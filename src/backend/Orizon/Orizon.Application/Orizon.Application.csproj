@@ -10,4 +10,8 @@
     <ProjectReference Include="..\Orizon.Domain\Orizon.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="14.1.0" />
+  </ItemGroup>
+
 </Project>
