@@ -1,0 +1,54 @@
+name: CI Frontend
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+    paths:
+      - "src/frontend/**"
+      - ".github/workflows/ci-frontend.yml"
+  pull_request:
+    branches:
+      - develop
+      - master
+    paths:
+      - "src/frontend/**"
+      - ".github/workflows/ci-frontend.yml"
+
+jobs:
+  build-and-test:
+    name: Build e Testes
+    runs-on: ubuntu-latest
+
+    steps:      
+      - name: Checkout do código
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js LTS
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+      
+      - name: Cache dependências npm
+        uses: actions/cache@v4
+        with:
+          path: src/frontend/orizon-frontend/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('src/frontend/orizon-frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      
+      - name: Instalar dependências
+        working-directory: src/frontend/orizon-frontend
+        run: npm ci
+      
+      - name: Build produção
+        working-directory: src/frontend/orizon-frontend
+        run: npx ng build --configuration production
+      
+      - name: Rodar testes unitários
+        working-directory: src/frontend/orizon-frontend
+        run: npx ng test
+          --watch=false
+          --browsers=ChromeHeadless
+          --code-coverage
