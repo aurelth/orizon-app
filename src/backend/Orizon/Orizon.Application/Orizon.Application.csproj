@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Orizon.Domain\Orizon.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
