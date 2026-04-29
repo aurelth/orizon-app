@@ -1,0 +1,35 @@
+services:
+  postgres:
+    # Restart manual em dev, se quebrar, queremos ver o erro
+    restart: "no"
+    environment:
+      # Log de todas as queries SQL durante desenvolvimento => Útil para debugar o EF Core e ver o SQL gerado
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "${POSTGRES_PORT}:5432"
+
+  redis:
+    restart: "no"
+    ports:
+      - "${REDIS_PORT}:6379"
+
+  seq:
+    restart: "no"
+    environment:
+      ACCEPT_EULA: Y
+      # Em desenvolvimento, sem autenticação no Seq => Facilita visualizar logs sem precisar de login
+      SEQ_FIRSTRUN_ADMINPASSWORDHASH: ""
+
+  prometheus:
+    restart: "no"
+  
+  grafana:
+    restart: "no"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GF_SECURITY_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      # Em desenvolvimento, desabilita HTTPS obrigatório
+      GF_SERVER_PROTOCOL: "http"
+      # Logs mais verbosos no Grafana durante desenvolvimento
+      GF_LOG_LEVEL: "debug"

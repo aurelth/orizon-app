@@ -1,0 +1,15 @@
+
+apiVersion: 1
+
+providers:
+
+  - name: "Orizon Dashboards"
+    orgId: 1
+    # Pasta onde os arquivos JSON dos dashboards ficam
+    folder: "Orizon"
+    type: file
+    disableDeletion: true
+    editable: false
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards
