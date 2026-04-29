@@ -1,0 +1,84 @@
+name: CI Backend
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+    paths:
+      - "src/backend/**"
+      - ".github/workflows/ci-backend.yml"
+  pull_request:
+    branches:
+      - develop
+      - master
+    paths:
+      - "src/backend/**"
+      - ".github/workflows/ci-backend.yml"
+
+jobs:
+  build-and-test:
+    name: Build e Testes    
+    runs-on: ubuntu-latest
+
+    steps:      
+      - name: Checkout do código
+        uses: actions/checkout@v4
+      
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+      
+      - name: Cache pacotes NuGet
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      
+      - name: Restaurar pacotes NuGet
+        run: dotnet restore src/backend/Orizon.sln
+      
+      - name: Compilar solução
+        run: dotnet build src/backend/Orizon.sln
+          --configuration Release
+          --no-restore
+    
+      - name: Rodar testes
+        run: dotnet test src/backend/Orizon.sln
+          --configuration Release
+          --no-build
+          --verbosity normal
+          --collect:"XPlat Code Coverage"
+          --results-directory ./coverage
+     
+      - name: Publicar relatório de cobertura
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          directory: ./coverage
+          fail_ci_if_error: false
+  
+  docker-build:
+    name: Validar Docker Build
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: false # Habilitar na Fase 4 quando Dockerfile.api existir
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Build imagem Docker da API
+        run: docker build
+          -f infra/docker/Dockerfile.api
+          -t orizon-api:ci
+          .
+
+      - name: Build imagem Docker do Worker
+        run: docker build
+          -f infra/docker/Dockerfile.worker
+          -t orizon-worker:ci
+          .
