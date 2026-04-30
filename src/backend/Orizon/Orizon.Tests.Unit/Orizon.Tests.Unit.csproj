@@ -20,4 +20,13 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Domain\DTOs\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Orizon.Application\Orizon.Application.csproj" />
+    <ProjectReference Include="..\Orizon.Domain\Orizon.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
