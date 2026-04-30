@@ -29,4 +29,11 @@
     <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\Migrations\" />
+    <Folder Include="Repositories\" />
+    <Folder Include="Services\External\" />
+    <Folder Include="Services\Cache\" />
+  </ItemGroup>
+
 </Project>
