@@ -15,9 +15,10 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.Property(r => r.Token)
             .IsRequired()
             .HasMaxLength(200);
-
+        
         builder.Property(r => r.UserId)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(450);
 
         builder.Property(r => r.ExpiresAt)
             .IsRequired();
@@ -25,14 +26,13 @@ public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
         builder.Property(r => r.IsRevoked)
             .IsRequired()
             .HasDefaultValue(false);
-        
+
         builder.Ignore(r => r.IsExpired);
         builder.Ignore(r => r.IsActive);
 
-        // Índice para buscar token rapidamente
         builder.HasIndex(r => r.Token)
             .IsUnique();
-        
-        builder.HasIndex(r => r.UserId);
+
+        builder.HasIndex(r => r.UserId);       
     }
 }

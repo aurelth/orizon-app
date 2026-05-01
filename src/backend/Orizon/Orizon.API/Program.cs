@@ -27,11 +27,10 @@ try
             .WriteTo.Seq(context.Configuration["Seq:ServerUrl"]
                 ?? "http://localhost:5341"));
 
+    //SERVICES REGISTRATION
     builder.Services.AddControllers();
-    builder.Services.AddOpenApi();
-
-    // JWT Service
-    builder.Services.AddScoped<IJwtService, JwtService>();
+    builder.Services.AddOpenApi();    
+    builder.Services.AddScoped<IJwtService, JwtService>();    
 
     builder.Services.AddDbContext<OrizonDbContext>(options =>
         options.UseNpgsql(
@@ -41,7 +40,7 @@ try
       
     builder.Services.AddIdentity<AppIdentityUser, IdentityRole>(options =>
     {
-        // Configurações de senha
+        // PASSWORD CONFIGURATIONS
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = true;
         options.Password.RequireUppercase = true;
@@ -85,7 +84,8 @@ try
     // REPOSITORIES
     builder.Services.AddScoped<IBriefingRepository, BriefingRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
-    
+    builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
     builder.Services.AddHealthChecks()
         .AddNpgSql(
             builder.Configuration.GetConnectionString("PostgreSQL")!,
@@ -98,7 +98,7 @@ try
        
     var app = builder.Build();
 
-    // PIPELINE DE MIDDLEWARES   
+    // MIDDLEWARES PIPELINE
     if (app.Environment.IsDevelopment())
     {
         app.MapOpenApi();

@@ -211,7 +211,7 @@ namespace Orizon.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("AppUser", (string)null);
+                    b.ToTable("AppUser");
                 });
 
             modelBuilder.Entity("Orizon.Domain.Entities.BriefingEntry", b =>
@@ -299,8 +299,10 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
 
                     b.HasKey("Id");
 
@@ -550,17 +552,6 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Orizon.Domain.Entities.RefreshToken", b =>
-                {
-                    b.HasOne("Orizon.Domain.Entities.AppUser", "User")
-                        .WithMany("RefreshTokens")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Orizon.Domain.Entities.TrelloBoardConfig", b =>
                 {
                     b.HasOne("Orizon.Domain.Entities.AppUser", "User")
@@ -575,8 +566,6 @@ namespace Orizon.Infrastructure.Data.Migrations
             modelBuilder.Entity("Orizon.Domain.Entities.AppUser", b =>
                 {
                     b.Navigation("BriefingEntries");
-
-                    b.Navigation("RefreshTokens");
 
                     b.Navigation("TrelloBoardConfigs");
                 });
