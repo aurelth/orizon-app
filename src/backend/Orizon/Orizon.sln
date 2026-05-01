@@ -13,9 +13,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orizon.API", "Orizon.API\Or
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orizon.Worker", "Orizon.Worker\Orizon.Worker.csproj", "{EDCBF07C-9C43-4E0A-9E86-325CF03981FE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orizon.Tests.Unit", "Orizon.Tests.Unit\Orizon.Tests.Unit.csproj", "{63F5C2B4-1F93-43D1-9C3B-5457C43C988B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orizon.Tests.Unit", "Tests\UnitTests\Orizon.Tests.Unit\Orizon.Tests.Unit.csproj", "{63F5C2B4-1F93-43D1-9C3B-5457C43C988B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orizon.Tests.Integration", "Orizon.Tests.Integration\Orizon.Tests.Integration.csproj", "{C4A16AF1-5F40-4198-BBE7-68F2FAEED9A5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Orizon.Tests.Integration", "Tests\IntegrationTests\Orizon.Tests.Integration\Orizon.Tests.Integration.csproj", "{C4A16AF1-5F40-4198-BBE7-68F2FAEED9A5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -18,9 +18,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Orizon.Application\Orizon.Application.csproj" />
-    <ProjectReference Include="..\Orizon.Domain\Orizon.Domain.csproj" />
-    <ProjectReference Include="..\Orizon.Infrastructure\Orizon.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\Orizon.Domain\Orizon.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Orizon.Application\Orizon.Application.csproj" />
+    <ProjectReference Include="..\..\..\Orizon.Infrastructure\Orizon.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>

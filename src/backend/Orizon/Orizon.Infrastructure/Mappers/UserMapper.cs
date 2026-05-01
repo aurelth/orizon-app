@@ -27,9 +27,9 @@ public partial class UserMapper
     [MapperIgnoreSource(nameof(AppIdentityUser.LockoutEnd))]
     [MapperIgnoreSource(nameof(AppIdentityUser.LockoutEnabled))]
     [MapperIgnoreSource(nameof(AppIdentityUser.AccessFailedCount))]
-    // Campos do Domain que não existem no Identity
     [MapperIgnoreTarget(nameof(AppUser.BriefingEntries))]
     [MapperIgnoreTarget(nameof(AppUser.TrelloBoardConfigs))]
+    [MapperIgnoreTarget(nameof(AppUser.RefreshTokens))]
     [MapperIgnoreTarget(nameof(AppUser.CreatedAt))]
     [MapperIgnoreTarget(nameof(AppUser.UpdatedAt))]
     public partial AppUser ToAppUser(AppIdentityUser source);
@@ -56,6 +56,7 @@ public partial class UserMapper
     [MapperIgnoreTarget(nameof(AppIdentityUser.AccessFailedCount))]
     [MapperIgnoreSource(nameof(AppUser.BriefingEntries))]
     [MapperIgnoreSource(nameof(AppUser.TrelloBoardConfigs))]
+    [MapperIgnoreSource(nameof(AppUser.RefreshTokens))]
     [MapperIgnoreSource(nameof(AppUser.CreatedAt))]
     [MapperIgnoreSource(nameof(AppUser.UpdatedAt))]
     public partial AppIdentityUser ToIdentityUser(AppUser source);
