@@ -39,15 +39,15 @@ jobs:
             ${{ runner.os }}-nuget-
       
       - name: Restaurar pacotes NuGet
-        run: dotnet restore src/backend/Orizon.sln
+        run: dotnet restore src/backend/Orizon/Orizon.sln
       
       - name: Compilar solução
-        run: dotnet build src/backend/Orizon.sln
+        run: dotnet build src/backend/Orizon/Orizon.sln
           --configuration Release
           --no-restore
     
       - name: Rodar testes
-        run: dotnet test src/backend/Orizon.sln
+        run: dotnet test src/backend/Orizon/Orizon.sln
           --configuration Release
           --no-build
           --verbosity normal
