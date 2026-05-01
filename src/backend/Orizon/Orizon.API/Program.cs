@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
+using Orizon.Application.Interfaces.Repositories;
+using Orizon.Application.Interfaces.Services;
 using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
 using Orizon.Infrastructure.Repositories;
-using Orizon.Application.Interfaces.Repositories;
+using Orizon.Infrastructure.Services;
+using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -27,6 +29,9 @@ try
 
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
+
+    // JWT Service
+    builder.Services.AddScoped<IJwtService, JwtService>();
 
     builder.Services.AddDbContext<OrizonDbContext>(options =>
         options.UseNpgsql(
