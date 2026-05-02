@@ -1,41 +1,40 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Orizon.Application\Orizon.Application.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Orizon.Application\Orizon.Application.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Google.Apis.Calendar.v3" Version="1.73.0.4073" />
-    <PackageReference Include="Google.Apis.Gmail.v1" Version="1.73.0.4120" />
-    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
-    <PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.*" />
-    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.*" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.*" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.*">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.*" />
-    <PackageReference Include="Polly" Version="8.6.6" />
-    <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
-    <PackageReference Include="Serilog" Version="4.3.1" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
-    <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
-    <PackageReference Include="StackExchange.Redis" Version="2.12.14" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Google.Apis.Calendar.v3" Version="1.73.0.4073" />
+		<PackageReference Include="Google.Apis.Gmail.v1" Version="1.73.0.4120" />
+		<PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
+		<PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.*" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.*" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.*" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.*">
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.*" />
+		<PackageReference Include="Polly" Version="8.6.6" />
+		<PackageReference Include="Riok.Mapperly" Version="4.3.1" />
+		<PackageReference Include="Serilog" Version="4.3.1" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+		<PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
+		<PackageReference Include="StackExchange.Redis" Version="2.12.14" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Data\Migrations\" />
-    <Folder Include="Services\External\" />
-    <Folder Include="Services\Cache\" />
-    <Folder Include="Services\Email\" />
-  </ItemGroup>
+	<ItemGroup>
+		<Folder Include="Services\External\" />
+		<Folder Include="Services\Cache\" />
+		<Folder Include="Services\Email\" />
+	</ItemGroup>
 
 </Project>
