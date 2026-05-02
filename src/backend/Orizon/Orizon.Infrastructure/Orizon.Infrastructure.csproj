@@ -35,6 +35,7 @@
     <Folder Include="Data\Migrations\" />
     <Folder Include="Services\External\" />
     <Folder Include="Services\Cache\" />
+    <Folder Include="Services\Email\" />
   </ItemGroup>
 
 </Project>

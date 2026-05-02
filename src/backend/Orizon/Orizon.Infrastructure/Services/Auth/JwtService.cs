@@ -6,7 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Orizon.Application.Interfaces.Services;
 using Orizon.Domain.Entities;
 
-namespace Orizon.Infrastructure.Services;
+namespace Orizon.Infrastructure.Services.Auth;
 
 public class JwtService : IJwtService
 {

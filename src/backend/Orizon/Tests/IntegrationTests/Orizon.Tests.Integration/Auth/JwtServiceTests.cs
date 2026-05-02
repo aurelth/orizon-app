@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Orizon.Domain.Entities;
 using Orizon.Domain.Enums;
-using Orizon.Infrastructure.Services;
+using Orizon.Infrastructure.Services.Auth;
 
 namespace Orizon.Tests.Integration.Auth;
 

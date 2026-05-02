@@ -6,6 +6,7 @@ using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
 using Orizon.Infrastructure.Repositories;
 using Orizon.Infrastructure.Services;
+using Orizon.Infrastructure.Services.Auth;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -30,7 +31,8 @@ try
     //SERVICES REGISTRATION
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();    
-    builder.Services.AddScoped<IJwtService, JwtService>();    
+    builder.Services.AddScoped<IJwtService, JwtService>();
+    builder.Services.AddScoped<IAuthService, AuthService>();
 
     builder.Services.AddDbContext<OrizonDbContext>(options =>
         options.UseNpgsql(
