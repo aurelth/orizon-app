@@ -52,14 +52,18 @@ public class IdentityServiceTests : IAsyncLifetime
         services.AddScoped<IIdentityService, IdentityService>();
 
         var provider = services.BuildServiceProvider();
+
+        // Usar scope para garantir que o contexto está correto
+        using (var scope = provider.CreateScope())
+        {
+            var context = scope.ServiceProvider
+                .GetRequiredService<OrizonDbContext>();
+
+            // MigrateAsync cria as tabelas via migrations
+            await context.Database.MigrateAsync();
+        }
+
         _context = provider.GetRequiredService<OrizonDbContext>();
-
-        // Aplicar migrations E garantir que o banco está criado
-        await _context.Database.MigrateAsync();
-
-        // Aguardar o banco estar pronto
-        await _context.Database.EnsureCreatedAsync();
-
         _identityService = provider.GetRequiredService<IIdentityService>();
     }
 
