@@ -7,6 +7,7 @@ using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
 using Orizon.Infrastructure.Repositories;
 using Testcontainers.PostgreSql;
+using Xunit;
 
 namespace Orizon.Tests.Integration.Auth;
 
