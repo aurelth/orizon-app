@@ -74,7 +74,7 @@ public class AuthControllerTests : IAsyncLifetime
         {
             try
             {
-                await context.Database.MigrateAsync();
+                await context.Database.EnsureCreatedAsync();
                 break;
             }
             catch (Exception) when (i < maxRetries - 1)

@@ -59,7 +59,7 @@ public class RefreshTokenRepositoryTests : IAsyncLifetime
         {
             try
             {
-                await _context.Database.MigrateAsync();
+                await _context.Database.EnsureCreatedAsync();
                 break;
             }
             catch (Exception) when (i < maxRetries - 1)
