@@ -32,7 +32,6 @@ public class IdentityServiceTests : IAsyncLifetime
         await _postgres.StartAsync();
 
         var services = new ServiceCollection();
-        
         services.AddLogging();
 
         services.AddDbContext<OrizonDbContext>(options =>
@@ -55,7 +54,11 @@ public class IdentityServiceTests : IAsyncLifetime
         var provider = services.BuildServiceProvider();
         _context = provider.GetRequiredService<OrizonDbContext>();
 
+        // Aplicar migrations E garantir que o banco está criado
         await _context.Database.MigrateAsync();
+
+        // Aguardar o banco estar pronto
+        await _context.Database.EnsureCreatedAsync();
 
         _identityService = provider.GetRequiredService<IIdentityService>();
     }
