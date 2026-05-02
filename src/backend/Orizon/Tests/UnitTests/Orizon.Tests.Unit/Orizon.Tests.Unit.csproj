@@ -10,21 +10,27 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="FluentAssertions" Version="8.9.0" />
+    <PackageReference Include="FluentValidation" Version="12.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.*" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.15" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
-    <PackageReference Include="Testcontainers.PostgreSql" Version="4.11.0" />
-    <PackageReference Include="Testcontainers.Redis" Version="4.11.0" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Orizon.Application\Orizon.Application.csproj" />
-    <ProjectReference Include="..\Orizon.Domain\Orizon.Domain.csproj" />
-    <ProjectReference Include="..\Orizon.Infrastructure\Orizon.Infrastructure.csproj" />
+    <Using Include="Xunit" />
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Xunit" />
+    <Folder Include="Application\Services\" />
+    <Folder Include="Domain\DTOs\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Orizon.Domain\Orizon.Domain.csproj" />
+    <ProjectReference Include="..\..\..\Orizon.Application\Orizon.Application.csproj" />
   </ItemGroup>
 
 </Project>

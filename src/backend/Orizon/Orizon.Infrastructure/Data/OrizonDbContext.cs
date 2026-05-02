@@ -14,6 +14,7 @@ public class OrizonDbContext : IdentityDbContext<AppIdentityUser>
     
     public DbSet<BriefingEntry> BriefingEntries => Set<BriefingEntry>();
     public DbSet<TrelloBoardConfig> TrelloBoardConfigs => Set<TrelloBoardConfig>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {      

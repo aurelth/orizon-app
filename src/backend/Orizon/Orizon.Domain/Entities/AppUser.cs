@@ -22,5 +22,5 @@ public class AppUser : BaseEntity
         = new List<BriefingEntry>();
 
     public ICollection<TrelloBoardConfig> TrelloBoardConfigs { get; set; }
-        = new List<TrelloBoardConfig>();
+        = new List<TrelloBoardConfig>();  
 }

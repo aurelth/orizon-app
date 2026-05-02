@@ -1,10 +1,19 @@
+using FluentValidation;
+using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
+using Microsoft.IdentityModel.Tokens;
+using Orizon.Application.Common.Behaviors;
+using Orizon.Application.Interfaces.Repositories;
+using Orizon.Application.Interfaces.Services;
+using Orizon.Application.UseCases.Auth.Commands.RegisterUser;
 using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
 using Orizon.Infrastructure.Repositories;
-using Orizon.Application.Interfaces.Repositories;
+using Orizon.Infrastructure.Services.Auth;
+using Serilog;
+using System.Text;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -33,34 +42,52 @@ try
             builder.Configuration.GetConnectionString("PostgreSQL"),
             npgsql => npgsql.MigrationsAssembly(
                 typeof(OrizonDbContext).Assembly.FullName)));
-      
+
     builder.Services.AddIdentity<AppIdentityUser, IdentityRole>(options =>
     {
-        // Configurações de senha
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = true;
         options.Password.RequireUppercase = true;
         options.Password.RequireNonAlphanumeric = false;
-        options.Password.RequiredLength = 8;        
-        options.User.RequireUniqueEmail = true;        
+        options.Password.RequiredLength = 8;
+        options.User.RequireUniqueEmail = true;
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
         options.Lockout.MaxFailedAccessAttempts = 5;
     })
     .AddEntityFrameworkStores<OrizonDbContext>()
     .AddDefaultTokenProviders();
-    
-    // REDIS
+
+    builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(
+                    builder.Configuration["Jwt:Secret"]!)),
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
     builder.Services.AddStackExchangeRedisCache(options =>
     {
         options.Configuration = builder.Configuration
             .GetConnectionString("Redis");
         options.InstanceName = "orizon:";
     });
-    
-    // SIGNALR   
+
     builder.Services.AddSignalR();
-    
-    // CORS 
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("OrizonPolicy", policy =>
@@ -77,34 +104,48 @@ try
         });
     });
 
-    // REPOSITORIES
     builder.Services.AddScoped<IBriefingRepository, BriefingRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
-    
-    builder.Services.AddHealthChecks()
-        .AddNpgSql(
-            builder.Configuration.GetConnectionString("PostgreSQL")!,
-            name: "postgresql",
-            tags: new[] { "db", "ready" })
-        .AddRedis(
-            builder.Configuration.GetConnectionString("Redis")!,
-            name: "redis",
+    builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+
+    builder.Services.AddScoped<IJwtService, JwtService>();
+    builder.Services.AddScoped<IIdentityService, IdentityService>();
+
+    builder.Services.AddMediatR(cfg =>
+        cfg.RegisterServicesFromAssembly(
+            typeof(RegisterUserCommand).Assembly));
+
+    builder.Services.AddValidatorsFromAssembly(
+        typeof(RegisterUserCommandValidator).Assembly);
+
+    builder.Services.AddTransient(
+        typeof(IPipelineBehavior<,>),
+        typeof(ValidationBehavior<,>));
+
+    var pgConnection = builder.Configuration.GetConnectionString("PostgreSQL");
+    var redisConnection = builder.Configuration.GetConnectionString("Redis");
+
+    var healthChecks = builder.Services.AddHealthChecks();
+
+    if (!string.IsNullOrEmpty(pgConnection))
+        healthChecks.AddNpgSql(pgConnection, name: "postgresql",
+            tags: new[] { "db", "ready" });
+
+    if (!string.IsNullOrEmpty(redisConnection))
+        healthChecks.AddRedis(redisConnection, name: "redis",
             tags: new[] { "cache", "ready" });
-       
+
     var app = builder.Build();
 
-    // PIPELINE DE MIDDLEWARES   
     if (app.Environment.IsDevelopment())
-    {
         app.MapOpenApi();
-    }
-    
-    app.UseSerilogRequestLogging();    
+
+    app.UseSerilogRequestLogging();
     app.UseCors("OrizonPolicy");
-    app.UseHttpsRedirection();    
+    app.UseHttpsRedirection();
     app.UseAuthentication();
     app.UseAuthorization();
-    app.MapControllers();    
+    app.MapControllers();
     app.MapHealthChecks("/health/ready");
     app.MapHealthChecks("/health/live");
 
@@ -112,7 +153,7 @@ try
 
     app.Run();
 }
-catch (Exception ex)
+catch (Exception ex) when (ex is not HostAbortedException)
 {
     Log.Fatal(ex, "Orizon API falhou ao iniciar");
 }
@@ -120,3 +161,5 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+public partial class Program { }

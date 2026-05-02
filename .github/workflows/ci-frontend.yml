@@ -21,15 +21,19 @@ jobs:
     name: Build e Testes
     runs-on: ubuntu-latest
 
-    steps:      
+    steps:
       - name: Checkout do código
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js LTS
         uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
-      
+
+      # Instala Chrome explicitamente para garantir => compatibilidade com --browsers=ChromeHeadless
+      - name: Instalar Chrome
+        uses: browser-actions/setup-chrome@v1
+
       - name: Cache dependências npm
         uses: actions/cache@v4
         with:
@@ -37,18 +41,27 @@ jobs:
           key: ${{ runner.os }}-npm-${{ hashFiles('src/frontend/orizon-frontend/package-lock.json') }}
           restore-keys: |
             ${{ runner.os }}-npm-
-      
+
       - name: Instalar dependências
         working-directory: src/frontend/orizon-frontend
         run: npm ci
-      
+
       - name: Build produção
         working-directory: src/frontend/orizon-frontend
         run: npx ng build --configuration production
-      
+
       - name: Rodar testes unitários
         working-directory: src/frontend/orizon-frontend
         run: npx ng test
           --watch=false
           --browsers=ChromeHeadless
           --code-coverage
+
+      # TODO Fase 10 — habilitar quando testes E2E existirem
+      # - name: Instalar Playwright
+      #   working-directory: src/frontend/orizon-frontend
+      #   run: npx playwright install --with-deps chromium
+      #
+      # - name: Rodar testes E2E
+      #   working-directory: src/frontend/orizon-frontend
+      #   run: npx playwright test

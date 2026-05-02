@@ -27,7 +27,6 @@ public partial class UserMapper
     [MapperIgnoreSource(nameof(AppIdentityUser.LockoutEnd))]
     [MapperIgnoreSource(nameof(AppIdentityUser.LockoutEnabled))]
     [MapperIgnoreSource(nameof(AppIdentityUser.AccessFailedCount))]
-    // Campos do Domain que não existem no Identity
     [MapperIgnoreTarget(nameof(AppUser.BriefingEntries))]
     [MapperIgnoreTarget(nameof(AppUser.TrelloBoardConfigs))]
     [MapperIgnoreTarget(nameof(AppUser.CreatedAt))]
