@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
 using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
+using Orizon.Infrastructure.Repositories;
 using Orizon.Infrastructure.Services.Auth;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -52,17 +54,24 @@ public class IdentityServiceTests : IAsyncLifetime
         .AddDefaultTokenProviders();
 
         services.AddSingleton<IIdentityService, IdentityService>();
+        services.AddSingleton<IRefreshTokenRepository, RefreshTokenRepository>();
 
         _provider = services.BuildServiceProvider();
         _context = _provider.GetRequiredService<OrizonDbContext>();
 
-        // Garantir que a migration corre e o banco está pronto
-        await _context.Database.MigrateAsync();
-
-        // Verificar que a tabela users existe
-        var conn = _context.Database.GetDbConnection();
-        await conn.OpenAsync();
-        await conn.CloseAsync();
+        var maxRetries = 5;
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                await _context.Database.MigrateAsync();
+                break;
+            }
+            catch (Exception) when (i < maxRetries - 1)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2));
+            }
+        }
 
         _identityService = _provider.GetRequiredService<IIdentityService>();
     }
@@ -172,11 +181,6 @@ public class IdentityServiceTests : IAsyncLifetime
     [Fact]
     public async Task EmailExistsAsync_WhenEmailDoesNotExist_ShouldReturnFalse()
     {
-        // Garantir que a tabela existe fazendo uma query simples primeiro
-        var tableExists = await _context.Database
-            .ExecuteSqlRawAsync("SELECT 1 FROM users LIMIT 1")
-            .ContinueWith(t => !t.IsFaulted);
-
         var exists = await _identityService
             .EmailExistsAsync("inexistente@orizonapp.io");
 

@@ -25,7 +25,6 @@ try
 {
     var builder = WebApplication.CreateBuilder(args);
 
-    // SERILOG
     builder.Host.UseSerilog((context, services, configuration) =>
         configuration
             .ReadFrom.Configuration(context.Configuration)
@@ -35,19 +34,15 @@ try
             .WriteTo.Seq(context.Configuration["Seq:ServerUrl"]
                 ?? "http://localhost:5341"));
 
-    // CONTROLLERS & OPENAPI
     builder.Services.AddControllers();
     builder.Services.AddOpenApi();
 
-
-    // ENTITY FRAMEWORK CORE + POSTGRESQL
     builder.Services.AddDbContext<OrizonDbContext>(options =>
         options.UseNpgsql(
             builder.Configuration.GetConnectionString("PostgreSQL"),
             npgsql => npgsql.MigrationsAssembly(
                 typeof(OrizonDbContext).Assembly.FullName)));
 
-    // ASP.NET CORE IDENTITY
     builder.Services.AddIdentity<AppIdentityUser, IdentityRole>(options =>
     {
         options.Password.RequireDigit = true;
@@ -62,7 +57,6 @@ try
     .AddEntityFrameworkStores<OrizonDbContext>()
     .AddDefaultTokenProviders();
 
-    // JWT AUTHENTICATION
     builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -85,8 +79,6 @@ try
         };
     });
 
-
-    // REDIS
     builder.Services.AddStackExchangeRedisCache(options =>
     {
         options.Configuration = builder.Configuration
@@ -94,10 +86,8 @@ try
         options.InstanceName = "orizon:";
     });
 
-    // SIGNALR
     builder.Services.AddSignalR();
 
-    // CORS
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("OrizonPolicy", policy =>
@@ -114,21 +104,17 @@ try
         });
     });
 
-    // REPOSITORIES
     builder.Services.AddScoped<IBriefingRepository, BriefingRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
-    // SERVICES
     builder.Services.AddScoped<IJwtService, JwtService>();
     builder.Services.AddScoped<IIdentityService, IdentityService>();
 
-    // MEDIATR + CQRS
     builder.Services.AddMediatR(cfg =>
         cfg.RegisterServicesFromAssembly(
             typeof(RegisterUserCommand).Assembly));
 
-    // FLUENTVALIDATION + PIPELINE BEHAVIOR
     builder.Services.AddValidatorsFromAssembly(
         typeof(RegisterUserCommandValidator).Assembly);
 
@@ -136,21 +122,21 @@ try
         typeof(IPipelineBehavior<,>),
         typeof(ValidationBehavior<,>));
 
-    // HEALTH CHECKS
-    builder.Services.AddHealthChecks()
-        .AddNpgSql(
-            builder.Configuration.GetConnectionString("PostgreSQL")!,
-            name: "postgresql",
-            tags: new[] { "db", "ready" })
-        .AddRedis(
-            builder.Configuration.GetConnectionString("Redis")!,
-            name: "redis",
+    var pgConnection = builder.Configuration.GetConnectionString("PostgreSQL");
+    var redisConnection = builder.Configuration.GetConnectionString("Redis");
+
+    var healthChecks = builder.Services.AddHealthChecks();
+
+    if (!string.IsNullOrEmpty(pgConnection))
+        healthChecks.AddNpgSql(pgConnection, name: "postgresql",
+            tags: new[] { "db", "ready" });
+
+    if (!string.IsNullOrEmpty(redisConnection))
+        healthChecks.AddRedis(redisConnection, name: "redis",
             tags: new[] { "cache", "ready" });
 
     var app = builder.Build();
 
-
-    // MIDDLEWARES PIPELINE
     if (app.Environment.IsDevelopment())
         app.MapOpenApi();
 

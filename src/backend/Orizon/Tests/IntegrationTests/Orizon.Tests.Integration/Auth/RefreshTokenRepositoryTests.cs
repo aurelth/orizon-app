@@ -11,7 +11,6 @@ using Xunit;
 
 namespace Orizon.Tests.Integration.Auth;
 
-// IAsyncLifetime — inicializa e destrói o container antes/depois dos testes
 public class RefreshTokenRepositoryTests : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgres;
@@ -21,7 +20,6 @@ public class RefreshTokenRepositoryTests : IAsyncLifetime
 
     public RefreshTokenRepositoryTests()
     {
-        // Container PostgreSQL isolado para os testes
         _postgres = new PostgreSqlBuilder()
             .WithImage("postgres:16-alpine")
             .WithDatabase("orizon_test")
@@ -31,24 +29,45 @@ public class RefreshTokenRepositoryTests : IAsyncLifetime
     }
 
     public async Task InitializeAsync()
-    {        
+    {
         await _postgres.StartAsync();
-        
+
         var services = new ServiceCollection();
+        services.AddLogging();
 
         services.AddDbContext<OrizonDbContext>(options =>
-            options.UseNpgsql(_postgres.GetConnectionString()));
+            options.UseNpgsql(_postgres.GetConnectionString()),
+            ServiceLifetime.Singleton);
 
-        services.AddIdentityCore<AppIdentityUser>()
-            .AddEntityFrameworkStores<OrizonDbContext>();
+        services.AddIdentity<AppIdentityUser, IdentityRole>(options =>
+        {
+            options.Password.RequireDigit = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireNonAlphanumeric = false;
+            options.Password.RequiredLength = 8;
+            options.User.RequireUniqueEmail = true;
+        })
+        .AddEntityFrameworkStores<OrizonDbContext>()
+        .AddDefaultTokenProviders();
 
         var provider = services.BuildServiceProvider();
         _context = provider.GetRequiredService<OrizonDbContext>();
 
-        // Aplica as migrations no banco de teste
-        await _context.Database.MigrateAsync();
+        var maxRetries = 5;
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                await _context.Database.MigrateAsync();
+                break;
+            }
+            catch (Exception) when (i < maxRetries - 1)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2));
+            }
+        }
 
-        // Cria um usuário de teste no banco
         var userManager = provider.GetRequiredService<UserManager<AppIdentityUser>>();
         var testUser = new AppIdentityUser
         {
@@ -72,16 +91,10 @@ public class RefreshTokenRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task AddAsync_WhenCalled_ShouldPersistTokenInDatabase()
     {
-        // Arrange
-        var refreshToken = new RefreshToken
-        {
-            UserId = _testUserId
-        };
+        var refreshToken = new RefreshToken { UserId = _testUserId };
 
-        // Act
         await _repository.AddAsync(refreshToken);
 
-        // Assert
         var saved = await _context.RefreshTokens
             .FirstOrDefaultAsync(t => t.Id == refreshToken.Id);
 
@@ -94,14 +107,11 @@ public class RefreshTokenRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task GetByTokenAsync_WhenTokenExists_ShouldReturnToken()
     {
-        // Arrange
         var refreshToken = new RefreshToken { UserId = _testUserId };
         await _repository.AddAsync(refreshToken);
 
-        // Act
         var found = await _repository.GetByTokenAsync(refreshToken.Token);
 
-        // Assert
         found.Should().NotBeNull();
         found!.Token.Should().Be(refreshToken.Token);
     }
@@ -109,17 +119,14 @@ public class RefreshTokenRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task GetByTokenAsync_WhenTokenDoesNotExist_ShouldReturnNull()
     {
-        // Act
         var found = await _repository.GetByTokenAsync("token-inexistente");
 
-        // Assert
         found.Should().BeNull();
     }
 
     [Fact]
     public async Task RevokeAllUserTokensAsync_WhenCalled_ShouldRevokeAllActiveTokens()
     {
-        // Arrange — criar 3 tokens para o usuário
         var token1 = new RefreshToken { UserId = _testUserId };
         var token2 = new RefreshToken { UserId = _testUserId };
         var token3 = new RefreshToken { UserId = _testUserId };
@@ -128,10 +135,8 @@ public class RefreshTokenRepositoryTests : IAsyncLifetime
         await _repository.AddAsync(token2);
         await _repository.AddAsync(token3);
 
-        // Act
         await _repository.RevokeAllUserTokensAsync(_testUserId);
 
-        // Assert
         var tokens = await _context.RefreshTokens
             .Where(t => t.UserId == _testUserId)
             .ToListAsync();
@@ -144,7 +149,6 @@ public class RefreshTokenRepositoryTests : IAsyncLifetime
     [Fact]
     public async Task DeleteExpiredTokensAsync_WhenCalled_ShouldRemoveExpiredTokens()
     {
-        // Arrange — criar token expirado e token válido
         var expiredToken = new RefreshToken
         {
             UserId = _testUserId,
@@ -159,10 +163,8 @@ public class RefreshTokenRepositoryTests : IAsyncLifetime
         await _repository.AddAsync(expiredToken);
         await _repository.AddAsync(validToken);
 
-        // Act
         await _repository.DeleteExpiredTokensAsync();
 
-        // Assert
         var remaining = await _context.RefreshTokens
             .Where(t => t.UserId == _testUserId)
             .ToListAsync();
