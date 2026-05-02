@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Orizon.Application.Interfaces.Services;
@@ -31,11 +32,13 @@ public class IdentityServiceTests : IAsyncLifetime
         await _postgres.StartAsync();
 
         var services = new ServiceCollection();
+        
+        services.AddLogging();
 
         services.AddDbContext<OrizonDbContext>(options =>
             options.UseNpgsql(_postgres.GetConnectionString()));
 
-        services.AddIdentityCore<AppIdentityUser>(options =>
+        services.AddIdentity<AppIdentityUser, IdentityRole>(options =>
         {
             options.Password.RequireDigit = true;
             options.Password.RequireLowercase = true;
@@ -44,7 +47,8 @@ public class IdentityServiceTests : IAsyncLifetime
             options.Password.RequiredLength = 8;
             options.User.RequireUniqueEmail = true;
         })
-        .AddEntityFrameworkStores<OrizonDbContext>();
+        .AddEntityFrameworkStores<OrizonDbContext>()
+        .AddDefaultTokenProviders();
 
         services.AddScoped<IIdentityService, IdentityService>();
 
