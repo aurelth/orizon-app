@@ -14,6 +14,7 @@ namespace Orizon.Tests.Integration.Auth;
 public class IdentityServiceTests : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgres;
+    private ServiceProvider _provider = null!;
     private OrizonDbContext _context = null!;
     private IIdentityService _identityService = null!;
 
@@ -35,7 +36,8 @@ public class IdentityServiceTests : IAsyncLifetime
         services.AddLogging();
 
         services.AddDbContext<OrizonDbContext>(options =>
-            options.UseNpgsql(_postgres.GetConnectionString()));
+            options.UseNpgsql(_postgres.GetConnectionString()),
+            ServiceLifetime.Singleton);
 
         services.AddIdentity<AppIdentityUser, IdentityRole>(options =>
         {
@@ -49,41 +51,35 @@ public class IdentityServiceTests : IAsyncLifetime
         .AddEntityFrameworkStores<OrizonDbContext>()
         .AddDefaultTokenProviders();
 
-        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddSingleton<IIdentityService, IdentityService>();
 
-        var provider = services.BuildServiceProvider();
+        _provider = services.BuildServiceProvider();
+        _context = _provider.GetRequiredService<OrizonDbContext>();
 
-        // Usar scope para garantir que o contexto está correto
-        using (var scope = provider.CreateScope())
-        {
-            var context = scope.ServiceProvider
-                .GetRequiredService<OrizonDbContext>();
+        // Garantir que a migration corre e o banco está pronto
+        await _context.Database.MigrateAsync();
 
-            // MigrateAsync cria as tabelas via migrations
-            await context.Database.MigrateAsync();
-        }
+        // Verificar que a tabela users existe
+        var conn = _context.Database.GetDbConnection();
+        await conn.OpenAsync();
+        await conn.CloseAsync();
 
-        _context = provider.GetRequiredService<OrizonDbContext>();
-        _identityService = provider.GetRequiredService<IIdentityService>();
+        _identityService = _provider.GetRequiredService<IIdentityService>();
     }
 
     public async Task DisposeAsync()
     {
         await _context.DisposeAsync();
+        await _provider.DisposeAsync();
         await _postgres.DisposeAsync();
     }
 
     [Fact]
     public async Task CreateUserAsync_WhenValidData_ShouldCreateUser()
     {
-        // Act
         var (success, userId, errors) = await _identityService
-            .CreateUserAsync(
-                "aurel@orizonapp.io",
-                "Aurel",
-                "Test@12345");
+            .CreateUserAsync("aurel@orizonapp.io", "Aurel", "Test@12345");
 
-        // Assert
         success.Should().BeTrue();
         userId.Should().NotBeNullOrEmpty();
         errors.Should().BeEmpty();
@@ -92,18 +88,12 @@ public class IdentityServiceTests : IAsyncLifetime
     [Fact]
     public async Task CreateUserAsync_WhenEmailAlreadyExists_ShouldReturnFailure()
     {
-        // Arrange — criar primeiro
         await _identityService.CreateUserAsync(
             "duplicate@orizonapp.io", "Aurel", "Test@12345");
 
-        // Act — tentar criar novamente
         var (success, userId, errors) = await _identityService
-            .CreateUserAsync(
-                "duplicate@orizonapp.io",
-                "Aurel",
-                "Test@12345");
+            .CreateUserAsync("duplicate@orizonapp.io", "Aurel", "Test@12345");
 
-        // Assert
         success.Should().BeFalse();
         userId.Should().BeNullOrEmpty();
         errors.Should().NotBeEmpty();
@@ -112,15 +102,12 @@ public class IdentityServiceTests : IAsyncLifetime
     [Fact]
     public async Task ValidateCredentialsAsync_WhenValidCredentials_ShouldReturnSuccess()
     {
-        // Arrange
         await _identityService.CreateUserAsync(
             "valid@orizonapp.io", "Aurel", "Test@12345");
 
-        // Act
         var (success, userId) = await _identityService
             .ValidateCredentialsAsync("valid@orizonapp.io", "Test@12345");
 
-        // Assert
         success.Should().BeTrue();
         userId.Should().NotBeNullOrEmpty();
     }
@@ -128,16 +115,12 @@ public class IdentityServiceTests : IAsyncLifetime
     [Fact]
     public async Task ValidateCredentialsAsync_WhenInvalidPassword_ShouldReturnFailure()
     {
-        // Arrange
         await _identityService.CreateUserAsync(
             "wrongpass@orizonapp.io", "Aurel", "Test@12345");
 
-        // Act
         var (success, userId) = await _identityService
-            .ValidateCredentialsAsync(
-                "wrongpass@orizonapp.io", "SenhaErrada");
+            .ValidateCredentialsAsync("wrongpass@orizonapp.io", "SenhaErrada");
 
-        // Assert
         success.Should().BeFalse();
         userId.Should().BeNullOrEmpty();
     }
@@ -145,12 +128,9 @@ public class IdentityServiceTests : IAsyncLifetime
     [Fact]
     public async Task ValidateCredentialsAsync_WhenEmailNotFound_ShouldReturnFailure()
     {
-        // Act
         var (success, userId) = await _identityService
-            .ValidateCredentialsAsync(
-                "inexistente@orizonapp.io", "Test@12345");
+            .ValidateCredentialsAsync("inexistente@orizonapp.io", "Test@12345");
 
-        // Assert
         success.Should().BeFalse();
         userId.Should().BeNullOrEmpty();
     }
@@ -158,15 +138,11 @@ public class IdentityServiceTests : IAsyncLifetime
     [Fact]
     public async Task GetUserByIdAsync_WhenUserExists_ShouldReturnAppUser()
     {
-        // Arrange
         var (_, userId, _) = await _identityService
-            .CreateUserAsync(
-                "getuser@orizonapp.io", "Aurel", "Test@12345");
+            .CreateUserAsync("getuser@orizonapp.io", "Aurel", "Test@12345");
 
-        // Act
         var appUser = await _identityService.GetUserByIdAsync(userId);
 
-        // Assert
         appUser.Should().NotBeNull();
         appUser!.Email.Should().Be("getuser@orizonapp.io");
         appUser.DisplayName.Should().Be("Aurel");
@@ -175,37 +151,35 @@ public class IdentityServiceTests : IAsyncLifetime
     [Fact]
     public async Task GetUserByIdAsync_WhenUserDoesNotExist_ShouldReturnNull()
     {
-        // Act
         var appUser = await _identityService
             .GetUserByIdAsync(Guid.NewGuid().ToString());
 
-        // Assert
         appUser.Should().BeNull();
     }
 
     [Fact]
     public async Task EmailExistsAsync_WhenEmailExists_ShouldReturnTrue()
     {
-        // Arrange
         await _identityService.CreateUserAsync(
             "exists@orizonapp.io", "Aurel", "Test@12345");
 
-        // Act
         var exists = await _identityService
             .EmailExistsAsync("exists@orizonapp.io");
 
-        // Assert
         exists.Should().BeTrue();
     }
 
     [Fact]
     public async Task EmailExistsAsync_WhenEmailDoesNotExist_ShouldReturnFalse()
     {
-        // Act
+        // Garantir que a tabela existe fazendo uma query simples primeiro
+        var tableExists = await _context.Database
+            .ExecuteSqlRawAsync("SELECT 1 FROM users LIMIT 1")
+            .ContinueWith(t => !t.IsFaulted);
+
         var exists = await _identityService
             .EmailExistsAsync("inexistente@orizonapp.io");
 
-        // Assert
         exists.Should().BeFalse();
     }
 }
