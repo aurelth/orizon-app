@@ -5,6 +5,7 @@ on:
     branches:
       - develop
       - master
+      - "feature/**"
     paths:
       - "src/frontend/**"
       - ".github/workflows/ci-frontend.yml"
@@ -25,14 +26,10 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
-      - name: Setup Node.js LTS
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/*"
-
-      # Instala Chrome explicitamente para garantir => compatibilidade com --browsers=ChromeHeadless
-      - name: Instalar Chrome
-        uses: browser-actions/setup-chrome@v1
+          node-version: "22"
 
       - name: Cache dependências npm
         uses: actions/cache@v4
@@ -48,14 +45,11 @@ jobs:
 
       - name: Build produção
         working-directory: src/frontend/orizon-frontend
-        run: npx ng build --configuration production
+        run: npm run build:prod
 
       - name: Rodar testes unitários
         working-directory: src/frontend/orizon-frontend
-        run: npx ng test
-          --watch=false
-          --browsers=ChromeHeadless
-          --code-coverage
+        run: npm test
 
       # TODO Fase 10 — habilitar quando testes E2E existirem
       # - name: Instalar Playwright
