@@ -1,0 +1,122 @@
+<div class="auth-layout">
+  <div class="auth-form-side">
+    <div class="auth-form-container">
+      <div class="brand">
+        <span class="brand-name">Orizon</span>
+        <span class="brand-tagline">Your day, before it begins</span>
+      </div>
+
+      <div class="form-header">
+        <h1>Bem-vindo de volta</h1>
+        <p>Entre na sua conta para acessar seu briefing</p>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+        <div class="field" [class.field--error]="isFieldInvalid('email')">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            placeholder="voce@exemplo.com"
+            autocomplete="email"
+          />
+          @if (isFieldInvalid('email')) {
+            <span class="field__error">
+              @if (form.get('email')?.errors?.['required']) {
+                Email é obrigatório
+              } @else {
+                Email inválido
+              }
+            </span>
+          }
+        </div>
+
+        <div class="field" [class.field--error]="isFieldInvalid('password')">
+          <label for="password">Senha</label>
+          <div class="field__password">
+            <input
+              id="password"
+              [type]="showPassword ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="Mínimo 8 caracteres"
+              autocomplete="current-password"
+            />
+            <button
+              type="button"
+              class="field__toggle"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
+            >
+              <i [class]="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+            </button>
+          </div>
+          @if (isFieldInvalid('password')) {
+            <span class="field__error">Senha deve ter no mínimo 8 caracteres</span>
+          }
+        </div>
+
+        @if (error()) {
+          <div class="alert alert--error">
+            <i class="pi pi-exclamation-circle"></i>
+            <span>{{ error() }}</span>
+          </div>
+        }
+
+        <button type="submit" class="btn btn--primary" [disabled]="isLoading()">
+          @if (isLoading()) {
+            <i class="pi pi-spinner pi-spin"></i>
+            <span>Entrando...</span>
+          } @else {
+            <span>Entrar</span>
+          }
+        </button>
+      </form>
+
+      <p class="auth-footer">
+        Não tem uma conta?
+        <a routerLink="/auth/register">Criar conta</a>
+      </p>
+    </div>
+  </div>
+
+  <div class="auth-visual-side">
+    <div class="visual-orb visual-orb--primary"></div>
+    <div class="visual-orb visual-orb--accent"></div>
+
+    <div class="auth-visual-content">
+      <div class="visual-label">
+        <span class="visual-label__dot"></span>
+        <span>Briefing diário personalizado</span>
+      </div>
+
+      <h2>Comece seu dia<br/>com clareza</h2>
+
+      <p>Clima, emails importantes, reuniões<br/>e tarefas, tudo em um só lugar,<br/>antes de você sair da cama.</p>
+
+      <div class="visual-divider">
+        <span class="visual-divider__line visual-divider__line--primary"></span>
+        <span class="visual-divider__line visual-divider__line--accent"></span>
+      </div>
+
+      <div class="visual-features">
+        <div class="visual-feature">
+          <i class="pi pi-sun"></i>
+          <span>Clima do dia</span>
+        </div>
+        <div class="visual-feature">
+          <i class="pi pi-envelope"></i>
+          <span>Emails importantes</span>
+        </div>
+        <div class="visual-feature">
+          <i class="pi pi-calendar"></i>
+          <span>Agenda do dia</span>
+        </div>
+        <div class="visual-feature">
+          <i class="pi pi-check-square"></i>
+          <span>Tarefas pendentes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
