@@ -12,6 +12,9 @@ using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
 using Orizon.Infrastructure.Repositories;
 using Orizon.Infrastructure.Services.Auth;
+using Orizon.Infrastructure.Services.Email;
+using Orizon.Infrastructure.Services.External;
+using SendGrid;
 using Serilog;
 using System.Text;
 
@@ -104,13 +107,44 @@ try
         });
     });
 
+    // REPOSITORIES
     builder.Services.AddScoped<IBriefingRepository, BriefingRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
     builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+    builder.Services.AddScoped<ITrelloBoardConfigRepository, TrelloBoardConfigRepository>();
 
+    // AUTH SERVICES
     builder.Services.AddScoped<IJwtService, JwtService>();
     builder.Services.AddScoped<IIdentityService, IdentityService>();
 
+    // EXTERNAL SERVICES — HttpClient com Polly retry
+    builder.Services.AddHttpClient<IWeatherService, WeatherService>()
+        .AddStandardResilienceHandler();
+
+    builder.Services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>()
+        .AddStandardResilienceHandler();
+
+    builder.Services.AddHttpClient<ITrelloService, TrelloService>()
+        .AddStandardResilienceHandler();
+
+    builder.Services.AddScoped<IGmailService, GmailIntegrationService>();
+    builder.Services.AddScoped<ICalendarService, CalendarIntegrationService>();
+    builder.Services.AddScoped<IClaudeService, ClaudeService>();
+
+    // EMAIL — SendGrid
+    var sendGridApiKey = builder.Configuration["Email:SendGridApiKey"];
+    if (!string.IsNullOrEmpty(sendGridApiKey))
+    {
+        builder.Services.AddSingleton<ISendGridClient>(
+            new SendGridClient(sendGridApiKey));
+        builder.Services.AddScoped<IEmailNotificationService, EmailNotificationService>();
+    }
+    else
+    {
+        builder.Services.AddScoped<IEmailNotificationService, NullEmailNotificationService>();
+    }
+
+    // MEDIATR + CQRS
     builder.Services.AddMediatR(cfg =>
         cfg.RegisterServicesFromAssembly(
             typeof(RegisterUserCommand).Assembly));
@@ -122,6 +156,7 @@ try
         typeof(IPipelineBehavior<,>),
         typeof(ValidationBehavior<,>));
 
+    // HEALTH CHECKS
     var pgConnection = builder.Configuration.GetConnectionString("PostgreSQL");
     var redisConnection = builder.Configuration.GetConnectionString("Redis");
 
