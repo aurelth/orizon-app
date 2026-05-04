@@ -14,7 +14,6 @@ public class TrelloListDto
     public string ListId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
 
-    // Detecção automática de tipo
-    // null = não detectado, usuário precisa mapear manualmente
+    // Detecção automática de tipo => null = não detectado, usuário precisa mapear manualmente
     public string? DetectedType { get; set; }
 }

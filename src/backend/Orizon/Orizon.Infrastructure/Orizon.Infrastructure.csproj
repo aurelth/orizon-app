@@ -11,6 +11,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Anthropic.SDK" Version="5.10.0" />
 		<PackageReference Include="Google.Apis.Calendar.v3" Version="1.73.0.4073" />
 		<PackageReference Include="Google.Apis.Gmail.v1" Version="1.73.0.4120" />
 		<PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
@@ -22,9 +23,11 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
+		<PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="10.5.0" />
 		<PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.*" />
 		<PackageReference Include="Polly" Version="8.6.6" />
 		<PackageReference Include="Riok.Mapperly" Version="4.3.1" />
+		<PackageReference Include="SendGrid" Version="9.29.3" />
 		<PackageReference Include="Serilog" Version="4.3.1" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
 		<PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
@@ -32,9 +35,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Services\External\" />
 		<Folder Include="Services\Cache\" />
-		<Folder Include="Services\Email\" />
 	</ItemGroup>
 
 </Project>

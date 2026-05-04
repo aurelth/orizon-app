@@ -29,9 +29,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Content Include="$(OutputPath)/Orizon.API.deps.json"
-				 CopyToOutputDirectory="Always"
-				 TargetPath="testhost.deps.json" />
+		<Content Include="$(OutputPath)/Orizon.API.deps.json" CopyToOutputDirectory="Always" TargetPath="testhost.deps.json" />
 	</ItemGroup>
 
 	<ItemGroup>

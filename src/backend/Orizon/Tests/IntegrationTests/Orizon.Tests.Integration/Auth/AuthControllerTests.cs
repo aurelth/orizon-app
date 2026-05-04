@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Orizon.Tests.Integration.Auth;
 
+[Collection("Integration Tests")]
 public class AuthControllerTests : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgres;
@@ -61,6 +62,15 @@ public class AuthControllerTests : IAsyncLifetime
                 builder.UseSetting("ConnectionStrings:PostgreSQL",
                     _postgres.GetConnectionString());
                 builder.UseSetting("ConnectionStrings:Redis", "");
+                builder.UseSetting("Weather:BaseUrl",
+                    "https://api.open-meteo.com/v1");
+                builder.UseSetting("Google:ClientId", "test-client-id");
+                builder.UseSetting("Google:ClientSecret", "test-client-secret");
+                builder.UseSetting("Google:RedirectUri",
+                    "http://localhost:5000/auth/google/callback");
+                builder.UseSetting("Anthropic:ApiKey", "test-api-key");
+                builder.UseSetting("Trello:ApiKey", "test-api-key");
+                builder.UseSetting("Trello:Token", "test-token");
             });
 
         _client = _factory.CreateClient();
