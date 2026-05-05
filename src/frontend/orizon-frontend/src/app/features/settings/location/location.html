@@ -1,0 +1,89 @@
+<div class="page-header">
+  <h1 class="page-title">Localização</h1>
+  <p class="page-subtitle">Configure sua cidade para o clima no briefing diário</p>
+</div>
+
+@if (error()) {
+  <div class="alert alert--error">
+    <i class="pi pi-exclamation-circle"></i>
+    <span>{{ error() }}</span>
+  </div>
+}
+
+<div class="location-content">
+
+  <div class="location-card">
+    <div class="location-card__header">
+      <div class="location-icon">
+        <i class="pi pi-map-marker"></i>
+      </div>
+      <div>
+        <h3>Localização atual</h3>
+        @if (city()) {
+          <p class="location-city">{{ city() }}</p>
+          @if (coordinates()) {
+            <p class="location-coords">
+              {{ coordinates()!.lat.toFixed(4) }}, {{ coordinates()!.lon.toFixed(4) }}
+            </p>
+          }
+        } @else {
+          <p class="location-empty">Nenhuma localização configurada</p>
+        }
+      </div>
+    </div>
+
+    <button
+      class="btn btn--ghost btn--sm"
+      [disabled]="isDetecting()"
+      (click)="detectLocation()"
+    >
+      @if (isDetecting()) {
+        <i class="pi pi-spinner pi-spin"></i>
+        <span>Detectando...</span>
+      } @else {
+        <i class="pi pi-crosshairs"></i>
+        <span>Detectar automaticamente</span>
+      }
+    </button>
+  </div>
+
+  <div class="divider">
+    <span>ou pesquise manualmente</span>
+  </div>
+
+  <div class="search-card">
+    <form [formGroup]="searchForm" (ngSubmit)="onSearch()" novalidate class="search-form">
+      <div class="search-field">
+        <input
+          type="text"
+          formControlName="query"
+          placeholder="Digite o nome da cidade..."
+          autocomplete="off"
+        />
+        <button type="submit" class="search-btn" [disabled]="isSearching()">
+          @if (isSearching()) {
+            <i class="pi pi-spinner pi-spin"></i>
+          } @else {
+            <i class="pi pi-search"></i>
+          }
+        </button>
+      </div>
+    </form>
+
+    @if (searchResults().length > 0) {
+      <div class="search-results">
+        @for (result of searchResults(); track result.city + result.lat) {
+          <button class="result-item" (click)="selectCity(result)">
+            <i class="pi pi-map-marker"></i>
+            <div class="result-info">
+              <span class="result-city">{{ result.city }}</span>
+              <span class="result-coords">{{ result.lat.toFixed(4) }}, {{ result.lon.toFixed(4) }}</span>
+            </div>
+            <i class="pi pi-chevron-right"></i>
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+</div>

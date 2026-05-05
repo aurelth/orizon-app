@@ -1,0 +1,107 @@
+<div class="page-header">
+  <h1 class="page-title">Modo Viagem</h1>
+  <p class="page-subtitle">Use uma localização temporária quando estiver viajando</p>
+</div>
+
+<div class="travel-content">
+
+  <div class="travel-status-card" [class.travel-status-card--active]="travelMode()">
+    <div class="travel-status-card__left">
+      <div class="travel-icon" [class.travel-icon--active]="travelMode()">
+        <i class="pi pi-globe"></i>
+      </div>
+      <div>
+        <h3>Modo Viagem</h3>
+        @if (travelMode()) {
+          <p class="status-text status-text--active">Ativo — usando localização temporária</p>
+        } @else {
+          <p class="status-text">Desativado — usando localização principal</p>
+        }
+      </div>
+    </div>
+
+    @if (travelMode()) {
+      <button class="toggle-btn toggle-btn--on" (click)="toggleTravelMode()">
+        <i class="pi pi-check"></i>
+        Desativar
+      </button>
+    }
+  </div>
+
+  @if (travelMode()) {
+    <div class="travel-info-card">
+      <div class="info-row">
+        <div class="info-item">
+          <span class="info-label">Localização base</span>
+          <span class="info-value">{{ baseCity() ?? 'Não configurada' }}</span>
+        </div>
+        <i class="pi pi-arrow-right info-arrow"></i>
+        <div class="info-item">
+          <span class="info-label">Localização de viagem</span>
+          <span class="info-value info-value--travel">{{ travelCity() }}</span>
+        </div>
+      </div>
+      @if (travelCoordinates()) {
+        <p class="travel-coords">
+          {{ travelCoordinates()!.lat.toFixed(4) }}, {{ travelCoordinates()!.lon.toFixed(4) }}
+        </p>
+      }
+    </div>
+  } @else {
+    <div class="search-section">
+      <p class="search-hint">Pesquise a cidade de destino para ativar o Modo Viagem:</p>
+
+      <div class="search-card">
+        <form [formGroup]="searchForm" (ngSubmit)="onSearch()" novalidate class="search-form">
+          <div class="search-field">
+            <input
+              type="text"
+              formControlName="query"
+              placeholder="Para onde você vai?"
+              autocomplete="off"
+            />
+            <button type="submit" class="search-btn" [disabled]="isSearching()">
+              @if (isSearching()) {
+                <i class="pi pi-spinner pi-spin"></i>
+              } @else {
+                <i class="pi pi-search"></i>
+              }
+            </button>
+          </div>
+        </form>
+
+        @if (searchResults().length > 0) {
+          <div class="search-results">
+            @for (result of searchResults(); track result.city + result.lat) {
+              <button class="result-item" (click)="selectCity(result)">
+                <i class="pi pi-map-marker"></i>
+                <div class="result-info">
+                  <span class="result-city">{{ result.city }}</span>
+                  <span class="result-coords">{{ result.lat.toFixed(4) }}, {{ result.lon.toFixed(4) }}</span>
+                </div>
+                <i class="pi pi-chevron-right"></i>
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      @if (selectedResult()) {
+        <div class="selected-city-card">
+          <div class="selected-city-card__info">
+            <i class="pi pi-map-marker"></i>
+            <div>
+              <p class="selected-label">Destino selecionado</p>
+              <p class="selected-name">{{ selectedResult()!.city }}</p>
+            </div>
+          </div>
+          <button class="btn btn--primary btn--sm" (click)="enableTravelMode()">
+            <i class="pi pi-globe"></i>
+            <span>Ativar Modo Viagem</span>
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+</div>
