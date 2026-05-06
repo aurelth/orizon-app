@@ -32,7 +32,10 @@ describe('RegisterComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([{ path: 'dashboard', component: RegisterComponent }]),
+        provideRouter([
+          { path: 'dashboard', component: RegisterComponent },
+          { path: 'settings', component: RegisterComponent },
+        ]),
         AuthStore,
         { provide: AuthService, useValue: authService },
       ],
