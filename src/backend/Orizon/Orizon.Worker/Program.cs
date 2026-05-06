@@ -1,12 +1,16 @@
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
+using Orizon.Application.Interfaces.Repositories;
+using Orizon.Application.Interfaces.Services;
 using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
 using Orizon.Infrastructure.Repositories;
-using Orizon.Application.Interfaces.Repositories;
+using Orizon.Infrastructure.Services.Email;
+using Orizon.Infrastructure.Services.External;
 using Orizon.Worker.Jobs;
+using SendGrid;
+using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -55,7 +59,34 @@ try
     // REPOSITORIES  
     builder.Services.AddScoped<IBriefingRepository, BriefingRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
-    
+
+    // EXTERNAL SERVICES
+    builder.Services.AddHttpClient<IWeatherService, WeatherService>()
+        .AddStandardResilienceHandler();
+
+    builder.Services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>()
+        .AddStandardResilienceHandler();
+
+    builder.Services.AddHttpClient<ITrelloService, TrelloService>()
+        .AddStandardResilienceHandler();
+
+    builder.Services.AddScoped<IGmailService, GmailIntegrationService>();
+    builder.Services.AddScoped<ICalendarService, CalendarIntegrationService>();
+    builder.Services.AddScoped<IClaudeService, ClaudeService>();
+
+    // EMAIL
+    var sendGridApiKey = builder.Configuration["Email:SendGridApiKey"];
+    if (!string.IsNullOrEmpty(sendGridApiKey))
+    {
+        builder.Services.AddSingleton<ISendGridClient>(
+            new SendGridClient(sendGridApiKey));
+        builder.Services.AddScoped<IEmailNotificationService, EmailNotificationService>();
+    }
+    else
+    {
+        builder.Services.AddScoped<IEmailNotificationService, NullEmailNotificationService>();
+    }
+
     // JOBS    
     builder.Services.AddScoped<BriefingJob>();
 

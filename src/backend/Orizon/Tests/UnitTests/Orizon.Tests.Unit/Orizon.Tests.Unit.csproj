@@ -12,7 +12,7 @@
     <PackageReference Include="FluentAssertions" Version="8.9.0" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.*" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.15" />
+	<PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.9.2" />
@@ -31,6 +31,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Orizon.Domain\Orizon.Domain.csproj" />
     <ProjectReference Include="..\..\..\Orizon.Application\Orizon.Application.csproj" />
+	<ProjectReference Include="..\..\..\Orizon.Worker\Orizon.Worker.csproj" />
   </ItemGroup>
 
 </Project>
