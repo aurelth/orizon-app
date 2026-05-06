@@ -33,7 +33,10 @@ describe('LoginComponent', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([{ path: 'dashboard', component: LoginComponent }]),
+        provideRouter([
+          { path: 'dashboard', component: LoginComponent },
+          { path: 'settings', component: LoginComponent },
+        ]),
         AuthStore,
         { provide: AuthService, useValue: authService },
       ],

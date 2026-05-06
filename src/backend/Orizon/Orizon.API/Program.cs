@@ -14,6 +14,7 @@ using Orizon.Infrastructure.Repositories;
 using Orizon.Infrastructure.Services.Auth;
 using Orizon.Infrastructure.Services.Email;
 using Orizon.Infrastructure.Services.External;
+using Scalar.AspNetCore;
 using SendGrid;
 using Serilog;
 using System.Text;
@@ -173,7 +174,10 @@ try
     var app = builder.Build();
 
     if (app.Environment.IsDevelopment())
-        app.MapOpenApi();
+    {
+        app.MapOpenApi();        
+        app.MapScalarApiReference();
+    }
 
     app.UseSerilogRequestLogging();
     app.UseCors("OrizonPolicy");

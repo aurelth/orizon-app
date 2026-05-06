@@ -12,7 +12,7 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler"   
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

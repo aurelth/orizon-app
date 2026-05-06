@@ -13,6 +13,9 @@
   ],
   "exclude": [
     "src/**/*.spec.ts",
-    "jest.setup.ts"
+    "src/**/*.spec.d.ts",
+    "jest.setup.ts",
+    // ALTERADO: exclusão explícita do interceptor spec que causava circular definition
+    "src/app/core/auth/interceptors/refresh-token.interceptor.spec.ts"
   ]
 }
