@@ -57,7 +57,7 @@
               autocomplete="new-password"
             />
             <button type="button" class="field__toggle" (click)="togglePassword()">
-              <i [class]="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+              <i [class]="showPassword ? 'pi pi-eye' : 'pi pi-eye-slash'"></i>
             </button>
           </div>
           @if (isFieldInvalid('password')) {
@@ -84,7 +84,7 @@
               autocomplete="new-password"
             />
             <button type="button" class="field__toggle" (click)="toggleConfirmPassword()">
-              <i [class]="showConfirmPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+              <i [class]="showConfirmPassword ? 'pi pi-eye' : 'pi pi-eye-slash'"></i>
             </button>
           </div>
           @if (isFieldInvalid('confirmPassword') || (form.errors?.['passwordMismatch'] && form.get('confirmPassword')?.touched)) {

@@ -48,7 +48,7 @@
               (click)="togglePassword()"
               [attr.aria-label]="showPassword ? 'Ocultar senha' : 'Mostrar senha'"
             >
-              <i [class]="showPassword ? 'pi pi-eye-slash' : 'pi pi-eye'"></i>
+              <i [class]="showPassword ? 'pi pi-eye' : 'pi pi-eye-slash'"></i>
             </button>
           </div>
           @if (isFieldInvalid('password')) {
