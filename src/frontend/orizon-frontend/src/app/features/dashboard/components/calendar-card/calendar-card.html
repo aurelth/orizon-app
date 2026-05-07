@@ -1,0 +1,51 @@
+<div class="card">
+  <div class="card__header">
+    <div class="card-icon card-icon--accent">
+      <i class="pi pi-calendar"></i>
+    </div>
+    <div>
+      <h3 class="card__title">Agenda do dia</h3>
+      <p class="card__subtitle">{{ events().length }} eventos</p>
+    </div>
+  </div>
+
+  <div class="card__body">
+    @if (events().length === 0) {
+      <div class="card__empty">
+        <i class="pi pi-calendar-times"></i>
+        <span>Sem eventos hoje</span>
+      </div>
+    } @else {
+      <div class="event-list">
+        @for (event of events(); track event.title) {
+          <div class="event-item" [class.event-item--rain]="event.conflictsWithRain">
+            <div class="event-time">
+              <span>{{ event.startTime | date:'HH:mm' }}</span>
+              <div class="event-time__line"></div>
+            </div>
+            <div class="event-content">
+              <p class="event-title">{{ event.title }}</p>
+              <p class="event-duration">
+                {{ formatDuration(event.startTime, event.endTime) }}
+                @if (event.participants.length > 0) {
+                  · {{ event.participants.length }} participantes
+                }
+              </p>
+              @if (event.conflictsWithRain) {
+                <span class="event-rain-warning">
+                  ☔ Conflito com chuva prevista
+                </span>
+              }
+              @if (event.meetLink) {
+                <a [href]="event.meetLink" target="_blank" class="event-meet-link">
+                  <i class="pi pi-video"></i>
+                  Entrar no Meet
+                </a>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

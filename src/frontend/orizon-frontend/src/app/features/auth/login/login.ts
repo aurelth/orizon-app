@@ -52,7 +52,7 @@ export class LoginComponent implements OnInit {
     this.authService.login(this.form.value).subscribe({
       next: () => {
         this.authStore.setLoading(false);
-        this.router.navigate(['/settings']);
+        this.router.navigate(['/dashboard']);
       },
       error: (err) => {
         this.authStore.setError(

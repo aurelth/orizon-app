@@ -1,0 +1,38 @@
+<div class="card">
+  <div class="card__header">
+    <div class="card-icon card-icon--primary">
+      <i class="pi pi-envelope"></i>
+    </div>
+    <div>
+      <h3 class="card__title">Emails importantes</h3>
+      <p class="card__subtitle">{{ emails().length }} mensagens</p>
+    </div>
+  </div>
+
+  <div class="card__body">
+    @if (emails().length === 0) {
+      <div class="card__empty">
+        <i class="pi pi-inbox"></i>
+        <span>Nenhum email importante hoje</span>
+      </div>
+    } @else {
+      <div class="email-list">
+        @for (email of emails(); track email.subject) {
+          <div class="email-item">
+            <div class="email-item__header">
+              <span class="email-category">
+                {{ email.categoryEmoji }} {{ email.category }}
+              </span>
+              <span class="email-time">
+                {{ email.receivedAt | date:'HH:mm' }}
+              </span>
+            </div>
+            <p class="email-from">{{ email.from }}</p>
+            <p class="email-subject">{{ email.subject }}</p>
+            <p class="email-summary">{{ email.aiSummary }}</p>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

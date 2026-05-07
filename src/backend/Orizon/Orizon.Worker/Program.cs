@@ -91,14 +91,14 @@ try
     builder.Services.AddScoped<BriefingJob>();
 
     var host = builder.Build();
-    
-    // REGISTRAR O JOB RECORRENTE => Cron: 0 6 * * * = todos os dias às 06h00     
+
+    // REGISTRAR O JOB RECORRENTE — executa às 06h, 12h e 17h (Brasília)
     using (var scope = host.Services.CreateScope())
     {
         RecurringJob.AddOrUpdate<BriefingJob>(
             recurringJobId: "morning-briefing",
-            methodCall: job => job.ExecuteAsync(CancellationToken.None),
-            cronExpression: "0 6 * * *",
+            methodCall: job => job.ExecuteAsync(CancellationToken.None),            
+            cronExpression: "0 6,12,17 * * *",
             options: new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.FindSystemTimeZoneById(
@@ -106,7 +106,7 @@ try
             });
 
         Log.Information(
-            "Job 'morning-briefing' registrado — executa diariamente às 06h (Brasília)");
+            "Job 'morning-briefing' registrado — executa às 06h, 12h e 17h (Brasília)");
     }
 
     Log.Information("Orizon Worker iniciado com sucesso");

@@ -1,0 +1,30 @@
+<div class="card">
+  <div class="card__header">
+    <div class="card-icon card-icon--primary">
+      <i class="pi pi-bolt"></i>
+    </div>
+    <div>
+      <h3 class="card__title">Sugestões do dia</h3>
+      <p class="card__subtitle">Gerado por Claude</p>
+    </div>
+  </div>
+
+  <div class="card__body">
+    <p class="suggestions-text">{{ aiSummary().suggestions }}</p>
+
+    @if (aiSummary().priorityTask) {
+    <div class="priority-task">
+      <span class="priority-task__label">🎯 Tarefa prioritária</span>
+      <p class="priority-task__text">{{ aiSummary().priorityTask }}</p>
+    </div>
+    }
+
+    @if (aiSummary().actionChips.length > 0) {
+    <div class="action-chips">
+      @for (chip of aiSummary().actionChips; track chip) {
+      <span class="chip">{{ chip }}</span>
+      }
+    </div>
+    }
+  </div>
+</div>
