@@ -1,0 +1,54 @@
+<div class="card">
+  <div class="card__header">
+    <div class="card-icon card-icon--accent">
+      <i class="pi pi-th-large"></i>
+    </div>
+    <div>
+      <h3 class="card__title">Tarefas</h3>
+      <p class="card__subtitle">{{ tasks().length }} cards</p>
+    </div>
+  </div>
+
+  <div class="card__body">
+    @if (tasks().length === 0) {
+      <div class="card__empty">
+        <i class="pi pi-check-square"></i>
+        <span>Nenhuma tarefa pendente</span>
+      </div>
+    } @else {
+      @if (inProgressTasks().length > 0) {
+        <div class="task-section">
+          <p class="task-section__label">Em progresso</p>
+          @for (task of inProgressTasks(); track task.cardId) {
+            <div class="task-item" [class.task-item--stuck]="task.isStuck">
+              <div class="task-item__board" [style.background]="task.boardColor + '20'">
+                {{ task.boardName }}
+              </div>
+              <p class="task-item__title">{{ task.title }}</p>
+              @if (task.daysInProgress) {
+                <p class="task-item__days" [class.task-item__days--stuck]="task.isStuck">
+                  {{ task.isStuck ? '⚠️ Parado há' : 'Em progresso há' }}
+                  {{ task.daysInProgress }} dias
+                </p>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      @if (todayTasks().length > 0) {
+        <div class="task-section">
+          <p class="task-section__label">Para hoje</p>
+          @for (task of todayTasks(); track task.cardId) {
+            <div class="task-item">
+              <div class="task-item__board" [style.background]="task.boardColor + '20'">
+                {{ task.boardName }}
+              </div>
+              <p class="task-item__title">{{ task.title }}</p>
+            </div>
+          }
+        </div>
+      }
+    }
+  </div>
+</div>

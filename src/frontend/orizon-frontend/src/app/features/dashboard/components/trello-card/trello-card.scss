@@ -1,0 +1,53 @@
+@use '../card-base' as *;
+
+.task-section {
+  margin-bottom: 1.25rem;
+
+  &:last-child { margin-bottom: 0; }
+
+  &__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.625rem;
+  }
+}
+
+.task-item {
+  padding: 0.75rem;
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  margin-bottom: 0.5rem;
+
+  &--stuck {
+    border-color: rgba(251, 191, 36, 0.4);
+    background: rgba(251, 191, 36, 0.04);
+  }
+
+  &__board {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.375rem;
+  }
+
+  &__title {
+    font-size: 0.875rem;
+    color: var(--color-text);
+    font-weight: 500;
+  }
+
+  &__days {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+
+    &--stuck { color: var(--color-warning); }
+  }
+}

@@ -1,10 +1,13 @@
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, LOCALE_ID } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { routes } from './app.routes';
 import { jwtInterceptor } from './core/auth/interceptors/jwt.interceptor';
 import { refreshTokenInterceptor } from './core/auth/interceptors/refresh-token.interceptor';
+import { registerLocaleData } from '@angular/common';
+import localePtBr from '@angular/common/locales/pt';
+
+registerLocaleData(localePtBr);
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -12,6 +15,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([jwtInterceptor, refreshTokenInterceptor])
     ),
-    provideAnimationsAsync(),
+    { provide: LOCALE_ID, useValue: 'pt' },
   ],
 };

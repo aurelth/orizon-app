@@ -1,12 +1,16 @@
 using Hangfire;
 using Hangfire.PostgreSql;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
+using Orizon.Application.Interfaces.Repositories;
+using Orizon.Application.Interfaces.Services;
 using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
 using Orizon.Infrastructure.Repositories;
-using Orizon.Application.Interfaces.Repositories;
+using Orizon.Infrastructure.Services.Email;
+using Orizon.Infrastructure.Services.External;
 using Orizon.Worker.Jobs;
+using SendGrid;
+using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -55,19 +59,46 @@ try
     // REPOSITORIES  
     builder.Services.AddScoped<IBriefingRepository, BriefingRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
-    
+
+    // EXTERNAL SERVICES
+    builder.Services.AddHttpClient<IWeatherService, WeatherService>()
+        .AddStandardResilienceHandler();
+
+    builder.Services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>()
+        .AddStandardResilienceHandler();
+
+    builder.Services.AddHttpClient<ITrelloService, TrelloService>()
+        .AddStandardResilienceHandler();
+
+    builder.Services.AddScoped<IGmailService, GmailIntegrationService>();
+    builder.Services.AddScoped<ICalendarService, CalendarIntegrationService>();
+    builder.Services.AddScoped<IClaudeService, ClaudeService>();
+
+    // EMAIL
+    var sendGridApiKey = builder.Configuration["Email:SendGridApiKey"];
+    if (!string.IsNullOrEmpty(sendGridApiKey))
+    {
+        builder.Services.AddSingleton<ISendGridClient>(
+            new SendGridClient(sendGridApiKey));
+        builder.Services.AddScoped<IEmailNotificationService, EmailNotificationService>();
+    }
+    else
+    {
+        builder.Services.AddScoped<IEmailNotificationService, NullEmailNotificationService>();
+    }
+
     // JOBS    
     builder.Services.AddScoped<BriefingJob>();
 
     var host = builder.Build();
-    
-    // REGISTRAR O JOB RECORRENTE => Cron: 0 6 * * * = todos os dias às 06h00     
+
+    // REGISTRAR O JOB RECORRENTE — executa às 06h, 12h e 17h (Brasília)
     using (var scope = host.Services.CreateScope())
     {
         RecurringJob.AddOrUpdate<BriefingJob>(
             recurringJobId: "morning-briefing",
-            methodCall: job => job.ExecuteAsync(CancellationToken.None),
-            cronExpression: "0 6 * * *",
+            methodCall: job => job.ExecuteAsync(CancellationToken.None),            
+            cronExpression: "0 6,12,17 * * *",
             options: new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.FindSystemTimeZoneById(
@@ -75,7 +106,7 @@ try
             });
 
         Log.Information(
-            "Job 'morning-briefing' registrado — executa diariamente às 06h (Brasília)");
+            "Job 'morning-briefing' registrado — executa às 06h, 12h e 17h (Brasília)");
     }
 
     Log.Information("Orizon Worker iniciado com sucesso");

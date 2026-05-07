@@ -19,6 +19,12 @@ export const routes: Routes = [
       import('./features/settings/settings.routes').then((m) => m.settingsRoutes),
   },
   {
+    path: 'dashboard',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/dashboard/dashboard.routes').then((m) => m.dashboardRoutes),
+  },
+  {
     path: '**',
     redirectTo: 'auth/login',
   },

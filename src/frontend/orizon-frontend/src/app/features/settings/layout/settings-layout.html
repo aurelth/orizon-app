@@ -1,41 +1,43 @@
 <div class="settings-layout">
-    <aside class="settings-sidebar">
-        <div class="sidebar-brand">
-            <span class="brand-name">Orizon</span>
-            <span class="brand-tagline">Your day, before it begins</span>
-        </div>
+  <aside class="settings-sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-name">Orizon</span>
+      <span class="brand-tagline">Your day, before it begins</span>
+    </div>
 
-        <nav class="sidebar-nav">
-            <span class="nav-section-label">Configurações</span>
+    <nav class="sidebar-nav">
+      <a routerLink="/dashboard" class="nav-item nav-item--dashboard">
+        <i class="pi pi-home"></i>
+        <span>Dashboard</span>
+      </a>
 
+      <span class="nav-section-label">Configurações</span>
 
-            <a routerLink="integrations" routerLinkActive="nav-item--active" class="nav-item">
-                <i class="pi pi-link"></i>
-                <span>Integrações</span>
-            </a>
+      <a routerLink="integrations" routerLinkActive="nav-item--active" class="nav-item">
+        <i class="pi pi-link"></i>
+        <span>Integrações</span>
+      </a>
 
+      <a routerLink="location" routerLinkActive="nav-item--active" class="nav-item">
+        <i class="pi pi-map-marker"></i>
+        <span>Localização</span>
+      </a>
 
-            <a routerLink="location" routerLinkActive="nav-item--active" class="nav-item">
-                <i class="pi pi-map-marker"></i>
-                <span>Localização</span>
-            </a>
+      <a routerLink="travel-mode" routerLinkActive="nav-item--active" class="nav-item">
+        <i class="pi pi-globe"></i>
+        <span>Modo Viagem</span>
+      </a>
+    </nav>
 
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="logout()">
+        <i class="pi pi-sign-out"></i>
+        <span>Sair</span>
+      </button>
+    </div>
+  </aside>
 
-            <a routerLink="travel-mode" routerLinkActive="nav-item--active" class="nav-item">
-                <i class="pi pi-globe"></i>
-                <span>Modo Viagem</span>
-            </a>
-        </nav>
-
-        <div class="sidebar-footer">
-            <button class="logout-btn" (click)="logout()">
-                <i class="pi pi-sign-out"></i>
-                <span>Sair</span>
-            </button>
-        </div>
-    </aside>
-
-    <main class="settings-main">
-        <router-outlet />
-    </main>
+  <main class="settings-main">
+    <router-outlet />
+  </main>
 </div>
