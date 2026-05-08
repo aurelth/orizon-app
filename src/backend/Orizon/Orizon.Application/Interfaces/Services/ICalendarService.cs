@@ -3,8 +3,12 @@
 namespace Orizon.Application.Interfaces.Services;
 
 public interface ICalendarService
-{    
+{
     Task<IEnumerable<CalendarEventDto>> GetTodayEventsAsync(
         string userId,
+        CancellationToken cancellationToken = default);
+
+    Task<IEnumerable<CalendarEventDto>> GetTodayEventsWithTokenAsync(
+        string accessToken,
         CancellationToken cancellationToken = default);
 }

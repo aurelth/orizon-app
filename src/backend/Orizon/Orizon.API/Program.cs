@@ -1,4 +1,6 @@
 using FluentValidation;
+using Hangfire;
+using Hangfire.PostgreSql;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -108,6 +110,16 @@ try
 
     builder.Services.AddSignalR();
 
+    // HANGFIRE DASHBOARD
+    builder.Services.AddHangfire(config =>
+        config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UsePostgreSqlStorage(options =>
+                options.UseNpgsqlConnection(
+                    builder.Configuration.GetConnectionString("PostgreSQL"))));
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("OrizonPolicy", policy =>
@@ -204,6 +216,15 @@ try
     app.MapHub<BriefingHub>("/hubs/briefing");
     app.MapHealthChecks("/health/ready");
     app.MapHealthChecks("/health/live");
+
+    // HANGFIRE DASHBOARD — apenas em desenvolvimento
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = [new Hangfire.Dashboard.LocalRequestsOnlyAuthorizationFilter()]
+        });
+    }
 
     Log.Information("Orizon API iniciada com sucesso");
 

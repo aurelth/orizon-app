@@ -1,7 +1,6 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { ApiService } from '../../../core/http/api.service';
 
 @Component({
   selector: 'app-oauth-callback',
@@ -67,31 +66,20 @@ import { ApiService } from '../../../core/http/api.service';
 export class OAuthCallbackComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly api = inject(ApiService);
 
   error: string | null = null;
 
   ngOnInit(): void {
-    const code = this.route.snapshot.queryParamMap.get('code');
-    const state = this.route.snapshot.queryParamMap.get('state');
     const errorParam = this.route.snapshot.queryParamMap.get('error');
 
     if (errorParam) {
       this.error = 'Autorização negada pelo Google.';
       return;
     }
-
-    if (!code) {
-      this.error = 'Código de autorização não encontrado.';
-      return;
-    }
-
-    this.api.post<void>('/google/callback', { code, state }).subscribe({
-      next: () => this.router.navigate(['/settings/integrations']),
-      error: () => {
-        this.error = 'Falha ao conectar com o Google. Tente novamente.';
-      },
-    });
+    
+    setTimeout(() => {
+      this.router.navigate(['/settings/integrations']);
+    }, 1000);
   }
 
   goToSettings(): void {

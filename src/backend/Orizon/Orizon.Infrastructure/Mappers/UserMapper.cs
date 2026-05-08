@@ -9,9 +9,6 @@ public partial class UserMapper
 {
     // AppIdentityUser → AppUser (Domain)
     [MapProperty(nameof(AppIdentityUser.Id), nameof(AppUser.Id))]
-    [MapperIgnoreSource(nameof(AppIdentityUser.GoogleAccessToken))]
-    [MapperIgnoreSource(nameof(AppIdentityUser.GoogleRefreshToken))]
-    [MapperIgnoreSource(nameof(AppIdentityUser.GoogleTokenExpiry))]
     [MapperIgnoreSource(nameof(AppIdentityUser.TrelloApiKey))]
     [MapperIgnoreSource(nameof(AppIdentityUser.TrelloToken))]
     [MapperIgnoreSource(nameof(AppIdentityUser.UserName))]
@@ -35,9 +32,6 @@ public partial class UserMapper
 
     // AppUser (Domain) → AppIdentityUser
     [MapProperty(nameof(AppUser.Id), nameof(AppIdentityUser.Id))]
-    [MapperIgnoreTarget(nameof(AppIdentityUser.GoogleAccessToken))]
-    [MapperIgnoreTarget(nameof(AppIdentityUser.GoogleRefreshToken))]
-    [MapperIgnoreTarget(nameof(AppIdentityUser.GoogleTokenExpiry))]
     [MapperIgnoreTarget(nameof(AppIdentityUser.TrelloApiKey))]
     [MapperIgnoreTarget(nameof(AppIdentityUser.TrelloToken))]
     [MapperIgnoreTarget(nameof(AppIdentityUser.UserName))]

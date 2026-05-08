@@ -3,25 +3,50 @@ using Google.Apis.Calendar.v3;
 using Google.Apis.Services;
 using Microsoft.Extensions.Logging;
 using Orizon.Application.DTOs.Calendar;
+using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
 
 namespace Orizon.Infrastructure.Services.External;
 
 public class CalendarIntegrationService : ICalendarService
 {
+    private readonly IUserRepository _userRepository;
     private readonly ILogger<CalendarIntegrationService> _logger;
 
-    public CalendarIntegrationService(ILogger<CalendarIntegrationService> logger)
+    public CalendarIntegrationService(
+        IUserRepository userRepository,
+        ILogger<CalendarIntegrationService> logger)
     {
+        _userRepository = userRepository;
         _logger = logger;
     }
 
-    public Task<IEnumerable<CalendarEventDto>> GetTodayEventsAsync(
+    public async Task<IEnumerable<CalendarEventDto>> GetTodayEventsAsync(
         string userId,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException(
-            "CalendarService requer accessToken do usuário — implementado na Fase 7");
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            _logger.LogWarning("UserId inválido: {UserId}", userId);
+            return [];
+        }
+
+        var user = await _userRepository.GetByIdAsync(userGuid, cancellationToken);
+
+        if (user is null)
+        {
+            _logger.LogWarning("Usuário {UserId} não encontrado para buscar eventos", userId);
+            return [];
+        }
+
+        if (string.IsNullOrEmpty(user.GoogleAccessToken))
+        {
+            _logger.LogWarning("Usuário {UserId} não possui Google Access Token", userId);
+            return [];
+        }
+
+        return await GetTodayEventsWithTokenAsync(
+            user.GoogleAccessToken, cancellationToken);
     }
 
     public async Task<IEnumerable<CalendarEventDto>> GetTodayEventsWithTokenAsync(

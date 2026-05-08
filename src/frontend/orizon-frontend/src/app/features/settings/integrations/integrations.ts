@@ -1,6 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { IntegrationsStore } from '../../../core/integrations/store/integrations.store';
 import { GoogleIntegrationService } from '../../../core/integrations/services/google-integration.service';
 import { TrelloIntegrationService, TrelloBoard } from '../../../core/integrations/services/trello-integration.service';
@@ -17,6 +18,7 @@ export class IntegrationsComponent implements OnInit {
   private readonly store = inject(IntegrationsStore);
   private readonly googleService = inject(GoogleIntegrationService);
   private readonly trelloService = inject(TrelloIntegrationService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly googleConnected = this.store.googleConnected;
   readonly trelloConnected = this.store.trelloConnected;
@@ -39,6 +41,15 @@ export class IntegrationsComponent implements OnInit {
     this.boardForm = this.fb.group({
       boardId: ['', Validators.required],
     });
+    
+    this.googleService.getStatus().subscribe();
+    
+    const googleParam = this.route.snapshot.queryParamMap.get('google');
+    if (googleParam === 'success') {
+      this.store.setGoogleConnected(true);
+    } else if (googleParam === 'error') {
+      this.store.setError('Falha ao conectar com o Google. Tente novamente.');
+    }
   }
 
   connectGoogle(): void {

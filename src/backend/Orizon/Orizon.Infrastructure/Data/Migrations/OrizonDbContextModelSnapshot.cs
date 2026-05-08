@@ -171,6 +171,18 @@ namespace Orizon.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("GoogleAccessToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("GoogleConnectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GoogleRefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("GoogleTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsTraveling")
                         .HasColumnType("boolean");
 
@@ -398,10 +410,13 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Property<string>("GoogleAccessToken")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("GoogleConnectedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("GoogleRefreshToken")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("GoogleTokenExpiry")
+                    b.Property<DateTime?>("GoogleTokenExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsTraveling")

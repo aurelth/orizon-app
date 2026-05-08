@@ -18,6 +18,7 @@ public class BriefingJob
     private readonly IWeatherService _weatherService;
     private readonly IClaudeService _claudeService;
     private readonly IEmailNotificationService _emailService;
+    private readonly IGoogleOAuthService _googleOAuthService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<BriefingJob> _logger;
 
@@ -30,6 +31,7 @@ public class BriefingJob
         IWeatherService weatherService,
         IClaudeService claudeService,
         IEmailNotificationService emailService,
+        IGoogleOAuthService googleOAuthService,
         IConfiguration configuration,
         ILogger<BriefingJob> logger)
     {
@@ -41,6 +43,7 @@ public class BriefingJob
         _weatherService = weatherService;
         _claudeService = claudeService;
         _emailService = emailService;
+        _googleOAuthService = googleOAuthService;
         _configuration = configuration;
         _logger = logger;
     }
@@ -57,7 +60,6 @@ public class BriefingJob
             _logger.LogInformation(
                 "Gerando briefing para {Count} usuários", userList.Count);
 
-            // ALTERADO: Task.WhenAll para execução paralela por usuário
             await Task.WhenAll(userList.Select(user =>
                 ProcessUserBriefingAsync(user, ct)));
 
@@ -76,32 +78,50 @@ public class BriefingJob
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var userId = user.Id.ToString();
 
-        _logger.LogInformation(
-            "Processando briefing para usuário {UserId}", userId);
+        _logger.LogInformation("Processando briefing para usuário {UserId}", userId);
 
-        var briefing = new BriefingEntry
+        // UPSERT
+        var existing = await _briefingRepository.GetByUserAndDateAsync(userId, today, ct);
+        var isNew = existing is null;
+
+        var briefing = existing ?? new BriefingEntry
         {
             UserId = user.Id,
             Date = today,
-            Status = BriefingStatus.Pending,
         };
-        await _briefingRepository.AddAsync(briefing, ct);
+
+        briefing.Status = BriefingStatus.Pending;
+
+        if (isNew)
+            await _briefingRepository.AddAsync(briefing, ct);
+        else
+            await _briefingRepository.UpdateAsync(briefing, ct);
 
         try
         {
-            // localização: usa viagem se ativo
+            // renova token Google se expirado ou prestes a expirar
+            var googleToken = await EnsureValidGoogleTokenAsync(user, ct);
+
+            // localização
             var lat = user.IsTraveling && user.TravelLatitude.HasValue
                 ? user.TravelLatitude.Value : user.Latitude;
             var lon = user.IsTraveling && user.TravelLongitude.HasValue
                 ? user.TravelLongitude.Value : user.Longitude;
             var timezone = user.Timezone;
 
-            // ALTERADO: Task.WhenAll para execução paralela das integrações
-            var emailsTask = _gmailService.GetRecentEmailsAsync(userId, ct);
-            var eventsTask = _calendarService.GetTodayEventsAsync(userId, ct);
-            // CORRIGIDO: GetWeatherAsync com parâmetro timezone
+            // Task.WhenAll seguro: nenhuma task toca o DbContext
+            var emailsTask = !string.IsNullOrEmpty(googleToken)
+                ? _gmailService.GetRecentEmailsWithTokenAsync(googleToken, cancellationToken: ct)
+                : Task.FromResult<IEnumerable<Application.DTOs.Email.EmailSummaryDto>>(
+                    Enumerable.Empty<Application.DTOs.Email.EmailSummaryDto>());
+
+            var eventsTask = !string.IsNullOrEmpty(googleToken)
+                ? _calendarService.GetTodayEventsWithTokenAsync(googleToken, ct)
+                : Task.FromResult<IEnumerable<Application.DTOs.Calendar.CalendarEventDto>>(
+                    Enumerable.Empty<Application.DTOs.Calendar.CalendarEventDto>());
+
             var weatherTask = _weatherService.GetWeatherAsync(lat, lon, timezone, ct);
-            // CORRIGIDO: GetActiveTasksAsync em vez de GetTasksAsync
+
             var trelloTask = user.TrelloEnabled
                 ? _trelloService.GetActiveTasksAsync(userId, ct)
                 : Task.FromResult<IEnumerable<Application.DTOs.Trello.TrelloTaskDto>>(
@@ -120,7 +140,6 @@ public class BriefingJob
             briefing.TrelloTasksJson = user.TrelloEnabled
                 ? JsonSerializer.Serialize(trelloTasks) : null;
 
-            // gera resumo com Claude
             var aiSummary = await _claudeService.GenerateDailySummaryAsync(
                 emails,
                 events,
@@ -136,10 +155,8 @@ public class BriefingJob
 
             await _briefingRepository.UpdateAsync(briefing, ct);
 
-            // notifica via SignalR
             await NotifyUserAsync(userId, briefing.Id, ct);
 
-            // envia email
             await _emailService.SendBriefingEmailAsync(
                 user.Email,
                 user.DisplayName,
@@ -169,6 +186,39 @@ public class BriefingJob
             briefing.ErrorMessage = ex.Message;
             await _briefingRepository.UpdateAsync(briefing, ct);
         }
+    }
+
+    // Renova o token se expirado ou expirando em menos de 5 minutos
+    private async Task<string> EnsureValidGoogleTokenAsync(
+        AppUser user, CancellationToken ct)
+    {
+        var isExpired = user.GoogleTokenExpiresAt is null ||
+                        user.GoogleTokenExpiresAt.Value <= DateTime.UtcNow.AddMinutes(5);
+
+        if (!isExpired)
+            return user.GoogleAccessToken ?? string.Empty;
+
+        if (string.IsNullOrEmpty(user.GoogleRefreshToken))
+        {
+            _logger.LogWarning(
+                "Usuário {UserId} sem refresh token — não é possível renovar", user.Id);
+            return string.Empty;
+        }
+
+        _logger.LogInformation("Renovando Google Access Token para usuário {UserId}", user.Id);
+
+        var tokens = await _googleOAuthService.RefreshAccessTokenAsync(
+            user.GoogleRefreshToken, ct);
+
+        user.GoogleAccessToken = tokens.AccessToken;
+        user.GoogleTokenExpiresAt = tokens.ExpiresAt;
+
+        await _userRepository.UpdateAsync(user, ct);
+
+        _logger.LogInformation(
+            "Google Access Token renovado com sucesso para usuário {UserId}", user.Id);
+
+        return tokens.AccessToken;
     }
 
     private async Task NotifyUserAsync(

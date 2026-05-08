@@ -23,4 +23,13 @@ export class GoogleIntegrationService {
       error: () => this.store.setLoadingGoogle(false),
     });
   }
+
+  getStatus(): Observable<{ connected: boolean }> {
+    return this.api.get<{ connected: boolean }>('/google/status').pipe(
+      tap({
+        next: ({ connected }) => this.store.setGoogleConnected(connected),
+        error: () => { },
+      })
+    );
+  }
 }

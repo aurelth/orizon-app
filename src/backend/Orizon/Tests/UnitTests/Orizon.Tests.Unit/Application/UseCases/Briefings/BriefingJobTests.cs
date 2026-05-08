@@ -25,10 +25,12 @@ public class BriefingJobTests
     private readonly Mock<IWeatherService> _weatherMock = new();
     private readonly Mock<IClaudeService> _claudeMock = new();
     private readonly Mock<IEmailNotificationService> _emailMock = new();
+    private readonly Mock<IGoogleOAuthService> _googleOAuthMock = new();
     private readonly Mock<IConfiguration> _configMock = new();
     private readonly Mock<ILogger<BriefingJob>> _loggerMock = new();
     private readonly BriefingJob _job;
 
+    // Token válido por padrão — expira daqui 1 hora
     private readonly AppUser _testUser = new()
     {
         Id = Guid.NewGuid(),
@@ -38,6 +40,9 @@ public class BriefingJobTests
         Longitude = -49.0661,
         Timezone = "America/Sao_Paulo",
         TrelloEnabled = false,
+        GoogleAccessToken = "valid-access-token",
+        GoogleRefreshToken = "valid-refresh-token",
+        GoogleTokenExpiresAt = DateTime.UtcNow.AddHours(1),
     };
 
     private readonly WeatherDto _weather = new()
@@ -71,6 +76,7 @@ public class BriefingJobTests
             _weatherMock.Object,
             _claudeMock.Object,
             _emailMock.Object,
+            _googleOAuthMock.Object,
             _configMock.Object,
             _loggerMock.Object);
     }
@@ -146,18 +152,24 @@ public class BriefingJobTests
             .ReturnsAsync(new List<AppUser> { _testUser });
 
         _briefingRepoMock
+            .Setup(r => r.GetByUserAndDateAsync(
+                _testUser.Id.ToString(), It.IsAny<DateOnly>(), default))
+            .ReturnsAsync((BriefingEntry?)null);
+
+        _briefingRepoMock
             .Setup(r => r.AddAsync(It.IsAny<BriefingEntry>(), default))
             .Returns(Task.CompletedTask);
 
         _gmailMock
-            .Setup(s => s.GetRecentEmailsAsync(_testUser.Id.ToString(), default))
+            .Setup(s => s.GetRecentEmailsWithTokenAsync(
+                _testUser.GoogleAccessToken!, It.IsAny<int>(), default))
             .ReturnsAsync(new List<EmailSummaryDto>());
 
         _calendarMock
-            .Setup(s => s.GetTodayEventsAsync(_testUser.Id.ToString(), default))
+            .Setup(s => s.GetTodayEventsWithTokenAsync(
+                _testUser.GoogleAccessToken!, default))
             .ReturnsAsync(new List<CalendarEventDto>());
 
-        // WeatherService lança exceção
         _weatherMock
             .Setup(s => s.GetWeatherAsync(
                 _testUser.Latitude, _testUser.Longitude, _testUser.Timezone, default))
@@ -200,7 +212,6 @@ public class BriefingJobTests
     {
         // Arrange
         _testUser.TrelloEnabled = true;
-
         SetupDefaultMocks();
 
         _trelloMock
@@ -254,11 +265,48 @@ public class BriefingJobTests
             Times.Once);
     }
 
-    private void SetupDefaultMocks()
+    [Fact]
+    public async Task ExecuteAsync_WhenTokenExpired_ShouldRefreshAndUseNewToken()
     {
+        // Arrange
+        _testUser.GoogleTokenExpiresAt = DateTime.UtcNow.AddMinutes(-1); // expirado
+        var newToken = "refreshed-access-token";
+
+        _googleOAuthMock
+            .Setup(s => s.RefreshAccessTokenAsync(_testUser.GoogleRefreshToken!, default))
+            .ReturnsAsync(new GoogleTokensDto(newToken, _testUser.GoogleRefreshToken!, DateTime.UtcNow.AddHours(1)));
+
+        _userRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<AppUser>(), default))
+            .Returns(Task.CompletedTask);
+
+        SetupDefaultMocks(accessToken: newToken);
+
+        // Act
+        await _job.ExecuteAsync(default);
+
+        // Assert
+        _googleOAuthMock.Verify(
+            s => s.RefreshAccessTokenAsync(_testUser.GoogleRefreshToken!, default),
+            Times.Once);
+
+        _gmailMock.Verify(
+            s => s.GetRecentEmailsWithTokenAsync(newToken, It.IsAny<int>(), default),
+            Times.Once);
+    }
+
+    private void SetupDefaultMocks(string? accessToken = null)
+    {
+        var token = accessToken ?? _testUser.GoogleAccessToken!;
+
         _userRepoMock
             .Setup(r => r.GetActiveUsersAsync(default))
             .ReturnsAsync(new List<AppUser> { _testUser });
+
+        _briefingRepoMock
+            .Setup(r => r.GetByUserAndDateAsync(
+                _testUser.Id.ToString(), It.IsAny<DateOnly>(), default))
+            .ReturnsAsync((BriefingEntry?)null);
 
         _briefingRepoMock
             .Setup(r => r.AddAsync(It.IsAny<BriefingEntry>(), default))
@@ -269,16 +317,16 @@ public class BriefingJobTests
             .Returns(Task.CompletedTask);
 
         _gmailMock
-            .Setup(s => s.GetRecentEmailsAsync(_testUser.Id.ToString(), default))
+            .Setup(s => s.GetRecentEmailsWithTokenAsync(token, It.IsAny<int>(), default))
             .ReturnsAsync(new List<EmailSummaryDto>());
 
         _calendarMock
-            .Setup(s => s.GetTodayEventsAsync(_testUser.Id.ToString(), default))
+            .Setup(s => s.GetTodayEventsWithTokenAsync(token, default))
             .ReturnsAsync(new List<CalendarEventDto>());
 
         _weatherMock
             .Setup(s => s.GetWeatherAsync(
-                _testUser.Latitude, _testUser.Longitude, _testUser.Timezone, default))
+                It.IsAny<double>(), It.IsAny<double>(), _testUser.Timezone, default))
             .ReturnsAsync(_weather);
 
         _claudeMock

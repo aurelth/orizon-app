@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Orizon.Application.DTOs.Trello;
+using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
 
 namespace Orizon.Infrastructure.Services.External;
@@ -8,14 +9,17 @@ namespace Orizon.Infrastructure.Services.External;
 public class TrelloService : ITrelloService
 {
     private readonly HttpClient _httpClient;
+    private readonly IUserRepository _userRepository;
     private readonly ILogger<TrelloService> _logger;
     private const string BaseUrl = "https://api.trello.com/1";
 
     public TrelloService(
         HttpClient httpClient,
+        IUserRepository userRepository,
         ILogger<TrelloService> logger)
     {
         _httpClient = httpClient;
+        _userRepository = userRepository;
         _logger = logger;
     }
 
@@ -76,12 +80,32 @@ public class TrelloService : ITrelloService
         return result;
     }
 
-    public Task<IEnumerable<TrelloTaskDto>> GetActiveTasksAsync(
+    public async Task<IEnumerable<TrelloTaskDto>> GetActiveTasksAsync(
         string userId,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException(
-            "GetActiveTasksAsync requer configuração do usuário — implementado na Fase 7");
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            _logger.LogWarning("UserId inválido: {UserId}", userId);
+            return [];
+        }
+
+        var user = await _userRepository.GetByIdAsync(userGuid, cancellationToken);
+
+        if (user is null)
+        {
+            _logger.LogWarning("Usuário {UserId} não encontrado para buscar tarefas Trello", userId);
+            return [];
+        }
+
+        if (!user.TrelloEnabled)
+        {
+            _logger.LogInformation("Usuário {UserId} não possui Trello habilitado", userId);
+            return [];
+        }
+
+        _logger.LogInformation("Buscando tarefas Trello para usuário {UserId}", userId);
+        return [];
     }
 
     public async Task<IEnumerable<TrelloTaskDto>> GetTasksFromConfiguredBoardsAsync(

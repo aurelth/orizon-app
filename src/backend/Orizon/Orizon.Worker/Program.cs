@@ -21,7 +21,7 @@ Log.Information("Iniciando Orizon Worker...");
 try
 {
     var builder = Host.CreateApplicationBuilder(args);
-    
+
     builder.Services.AddSerilog((services, config) =>
         config
             .ReadFrom.Configuration(builder.Configuration)
@@ -30,32 +30,33 @@ try
             .WriteTo.Console()
             .WriteTo.Seq(builder.Configuration["Seq:ServerUrl"]
                 ?? "http://localhost:5341"));
-    
+
     builder.Services.AddDbContext<OrizonDbContext>(options =>
         options.UseNpgsql(
             builder.Configuration.GetConnectionString("PostgreSQL"),
             npgsql => npgsql.MigrationsAssembly(
                 typeof(OrizonDbContext).Assembly.FullName)));
-   
+
     builder.Services.AddIdentityCore<AppIdentityUser>()
         .AddEntityFrameworkStores<OrizonDbContext>();
 
     builder.Services.AddHangfire(config =>
         config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-            .UseSimpleAssemblyNameTypeSerializer()
             .UseRecommendedSerializerSettings()
             .UsePostgreSqlStorage(options =>
                 options.UseNpgsqlConnection(
                     builder.Configuration.GetConnectionString("PostgreSQL"))));
-   
+
     builder.Services.AddHangfireServer(options =>
     {
         options.WorkerCount = builder.Configuration
             .GetValue<int>("Hangfire:WorkerCount", 5);
         options.ServerName = "orizon-worker";
+        // Garante que o Worker só processa jobs que ele conhece
+        options.Queues = new[] { "default" };
     });
-   
+
     // REPOSITORIES  
     builder.Services.AddScoped<IBriefingRepository, BriefingRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -91,22 +92,25 @@ try
     builder.Services.AddScoped<BriefingJob>();
 
     var host = builder.Build();
-
-    // REGISTRAR O JOB RECORRENTE — executa às 06h, 12h e 17h (Brasília)
+    
     using (var scope = host.Services.CreateScope())
     {
+        var recurringJobManager = scope.ServiceProvider
+            .GetRequiredService<IRecurringJobManager>();
+        
+        recurringJobManager.RemoveIfExists("morning-briefing");
+        
         RecurringJob.AddOrUpdate<BriefingJob>(
             recurringJobId: "morning-briefing",
-            methodCall: job => job.ExecuteAsync(CancellationToken.None),            
-            cronExpression: "0 6,12,17 * * *",
+            methodCall: job => job.ExecuteAsync(CancellationToken.None),
+            cronExpression: "* * * * *",
             options: new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.FindSystemTimeZoneById(
                     "E. South America Standard Time")
             });
 
-        Log.Information(
-            "Job 'morning-briefing' registrado — executa às 06h, 12h e 17h (Brasília)");
+        Log.Information("Job 'morning-briefing' registrado com sucesso");
     }
 
     Log.Information("Orizon Worker iniciado com sucesso");

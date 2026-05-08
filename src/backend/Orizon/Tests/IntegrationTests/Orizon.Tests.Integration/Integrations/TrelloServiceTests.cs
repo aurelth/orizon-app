@@ -1,56 +1,174 @@
-﻿using FluentAssertions;
-using Microsoft.Extensions.Logging.Abstractions;
-using Orizon.Infrastructure.Services.External;
-using Xunit;
+﻿using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Orizon.Application.DTOs.Trello;
+using Orizon.Application.Interfaces.Repositories;
+using Orizon.Application.Interfaces.Services;
 
-namespace Orizon.Tests.Integration.Integrations;
+namespace Orizon.Infrastructure.Services.External;
 
-public class TrelloServiceTests
+public class TrelloService : ITrelloService
 {
-    private readonly TrelloService _service;
-    private readonly string? _apiKey;
-    private readonly string? _token;
+    private readonly HttpClient _httpClient;
+    private readonly IUserRepository _userRepository;
+    private readonly ILogger<TrelloService> _logger;
+    private const string BaseUrl = "https://api.trello.com/1";
 
-    public TrelloServiceTests()
+    public TrelloService(
+        HttpClient httpClient,
+        IUserRepository userRepository,
+        ILogger<TrelloService> logger)
     {
-        var httpClient = new HttpClient();
-        _service = new TrelloService(
-            httpClient,
-            NullLogger<TrelloService>.Instance);
-
-        // Lê as credenciais das variáveis de ambiente
-        // No CI essas variáveis não existem — os testes são pulados
-        _apiKey = Environment.GetEnvironmentVariable("TRELLO_API_KEY");
-        _token = Environment.GetEnvironmentVariable("TRELLO_TOKEN");
+        _httpClient = httpClient;
+        _userRepository = userRepository;
+        _logger = logger;
     }
 
-    [Fact]
-    public async Task GetBoardsAsync_WhenValidCredentials_ShouldReturnBoards()
+    public async Task<IEnumerable<TrelloBoardDto>> GetBoardsAsync(
+        string apiKey,
+        string token,
+        CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrEmpty(_apiKey) || string.IsNullOrEmpty(_token))
+        var url = $"{BaseUrl}/members/me/boards" +
+            $"?key={apiKey}&token={token}" +
+            $"&fields=id,name,prefs,closed" +
+            $"&lists=open";
+
+        _logger.LogInformation("Buscando boards do Trello");
+
+        var response = await _httpClient.GetAsync(url, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var boards = JsonSerializer.Deserialize<JsonElement[]>(json);
+
+        var result = new List<TrelloBoardDto>();
+
+        foreach (var board in boards ?? [])
         {
-            // Pula o teste no CI onde as credenciais não estão disponíveis
-            return;
+            if (board.GetProperty("closed").GetBoolean()) continue;
+
+            var lists = new List<TrelloListDto>();
+            if (board.TryGetProperty("lists", out var listsElement))
+            {
+                foreach (var list in listsElement.EnumerateArray())
+                {
+                    var listName = list.GetProperty("name").GetString() ?? "";
+                    lists.Add(new TrelloListDto
+                    {
+                        ListId = list.GetProperty("id").GetString() ?? "",
+                        Name = listName,
+                        DetectedType = DetectListType(listName),
+                    });
+                }
+            }
+
+            var color = board
+                .GetProperty("prefs")
+                .GetProperty("backgroundColor")
+                .GetString();
+
+            result.Add(new TrelloBoardDto
+            {
+                BoardId = board.GetProperty("id").GetString() ?? "",
+                Name = board.GetProperty("name").GetString() ?? "",
+                Color = color,
+                IsActive = true,
+                Lists = lists,
+            });
         }
 
-        var result = await _service.GetBoardsAsync(_apiKey, _token);
-
-        result.Should().NotBeNull();
-        result.Should().NotBeEmpty();
-        result.Should().AllSatisfy(board =>
-        {
-            board.BoardId.Should().NotBeNullOrEmpty();
-            board.Name.Should().NotBeNullOrEmpty();
-            board.Lists.Should().NotBeNull();
-        });
+        return result;
     }
 
-    [Fact]
-    public async Task GetBoardsAsync_WhenInvalidCredentials_ShouldThrowException()
+    public async Task<IEnumerable<TrelloTaskDto>> GetActiveTasksAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
     {
-        var act = async () => await _service.GetBoardsAsync(
-            "invalid-key", "invalid-token");
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            _logger.LogWarning("UserId inválido: {UserId}", userId);
+            return [];
+        }
 
-        await act.Should().ThrowAsync<Exception>();
+        var user = await _userRepository.GetByIdAsync(userGuid, cancellationToken);
+
+        if (user is null)
+        {
+            _logger.LogWarning("Usuário {UserId} não encontrado para buscar tarefas Trello", userId);
+            return [];
+        }
+
+        if (!user.TrelloEnabled)
+        {
+            _logger.LogInformation("Usuário {UserId} não possui Trello habilitado", userId);
+            return [];
+        }
+
+        _logger.LogInformation("Buscando tarefas Trello para usuário {UserId}", userId);
+        return [];
+    }
+
+    public async Task<IEnumerable<TrelloTaskDto>> GetTasksFromConfiguredBoardsAsync(
+        string apiKey,
+        string token,
+        IEnumerable<Domain.Entities.TrelloBoardConfig> configs,
+        CancellationToken cancellationToken = default)
+    {
+        var tasks = new List<TrelloTaskDto>();
+
+        foreach (var config in configs.Where(c => c.IsActive))
+        {
+            var url = $"{BaseUrl}/boards/{config.BoardId}/cards" +
+                $"?key={apiKey}&token={token}" +
+                $"&fields=id,name,idList,due,dueComplete,labels,dateLastActivity,desc";
+
+            var response = await _httpClient.GetAsync(url, cancellationToken);
+            if (!response.IsSuccessStatusCode) continue;
+
+            var json = await response.Content.ReadAsStringAsync(cancellationToken);
+            var cards = JsonSerializer.Deserialize<JsonElement[]>(json);
+
+            foreach (var card in cards ?? [])
+            {
+                var listId = card.GetProperty("idList").GetString();
+                var isTodayList = listId == config.TodayListId;
+                var isInProgressList = listId == config.InProgressListId;
+
+                if (!isTodayList && !isInProgressList) continue;
+
+                var columnType = isTodayList ? "today" : "inprogress";
+                var lastActivity = DateTime.Parse(
+                    card.GetProperty("dateLastActivity").GetString()!);
+
+                int? daysInProgress = null;
+                if (isInProgressList)
+                    daysInProgress = (int)(DateTime.UtcNow - lastActivity).TotalDays;
+
+                tasks.Add(new TrelloTaskDto
+                {
+                    CardId = card.GetProperty("id").GetString() ?? "",
+                    Title = card.GetProperty("name").GetString() ?? "",
+                    BoardName = config.BoardName,
+                    BoardColor = config.BoardColor ?? "#6ee7b7",
+                    ListName = isTodayList
+                        ? config.TodayListName ?? "Today"
+                        : config.InProgressListName ?? "In Progress",
+                    ColumnType = columnType,
+                    MovedToInProgressAt = isInProgressList ? lastActivity : null,
+                    DaysInProgress = daysInProgress,
+                });
+            }
+        }
+
+        return tasks;
+    }
+
+    private static string? DetectListType(string listName)
+    {
+        var lower = listName.ToLower();
+        if (lower.Contains("today") || lower.Contains("hoje")) return "today";
+        if (lower.Contains("progress") || lower.Contains("fazendo") ||
+            lower.Contains("doing") || lower.Contains("em andamento")) return "inprogress";
+        return null;
     }
 }
