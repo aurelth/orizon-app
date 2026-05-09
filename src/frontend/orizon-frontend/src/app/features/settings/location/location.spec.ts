@@ -18,6 +18,8 @@ describe('LocationComponent', () => {
     locationService = {
       detectCurrentLocation: jest.fn(),
       searchCity: jest.fn(),
+      getLocation: jest.fn().mockReturnValue(of(null)),
+      saveLocation: jest.fn().mockReturnValue(of(void 0)),
     };
 
     await TestBed.configureTestingModule({

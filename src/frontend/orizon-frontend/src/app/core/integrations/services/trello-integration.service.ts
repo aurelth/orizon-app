@@ -4,18 +4,26 @@ import { ApiService } from '../../http/api.service';
 import { IntegrationsStore } from '../store/integrations.store';
 
 export interface TrelloBoard {
-  id: string;
+  boardId: string;
   name: string;
+  color?: string;
+  lists: TrelloList[];
 }
 
 export interface TrelloList {
-  id: string;
+  listId: string;
   name: string;
+  detectedType?: string;
 }
 
 export interface SaveBoardConfigRequest {
   boardId: string;
-  listIds: string[];
+  boardName: string;
+  boardColor?: string;
+  todayListId?: string;
+  todayListName?: string;
+  inProgressListId?: string;
+  inProgressListName?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -28,13 +36,16 @@ export class TrelloIntegrationService {
     return this.api.post<void>('/trello/connect', { apiKey, token }).pipe(
       tap({
         next: () => this.store.setTrelloConnected(true),
-        error: () => this.store.setError('Credenciais Trello inválidas.'),
+        error: () => {
+          this.store.setLoadingTrello(false);
+          this.store.setError('Credenciais Trello inválidas.');
+        },
       })
     );
   }
 
-  getBoards(): Observable<TrelloBoard[]> {
-    return this.api.get<TrelloBoard[]>('/trello/boards').pipe(
+  getBoards(apiKey: string, token: string): Observable<TrelloBoard[]> {
+    return this.api.get<TrelloBoard[]>(`/trello/boards?apiKey=${apiKey}&token=${token}`).pipe(
       tap({
         next: (boards) => this.store.setTrelloBoards(boards),
         error: () => this.store.setError('Falha ao carregar boards do Trello.'),
@@ -43,13 +54,14 @@ export class TrelloIntegrationService {
   }
 
   saveBoardConfig(request: SaveBoardConfigRequest): Observable<void> {
-    return this.api.post<void>('/trello/board-config', request).pipe(
+    return this.api.post<void>('/trello/boards/config', request).pipe(
       tap({
         next: () => {
           this.store.setTrelloBoardConfig({
             boardId: request.boardId,
-            boardName: '',
-            listIds: request.listIds,
+            boardName: request.boardName,
+            listIds: [request.todayListId, request.inProgressListId]
+              .filter(Boolean) as string[],
           });
         },
         error: () => this.store.setError('Falha ao salvar configuração do board.'),

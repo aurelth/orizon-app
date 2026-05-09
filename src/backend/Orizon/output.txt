@@ -1,0 +1,352 @@
+﻿  Determining projects to restore...
+  All projects are up-to-date for restore.
+  Orizon.Domain -> C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Orizon.Domain\bin\Debug\net9.0\Orizon.Domain.dll
+  Orizon.Application -> C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Orizon.Application\bin\Debug\net9.0\Orizon.Application.dll
+  Orizon.Infrastructure -> C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Orizon.Infrastructure\bin\Debug\net9.0\Orizon.Infrastructure.dll
+  Orizon.API -> C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Orizon.API\bin\Debug\net9.0\Orizon.API.dll
+C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Integrations\TrelloControllerTests.cs(33,21): warning CS0618: 'PostgreSqlBuilder.PostgreSqlBuilder()' is obsolete: 'This parameterless constructor is obsolete and will be removed. Use the constructor with the image parameter instead: https://github.com/testcontainers/testcontainers-dotnet/discussions/1470#discussioncomment-15185721.' [C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Orizon.Tests.Integration.csproj]
+C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Auth\RefreshTokenRepositoryTests.cs(23,21): warning CS0618: 'PostgreSqlBuilder.PostgreSqlBuilder()' is obsolete: 'This parameterless constructor is obsolete and will be removed. Use the constructor with the image parameter instead: https://github.com/testcontainers/testcontainers-dotnet/discussions/1470#discussioncomment-15185721.' [C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Orizon.Tests.Integration.csproj]
+C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Integrations\WeatherControllerTests.cs(27,21): warning CS0618: 'PostgreSqlBuilder.PostgreSqlBuilder()' is obsolete: 'This parameterless constructor is obsolete and will be removed. Use the constructor with the image parameter instead: https://github.com/testcontainers/testcontainers-dotnet/discussions/1470#discussioncomment-15185721.' [C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Orizon.Tests.Integration.csproj]
+C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Auth\IdentityServiceTests.cs(25,21): warning CS0618: 'PostgreSqlBuilder.PostgreSqlBuilder()' is obsolete: 'This parameterless constructor is obsolete and will be removed. Use the constructor with the image parameter instead: https://github.com/testcontainers/testcontainers-dotnet/discussions/1470#discussioncomment-15185721.' [C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Orizon.Tests.Integration.csproj]
+C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Auth\AuthControllerTests.cs(27,21): warning CS0618: 'PostgreSqlBuilder.PostgreSqlBuilder()' is obsolete: 'This parameterless constructor is obsolete and will be removed. Use the constructor with the image parameter instead: https://github.com/testcontainers/testcontainers-dotnet/discussions/1470#discussioncomment-15185721.' [C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Orizon.Tests.Integration.csproj]
+C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Briefings\BriefingControllerTests.cs(42,21): warning CS0618: 'PostgreSqlBuilder.PostgreSqlBuilder()' is obsolete: 'This parameterless constructor is obsolete and will be removed. Use the constructor with the image parameter instead: https://github.com/testcontainers/testcontainers-dotnet/discussions/1470#discussioncomment-15185721.' [C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\Orizon.Tests.Integration.csproj]
+  Orizon.Tests.Integration -> C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\bin\Debug\net9.0\Orizon.Tests.Integration.dll
+Test run for C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\bin\Debug\net9.0\Orizon.Tests.Integration.dll (.NETCoreApp,Version=v9.0)
+VSTest version 17.14.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+C:\Users\Aurel\source\repos\orizon-app\src\backend\Orizon\Tests\IntegrationTests\Orizon.Tests.Integration\bin\Debug\net9.0\Orizon.Tests.Integration.dll
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.0+00ab0a9ec4 (64-bit .NET 9.0.15)
+[xUnit.net 00:00:00.16]   Discovering: Orizon.Tests.Integration
+[xUnit.net 00:00:00.22]   Discovered:  Orizon.Tests.Integration
+[xUnit.net 00:00:00.25]   Starting:    Orizon.Tests.Integration
+[testcontainers.org 00:00:00.20] Connected to Docker:
+  Host: npipe://./pipe/docker_engine
+  Server Version: 29.4.0
+  Kernel Version: 6.6.87.2-microsoft-standard-WSL2
+  API Version: 1.54
+  Operating System: Docker Desktop
+  Total Memory: 15.44 GB
+  Labels: 
+    com.docker.desktop.address=npipe://\\.\pipe\docker_cli
+[testcontainers.org 00:00:00.54] Docker container 486fbd2bb637 created
+[testcontainers.org 00:00:00.62] Start Docker container 486fbd2bb637
+[testcontainers.org 00:00:01.02] Wait for Docker container 486fbd2bb637 to complete readiness checks
+[testcontainers.org 00:00:02.18] Docker container 486fbd2bb637 ready
+[testcontainers.org 00:00:02.53] Docker container df0f1b71e83b created
+[testcontainers.org 00:00:02.58] Start Docker container df0f1b71e83b
+[testcontainers.org 00:00:02.97] Wait for Docker container df0f1b71e83b to complete readiness checks
+[testcontainers.org 00:00:03.00] Execute "pg_isready --host localhost --dbname orizon_test --username orizon" at Docker container df0f1b71e83b
+[testcontainers.org 00:00:04.15] Execute "pg_isready --host localhost --dbname orizon_test --username orizon" at Docker container df0f1b71e83b
+[testcontainers.org 00:00:05.38] Execute "pg_isready --host localhost --dbname orizon_test --username orizon" at Docker container df0f1b71e83b
+[testcontainers.org 00:00:05.57] Docker container df0f1b71e83b ready
+[18:47:29 INF] Iniciando Orizon API...
+[18:47:29 INF] Orizon API iniciada com sucesso
+[18:47:29 INF] User profile is available. Using 'C:\Users\Aurel\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+[18:47:30 INF] Executed DbCommand (22ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+DROP DATABASE orizon_test WITH (FORCE);
+[18:47:30 ERR] An error occurred using the connection to database 'orizon_test' on server 'tcp://127.0.0.1:57783'.
+[18:47:30 INF] Executed DbCommand (21ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE DATABASE orizon_test;
+[18:47:30 INF] Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+    "MigrationId" character varying(150) NOT NULL,
+    "ProductVersion" character varying(32) NOT NULL,
+    CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY ("MigrationId")
+);
+[18:47:30 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+LOCK TABLE "__EFMigrationsHistory" IN ACCESS EXCLUSIVE MODE
+[18:47:30 INF] Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+SELECT "MigrationId", "ProductVersion"
+FROM "__EFMigrationsHistory"
+ORDER BY "MigrationId";
+[18:47:30 INF] Applying migration '20260501015635_InitialCreate'.
+[18:47:30 INF] Executed DbCommand (6ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE "AppUser" (
+    "Id" uuid NOT NULL,
+    "Email" text NOT NULL,
+    "DisplayName" text NOT NULL,
+    "ProfilePictureUrl" text,
+    "LocationName" text NOT NULL,
+    "Latitude" double precision NOT NULL,
+    "Longitude" double precision NOT NULL,
+    "Timezone" text NOT NULL,
+    "IsTraveling" boolean NOT NULL,
+    "TravelLocationName" text,
+    "TravelLatitude" double precision,
+    "TravelLongitude" double precision,
+    "ThemePreference" integer NOT NULL,
+    "TrelloEnabled" boolean NOT NULL,
+    "CreatedAt" timestamp with time zone NOT NULL,
+    "UpdatedAt" timestamp with time zone NOT NULL,
+    CONSTRAINT "PK_AppUser" PRIMARY KEY ("Id")
+);
+[18:47:30 INF] Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE "AspNetRoles" (
+    "Id" text NOT NULL,
+    "Name" character varying(256),
+    "NormalizedName" character varying(256),
+    "ConcurrencyStamp" text,
+    CONSTRAINT "PK_AspNetRoles" PRIMARY KEY ("Id")
+);
+[18:47:30 INF] Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE users (
+    "Id" text NOT NULL,
+    "DisplayName" text NOT NULL,
+    "ProfilePictureUrl" text,
+    "LocationName" text NOT NULL,
+    "Latitude" double precision NOT NULL,
+    "Longitude" double precision NOT NULL,
+    "Timezone" text NOT NULL,
+    "IsTraveling" boolean NOT NULL,
+    "TravelLocationName" text,
+    "TravelLatitude" double precision,
+    "TravelLongitude" double precision,
+    "ThemePreference" integer NOT NULL,
+    "TrelloEnabled" boolean NOT NULL,
+    "GoogleAccessToken" text,
+    "GoogleRefreshToken" text,
+    "GoogleTokenExpiry" timestamp with time zone,
+    "TrelloApiKey" text,
+    "TrelloToken" text,
+    "UserName" character varying(256),
+    "NormalizedUserName" character varying(256),
+    "Email" character varying(256),
+    "NormalizedEmail" character varying(256),
+    "EmailConfirmed" boolean NOT NULL,
+    "PasswordHash" text,
+    "SecurityStamp" text,
+    "ConcurrencyStamp" text,
+    "PhoneNumber" text,
+    "PhoneNumberConfirmed" boolean NOT NULL,
+    "TwoFactorEnabled" boolean NOT NULL,
+    "LockoutEnd" timestamp with time zone,
+    "LockoutEnabled" boolean NOT NULL,
+    "AccessFailedCount" integer NOT NULL,
+    CONSTRAINT "PK_users" PRIMARY KEY ("Id")
+);
+[18:47:30 INF] Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE briefing_entries (
+    "Id" uuid NOT NULL,
+    "UserId" uuid NOT NULL,
+    "Date" date NOT NULL,
+    "EmailSummaryJson" jsonb,
+    "CalendarEventsJson" jsonb,
+    "TrelloTasksJson" jsonb,
+    "WeatherJson" jsonb,
+    "AISummary" text,
+    "AISuggestions" text,
+    "Status" text NOT NULL,
+    "GeneratedAt" timestamp with time zone,
+    "EmailSentAt" timestamp with time zone,
+    "ErrorMessage" text,
+    "CreatedAt" timestamp with time zone NOT NULL,
+    "UpdatedAt" timestamp with time zone NOT NULL,
+    CONSTRAINT "PK_briefing_entries" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_briefing_entries_AppUser_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUser" ("Id") ON DELETE CASCADE
+);
+[18:47:30 INF] Executed DbCommand (8ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE trello_board_configs (
+    "Id" uuid NOT NULL,
+    "UserId" uuid NOT NULL,
+    "BoardId" character varying(100) NOT NULL,
+    "BoardName" character varying(200) NOT NULL,
+    "BoardColor" character varying(50),
+    "IsActive" boolean NOT NULL DEFAULT TRUE,
+    "TodayListId" character varying(100),
+    "InProgressListId" character varying(100),
+    "TodayListName" character varying(200),
+    "InProgressListName" character varying(200),
+    "CreatedAt" timestamp with time zone NOT NULL,
+    "UpdatedAt" timestamp with time zone NOT NULL,
+    CONSTRAINT "PK_trello_board_configs" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_trello_board_configs_AppUser_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUser" ("Id") ON DELETE CASCADE
+);
+[18:47:30 INF] Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE "AspNetRoleClaims" (
+    "Id" integer GENERATED BY DEFAULT AS IDENTITY,
+    "RoleId" text NOT NULL,
+    "ClaimType" text,
+    "ClaimValue" text,
+    CONSTRAINT "PK_AspNetRoleClaims" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_AspNetRoleClaims_AspNetRoles_RoleId" FOREIGN KEY ("RoleId") REFERENCES "AspNetRoles" ("Id") ON DELETE CASCADE
+);
+[18:47:30 INF] Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE "AspNetUserClaims" (
+    "Id" integer GENERATED BY DEFAULT AS IDENTITY,
+    "UserId" text NOT NULL,
+    "ClaimType" text,
+    "ClaimValue" text,
+    CONSTRAINT "PK_AspNetUserClaims" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_AspNetUserClaims_users_UserId" FOREIGN KEY ("UserId") REFERENCES users ("Id") ON DELETE CASCADE
+);
+[18:47:30 INF] Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE "AspNetUserLogins" (
+    "LoginProvider" text NOT NULL,
+    "ProviderKey" text NOT NULL,
+    "ProviderDisplayName" text,
+    "UserId" text NOT NULL,
+    CONSTRAINT "PK_AspNetUserLogins" PRIMARY KEY ("LoginProvider", "ProviderKey"),
+    CONSTRAINT "FK_AspNetUserLogins_users_UserId" FOREIGN KEY ("UserId") REFERENCES users ("Id") ON DELETE CASCADE
+);
+[18:47:30 INF] Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE "AspNetUserRoles" (
+    "UserId" text NOT NULL,
+    "RoleId" text NOT NULL,
+    CONSTRAINT "PK_AspNetUserRoles" PRIMARY KEY ("UserId", "RoleId"),
+    CONSTRAINT "FK_AspNetUserRoles_AspNetRoles_RoleId" FOREIGN KEY ("RoleId") REFERENCES "AspNetRoles" ("Id") ON DELETE CASCADE,
+    CONSTRAINT "FK_AspNetUserRoles_users_UserId" FOREIGN KEY ("UserId") REFERENCES users ("Id") ON DELETE CASCADE
+);
+[18:47:30 INF] Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE "AspNetUserTokens" (
+    "UserId" text NOT NULL,
+    "LoginProvider" text NOT NULL,
+    "Name" text NOT NULL,
+    "Value" text,
+    CONSTRAINT "PK_AspNetUserTokens" PRIMARY KEY ("UserId", "LoginProvider", "Name"),
+    CONSTRAINT "FK_AspNetUserTokens_users_UserId" FOREIGN KEY ("UserId") REFERENCES users ("Id") ON DELETE CASCADE
+);
+[18:47:30 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE INDEX "IX_AspNetRoleClaims_RoleId" ON "AspNetRoleClaims" ("RoleId");
+[18:47:30 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE UNIQUE INDEX "RoleNameIndex" ON "AspNetRoles" ("NormalizedName");
+[18:47:30 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE INDEX "IX_AspNetUserClaims_UserId" ON "AspNetUserClaims" ("UserId");
+[18:47:30 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE INDEX "IX_AspNetUserLogins_UserId" ON "AspNetUserLogins" ("UserId");
+[18:47:30 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE INDEX "IX_AspNetUserRoles_RoleId" ON "AspNetUserRoles" ("RoleId");
+[18:47:30 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_briefing_entries_UserId_Date" ON briefing_entries ("UserId", "Date");
+[18:47:30 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_trello_board_configs_UserId_BoardId" ON trello_board_configs ("UserId", "BoardId");
+[18:47:30 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE INDEX "EmailIndex" ON users ("NormalizedEmail");
+[18:47:30 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE UNIQUE INDEX "UserNameIndex" ON users ("NormalizedUserName");
+[18:47:30 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260501015635_InitialCreate', '9.0.15');
+[18:47:30 INF] Applying migration '20260501193216_AddRefreshToken'.
+[18:47:31 INF] Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE TABLE refresh_tokens (
+    "Id" uuid NOT NULL,
+    "Token" character varying(200) NOT NULL,
+    "UserId" uuid NOT NULL,
+    "ExpiresAt" timestamp with time zone NOT NULL,
+    "IsRevoked" boolean NOT NULL DEFAULT FALSE,
+    "RevokedAt" timestamp with time zone,
+    "CreatedAt" timestamp with time zone NOT NULL,
+    "UpdatedAt" timestamp with time zone NOT NULL,
+    CONSTRAINT "PK_refresh_tokens" PRIMARY KEY ("Id"),
+    CONSTRAINT "FK_refresh_tokens_AppUser_UserId" FOREIGN KEY ("UserId") REFERENCES "AppUser" ("Id") ON DELETE CASCADE
+);
+[18:47:31 INF] Executed DbCommand (5ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE UNIQUE INDEX "IX_refresh_tokens_Token" ON refresh_tokens ("Token");
+[18:47:31 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+CREATE INDEX "IX_refresh_tokens_UserId" ON refresh_tokens ("UserId");
+[18:47:31 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260501193216_AddRefreshToken', '9.0.15');
+[18:47:31 INF] Applying migration '20260501232639_FixRefreshTokenForeignKey'.
+[18:47:31 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260501232639_FixRefreshTokenForeignKey', '9.0.15');
+[18:47:31 INF] Applying migration '20260501234548_FixRefreshTokenUserId'.
+[18:47:31 INF] Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE refresh_tokens DROP CONSTRAINT "FK_refresh_tokens_AppUser_UserId";
+[18:47:31 INF] Executed DbCommand (6ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE refresh_tokens ALTER COLUMN "UserId" TYPE character varying(450);
+[18:47:31 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260501234548_FixRefreshTokenUserId', '9.0.15');
+[18:47:31 INF] Applying migration '20260507214254_AddGoogleTokensToAppUser'.
+[18:47:31 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE "AppUser" ADD "GoogleAccessToken" text;
+[18:47:31 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE "AppUser" ADD "GoogleConnectedAt" timestamp with time zone;
+[18:47:31 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE "AppUser" ADD "GoogleRefreshToken" text;
+[18:47:31 INF] Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE "AppUser" ADD "GoogleTokenExpiresAt" timestamp with time zone;
+[18:47:31 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260507214254_AddGoogleTokensToAppUser', '9.0.15');
+[18:47:31 INF] Applying migration '20260507221034_AddGoogleConnectedAtAndFixTokenExpiry'.
+[18:47:31 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE users RENAME COLUMN "GoogleTokenExpiry" TO "GoogleTokenExpiresAt";
+[18:47:31 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE users ADD "GoogleConnectedAt" timestamp with time zone;
+[18:47:31 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260507221034_AddGoogleConnectedAtAndFixTokenExpiry', '9.0.15');
+[18:47:31 INF] Applying migration '20260509211318_AddTrelloCredentials'.
+[18:47:31 INF] Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE "AppUser" ADD "TrelloApiKey" text;
+[18:47:31 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+ALTER TABLE "AppUser" ADD "TrelloToken" text;
+[18:47:31 INF] Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+VALUES ('20260509211318_AddTrelloCredentials', '9.0.15');
+[18:47:31 INF] Request starting HTTP/1.1 POST http://localhost/auth/register - application/json; charset=utf-8 77
+[18:47:31 WRN] Failed to determine the https port for redirect.
+[18:47:31 INF] Executing endpoint 'Orizon.API.Controllers.AuthController.Register (Orizon.API)'
+[18:47:31 INF] Route matched with {action = "Register", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Register(Orizon.Application.UseCases.Auth.Commands.RegisterUser.RegisterUserCommand, System.Threading.CancellationToken) on controller Orizon.API.Controllers.AuthController (Orizon.API).
+[18:47:31 WRN] You do not have a valid license key for the Lucky Penny software MediatR. This is allowed for development and testing scenarios. If you are running in production you are required to have a licensed version. Please visit https://luckypennysoftware.com to obtain a valid license.
+[18:47:31 INF] Executed DbCommand (20ms) [Parameters=[@__normalizedEmail_0='?'], CommandType='Text', CommandTimeout='30']
+SELECT u."Id", u."AccessFailedCount", u."ConcurrencyStamp", u."DisplayName", u."Email", u."EmailConfirmed", u."GoogleAccessToken", u."GoogleConnectedAt", u."GoogleRefreshToken", u."GoogleTokenExpiresAt", u."IsTraveling", u."Latitude", u."LocationName", u."LockoutEnabled", u."LockoutEnd", u."Longitude", u."NormalizedEmail", u."NormalizedUserName", u."PasswordHash", u."PhoneNumber", u."PhoneNumberConfirmed", u."ProfilePictureUrl", u."SecurityStamp", u."ThemePreference", u."Timezone", u."TravelLatitude", u."TravelLocationName", u."TravelLongitude", u."TrelloApiKey", u."TrelloEnabled", u."TrelloToken", u."TwoFactorEnabled", u."UserName"
+FROM users AS u
+WHERE u."NormalizedEmail" = @__normalizedEmail_0
+LIMIT 2
+[18:47:31 INF] Executed DbCommand (3ms) [Parameters=[@__normalizedUserName_0='?'], CommandType='Text', CommandTimeout='30']
+SELECT u."Id", u."AccessFailedCount", u."ConcurrencyStamp", u."DisplayName", u."Email", u."EmailConfirmed", u."GoogleAccessToken", u."GoogleConnectedAt", u."GoogleRefreshToken", u."GoogleTokenExpiresAt", u."IsTraveling", u."Latitude", u."LocationName", u."LockoutEnabled", u."LockoutEnd", u."Longitude", u."NormalizedEmail", u."NormalizedUserName", u."PasswordHash", u."PhoneNumber", u."PhoneNumberConfirmed", u."ProfilePictureUrl", u."SecurityStamp", u."ThemePreference", u."Timezone", u."TravelLatitude", u."TravelLocationName", u."TravelLongitude", u."TrelloApiKey", u."TrelloEnabled", u."TrelloToken", u."TwoFactorEnabled", u."UserName"
+FROM users AS u
+WHERE u."NormalizedUserName" = @__normalizedUserName_0
+LIMIT 1
+[18:47:31 INF] Executed DbCommand (2ms) [Parameters=[@__normalizedEmail_0='?'], CommandType='Text', CommandTimeout='30']
+SELECT u."Id", u."AccessFailedCount", u."ConcurrencyStamp", u."DisplayName", u."Email", u."EmailConfirmed", u."GoogleAccessToken", u."GoogleConnectedAt", u."GoogleRefreshToken", u."GoogleTokenExpiresAt", u."IsTraveling", u."Latitude", u."LocationName", u."LockoutEnabled", u."LockoutEnd", u."Longitude", u."NormalizedEmail", u."NormalizedUserName", u."PasswordHash", u."PhoneNumber", u."PhoneNumberConfirmed", u."ProfilePictureUrl", u."SecurityStamp", u."ThemePreference", u."Timezone", u."TravelLatitude", u."TravelLocationName", u."TravelLongitude", u."TrelloApiKey", u."TrelloEnabled", u."TrelloToken", u."TwoFactorEnabled", u."UserName"
+FROM users AS u
+WHERE u."NormalizedEmail" = @__normalizedEmail_0
+LIMIT 2
+[18:47:31 INF] Executed DbCommand (7ms) [Parameters=[@p0='?', @p1='?' (DbType = Int32), @p2='?', @p3='?', @p4='?', @p5='?' (DbType = Boolean), @p6='?', @p7='?' (DbType = DateTime), @p8='?', @p9='?' (DbType = DateTime), @p10='?' (DbType = Boolean), @p11='?' (DbType = Double), @p12='?', @p13='?' (DbType = Boolean), @p14='?' (DbType = DateTime), @p15='?' (DbType = Double), @p16='?', @p17='?', @p18='?', @p19='?', @p20='?' (DbType = Boolean), @p21='?', @p22='?', @p23='?' (DbType = Int32), @p24='?', @p25='?' (DbType = Double), @p26='?', @p27='?' (DbType = Double), @p28='?', @p29='?' (DbType = Boolean), @p30='?', @p31='?' (DbType = Boolean), @p32='?'], CommandType='Text', CommandTimeout='30']
+INSERT INTO users ("Id", "AccessFailedCount", "ConcurrencyStamp", "DisplayName", "Email", "EmailConfirmed", "GoogleAccessToken", "GoogleConnectedAt", "GoogleRefreshToken", "GoogleTokenExpiresAt", "IsTraveling", "Latitude", "LocationName", "LockoutEnabled", "LockoutEnd", "Longitude", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "ProfilePictureUrl", "SecurityStamp", "ThemePreference", "Timezone", "TravelLatitude", "TravelLocationName", "TravelLongitude", "TrelloApiKey", "TrelloEnabled", "TrelloToken", "TwoFactorEnabled", "UserName")
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21, @p22, @p23, @p24, @p25, @p26, @p27, @p28, @p29, @p30, @p31, @p32);
+[18:47:31 INF] Executed DbCommand (4ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?' (DbType = DateTime), @p3='?' (DbType = DateTime), @p4='?', @p5='?' (DbType = DateTime), @p6='?'], CommandType='Text', CommandTimeout='30']
+INSERT INTO refresh_tokens ("Id", "CreatedAt", "ExpiresAt", "RevokedAt", "Token", "UpdatedAt", "UserId")
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6)
+RETURNING "IsRevoked";
+[18:47:31 INF] Novo usu´┐¢rio registrado: trello@orizonapp.io
+[18:47:31 INF] Executing CreatedResult, writing value of type 'Orizon.Application.DTOs.Auth.AuthResponseDto'.
+[18:47:31 INF] Executed action Orizon.API.Controllers.AuthController.Register (Orizon.API) in 505.4382ms
+[18:47:31 INF] Executed endpoint 'Orizon.API.Controllers.AuthController.Register (Orizon.API)'
+[18:47:31 INF] HTTP POST /auth/register responded 201 in 543.2168 ms
+[18:47:31 INF] Request finished HTTP/1.1 POST http://localhost/auth/register - 201 null application/json; charset=utf-8 564.3288ms
+[18:47:31 INF] Executed DbCommand (2ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?' (DbType = DateTime), @p2='?', @p3='?', @p4='?', @p5='?' (DbType = DateTime), @p6='?', @p7='?' (DbType = DateTime), @p8='?' (DbType = Boolean), @p9='?' (DbType = Double), @p10='?', @p11='?' (DbType = Double), @p12='?', @p13='?' (DbType = Int32), @p14='?', @p15='?' (DbType = Double), @p16='?', @p17='?' (DbType = Double), @p18='?', @p19='?' (DbType = Boolean), @p20='?', @p21='?' (DbType = DateTime)], CommandType='Text', CommandTimeout='30']
+INSERT INTO "AppUser" ("Id", "CreatedAt", "DisplayName", "Email", "GoogleAccessToken", "GoogleConnectedAt", "GoogleRefreshToken", "GoogleTokenExpiresAt", "IsTraveling", "Latitude", "LocationName", "Longitude", "ProfilePictureUrl", "ThemePreference", "Timezone", "TravelLatitude", "TravelLocationName", "TravelLongitude", "TrelloApiKey", "TrelloEnabled", "TrelloToken", "UpdatedAt")
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10, @p11, @p12, @p13, @p14, @p15, @p16, @p17, @p18, @p19, @p20, @p21);
+[18:47:31 INF] Request starting HTTP/1.1 POST http://localhost/trello/boards/config - application/json; charset=utf-8 191
+[18:47:31 INF] Executing endpoint 'Orizon.API.Controllers.TrelloController.SaveBoardConfig (Orizon.API)'
+[18:47:31 INF] Route matched with {action = "SaveBoardConfig", controller = "Trello"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] SaveBoardConfig(Orizon.Application.UseCases.Integrations.Trello.Command.SaveBoardConfigCommand, System.Threading.CancellationToken) on controller Orizon.API.Controllers.TrelloController (Orizon.API).
+[18:47:31 INF] Executed DbCommand (3ms) [Parameters=[@__userId_0='?' (DbType = Guid), @__boardId_1='?'], CommandType='Text', CommandTimeout='30']
+SELECT t."Id", t."BoardColor", t."BoardId", t."BoardName", t."CreatedAt", t."InProgressListId", t."InProgressListName", t."IsActive", t."TodayListId", t."TodayListName", t."UpdatedAt", t."UserId"
+FROM trello_board_configs AS t
+WHERE t."UserId" = @__userId_0 AND t."BoardId" = @__boardId_1
+LIMIT 1
+[18:47:31 INF] Executed DbCommand (3ms) [Parameters=[@p0='?' (DbType = Guid), @p1='?', @p2='?', @p3='?', @p4='?' (DbType = DateTime), @p5='?', @p6='?', @p7='?', @p8='?', @p9='?' (DbType = DateTime), @p10='?' (DbType = Guid)], CommandType='Text', CommandTimeout='30']
+INSERT INTO trello_board_configs ("Id", "BoardColor", "BoardId", "BoardName", "CreatedAt", "InProgressListId", "InProgressListName", "TodayListId", "TodayListName", "UpdatedAt", "UserId")
+VALUES (@p0, @p1, @p2, @p3, @p4, @p5, @p6, @p7, @p8, @p9, @p10)
+RETURNING "IsActive";
+[18:47:31 INF] Executing StatusCodeResult, setting HTTP status code 200
+[18:47:31 INF] Executed action Orizon.API.Controllers.TrelloController.SaveBoardConfig (Orizon.API) in 63.4701ms
+[18:47:31 INF] Executed endpoint 'Orizon.API.Controllers.TrelloController.SaveBoardConfig (Orizon.API)'
+[18:47:31 INF] HTTP POST /trello/boards/config responded 200 in 101.6084 ms
+[18:47:31 INF] Request finished HTTP/1.1 POST http://localhost/trello/boards/config - 200 null null 104.1068ms
+[testcontainers.org 00:00:07.75] Delete Docker container df0f1b71e83b
+[xUnit.net 00:00:08.67]   Finished:    Orizon.Tests.Integration
+  Passed Orizon.Tests.Integration.Integrations.TrelloControllerTests.SaveBoardConfig_WhenValidData_ShouldReturn200 [340 ms]
+
+Test Run Successful.
+Total tests: 1
+     Passed: 1
+ Total time: 10.2059 Seconds

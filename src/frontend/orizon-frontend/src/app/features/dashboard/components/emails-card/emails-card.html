@@ -29,7 +29,7 @@
             </div>
             <p class="email-from">{{ email.from }}</p>
             <p class="email-subject">{{ email.subject }}</p>
-            <p class="email-summary">{{ email.aiSummary }}</p>
+            <p class="email-summary">{{ email.aiSummary | slice:0:120 }}{{ email.aiSummary.length > 120 ? '...' : '' }}</p>
           </div>
         }
       </div>

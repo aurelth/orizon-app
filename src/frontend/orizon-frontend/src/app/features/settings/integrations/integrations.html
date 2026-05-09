@@ -1,161 +1,198 @@
 <div class="page-header">
-    <h1 class="page-title">Integrações</h1>
-    <p class="page-subtitle">Conecte seus serviços para personalizar o briefing diário</p>
+  <h1 class="page-title">Integrações</h1>
+  <p class="page-subtitle">Conecte seus serviços para personalizar o briefing diário</p>
 </div>
 
 @if (error()) {
 <div class="alert alert--error">
-    <i class="pi pi-exclamation-circle"></i>
-    <span>{{ error() }}</span>
+  <i class="pi pi-exclamation-circle"></i>
+  <span>{{ error() }}</span>
 </div>
 }
 
 <div class="integrations-grid">
 
-    <!-- Google -->
-    <div class="integration-card">
-        <div class="integration-card__header">
-            <div class="integration-icon integration-icon--google">
-                <i class="pi pi-google"></i>
-            </div>
-            <div class="integration-info">
-                <h3>Google</h3>
-                <p>Gmail e Google Calendar</p>
-            </div>
-            <div class="integration-status">
-                @if (googleConnected()) {
-                <span class="status-badge status-badge--connected">
-                    <span class="status-dot"></span>
-                    Conectado
-                </span>
-                } @else {
-                <span class="status-badge status-badge--disconnected">Desconectado</span>
-                }
-            </div>
-        </div>
+  <!-- Google -->
+  <div class="integration-card">
+    <div class="integration-card__header">
+      <div class="integration-icon integration-icon--google">
+        <i class="pi pi-google"></i>
+      </div>
+      <div class="integration-info">
+        <h3>Google</h3>
+        <p>Gmail e Google Calendar</p>
+      </div>
+      <div class="integration-status">
+        @if (googleConnected()) {
+        <span class="status-badge status-badge--connected">
+          <span class="status-dot"></span>
+          Conectado
+        </span>
+        } @else {
+        <span class="status-badge status-badge--disconnected">Desconectado</span>
+        }
+      </div>
+    </div>
+    <div class="integration-card__body">
+      <p>Acesse seus emails importantes e reuniões do dia diretamente no briefing matinal.</p>
+    </div>
+    <div class="integration-card__footer">
+      @if (googleConnected()) {
+      <button class="btn btn--ghost btn--sm">
+        <i class="pi pi-refresh"></i>
+        <span>Reconectar</span>
+      </button>
+      } @else {
+      <button class="btn btn--primary btn--sm" [disabled]="isLoadingGoogle()" (click)="connectGoogle()">
+        @if (isLoadingGoogle()) {
+        <i class="pi pi-spinner pi-spin"></i>
+        <span>Redirecionando...</span>
+        } @else {
+        <i class="pi pi-link"></i>
+        <span>Conectar Google</span>
+        }
+      </button>
+      }
+    </div>
+  </div>
 
-        <div class="integration-card__body">
-            <p>Acesse seus emails importantes e reuniões do dia diretamente no briefing matinal.</p>
-        </div>
+  <!-- Trello -->
+  <div class="integration-card">
+    <div class="integration-card__header">
+      <div class="integration-icon integration-icon--trello">
+        <i class="pi pi-th-large"></i>
+      </div>
+      <div class="integration-info">
+        <h3>Trello</h3>
+        <p>Tarefas e boards</p>
+      </div>
+      <div class="integration-status">
+        @if (trelloConnected()) {
+        <span class="status-badge status-badge--connected">
+          <span class="status-dot"></span>
+          Conectado
+        </span>
+        } @else {
+        <span class="status-badge status-badge--disconnected">Desconectado</span>
+        }
+      </div>
+    </div>
 
-        <div class="integration-card__footer">
-            @if (googleConnected()) {
-            <button class="btn btn--ghost btn--sm">
-                <i class="pi pi-refresh"></i>
-                <span>Reconectar</span>
-            </button>
+    <div class="integration-card__body">
+      <p>Visualize suas tarefas pendentes e cards dos boards selecionados no briefing.</p>
+
+      @if (showTrelloForm && !trelloConnected()) {
+      <form [formGroup]="trelloForm" (ngSubmit)="onTrelloSubmit()" novalidate class="trello-form">
+        <div class="field" [class.field--error]="isFieldInvalid(trelloForm, 'apiKey')">
+          <label for="apiKey">API Key</label>
+          <input id="apiKey" type="text" formControlName="apiKey" placeholder="Cole sua API Key do Trello" />
+          @if (isFieldInvalid(trelloForm, 'apiKey')) {
+          <span class="field__error">API Key inválida (mínimo 32 caracteres)</span>
+          }
+        </div>
+        <div class="field" [class.field--error]="isFieldInvalid(trelloForm, 'token')">
+          <label for="token">Token</label>
+          <input id="token" type="text" formControlName="token" placeholder="Cole seu Token do Trello" />
+          @if (isFieldInvalid(trelloForm, 'token')) {
+          <span class="field__error">Token inválido (mínimo 64 caracteres)</span>
+          }
+        </div>
+        <a href="https://trello.com/app-key" target="_blank" rel="noopener noreferrer" class="trello-help-link">
+          <i class="pi pi-external-link"></i>
+          Onde encontro minhas credenciais?
+        </a>
+        <div class="form-actions">
+          <button type="button" class="btn btn--ghost btn--sm" (click)="toggleTrelloForm()">Cancelar</button>
+          <button type="submit" class="btn btn--primary btn--sm" [disabled]="isLoadingTrello()">
+            @if (isLoadingTrello()) {
+            <i class="pi pi-spinner pi-spin"></i>
+            <span>Conectando...</span>
             } @else {
-            <button class="btn btn--primary btn--sm" [disabled]="isLoadingGoogle()" (click)="connectGoogle()">
-                @if (isLoadingGoogle()) {
-                <i class="pi pi-spinner pi-spin"></i>
-                <span>Redirecionando...</span>
-                } @else {
-                <i class="pi pi-link"></i>
-                <span>Conectar Google</span>
-                }
+            <span>Salvar</span>
+            }
+          </button>
+        </div>
+      </form>
+      }
+
+      @if (trelloConnected() && trelloBoards().length > 0) {
+      <div class="board-selector">
+        <p class="board-selector__label">Selecione o board principal:</p>
+        <div class="board-list">
+          @for (board of trelloBoards(); track board.boardId) {
+          <button class="board-item" [class.board-item--selected]="selectedBoard?.boardId === board.boardId"
+            (click)="onBoardSelect(board)">
+            <i class="pi pi-th-large"></i>
+            <span>{{ board.name }}</span>
+            @if (selectedBoard?.boardId === board.boardId) {
+            <i class="pi pi-check board-item__check"></i>
+            }
+          </button>
+          }
+        </div>
+
+        @if (selectedBoard) {
+        <div class="list-selector">
+          <p class="board-selector__label">Lista "Hoje" (tarefas do dia):</p>
+          <div class="board-list">
+            @for (list of selectedBoard.lists; track list.listId) {
+            <button class="board-item"
+              [class.board-item--selected]="selectedTodayList?.listId === list.listId"
+              (click)="onTodayListSelect(list)">
+              <i class="pi pi-sun"></i>
+              <span>{{ list.name }}</span>
+              @if (list.detectedType === 'today') {
+              <span class="list-hint">sugerido</span>
+              }
+              @if (selectedTodayList?.listId === list.listId) {
+              <i class="pi pi-check board-item__check"></i>
+              }
             </button>
             }
-        </div>
-    </div>
+          </div>
 
-    <!-- Trello -->
-    <div class="integration-card">
-        <div class="integration-card__header">
-            <div class="integration-icon integration-icon--trello">
-                <i class="pi pi-th-large"></i>
-            </div>
-            <div class="integration-info">
-                <h3>Trello</h3>
-                <p>Tarefas e boards</p>
-            </div>
-            <div class="integration-status">
-                @if (trelloConnected()) {
-                <span class="status-badge status-badge--connected">
-                    <span class="status-dot"></span>
-                    Conectado
-                </span>
-                } @else {
-                <span class="status-badge status-badge--disconnected">Desconectado</span>
-                }
-            </div>
-        </div>
-
-        <div class="integration-card__body">
-            <p>Visualize suas tarefas pendentes e cards dos boards selecionados no briefing.</p>
-
-            @if (showTrelloForm && !trelloConnected()) {
-            <form [formGroup]="trelloForm" (ngSubmit)="onTrelloSubmit()" novalidate class="trello-form">
-                <div class="field" [class.field--error]="isFieldInvalid(trelloForm, 'apiKey')">
-                    <label for="apiKey">API Key</label>
-                    <input id="apiKey" type="text" formControlName="apiKey" placeholder="Cole sua API Key do Trello" />
-                    @if (isFieldInvalid(trelloForm, 'apiKey')) {
-                    <span class="field__error">API Key inválida (mínimo 32 caracteres)</span>
-                    }
-                </div>
-
-                <div class="field" [class.field--error]="isFieldInvalid(trelloForm, 'token')">
-                    <label for="token">Token</label>
-                    <input id="token" type="text" formControlName="token" placeholder="Cole seu Token do Trello" />
-                    @if (isFieldInvalid(trelloForm, 'token')) {
-                    <span class="field__error">Token inválido (mínimo 64 caracteres)</span>
-                    }
-                </div>
-
-
-                <a href="https://trello.com/app-key" target="_blank" rel="noopener noreferrer" class="trello-help-link">
-                    <i class="pi pi-external-link"></i>
-                    Onde encontro minhas credenciais?
-                </a>
-
-                <div class="form-actions">
-                    <button type="button" class="btn btn--ghost btn--sm" (click)="toggleTrelloForm()">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn btn--primary btn--sm" [disabled]="isLoadingTrello()">
-                        @if (isLoadingTrello()) {
-                        <i class="pi pi-spinner pi-spin"></i>
-                        <span>Conectando...</span>
-                        } @else {
-                        <span>Salvar</span>
-                        }
-                    </button>
-                </div>
-            </form>
-            }
-
-            @if (trelloConnected() && trelloBoards().length > 0) {
-            <div class="board-selector">
-                <p class="board-selector__label">Selecione o board principal:</p>
-                <div class="board-list">
-                    @for (board of trelloBoards(); track board.id) {
-                    <button class="board-item" [class.board-item--selected]="selectedBoard?.id === board.id"
-                        (click)="onBoardSelect(board)">
-                        <i class="pi pi-th-large"></i>
-                        <span>{{ board.name }}</span>
-                        @if (selectedBoard?.id === board.id) {
-                        <i class="pi pi-check board-item__check"></i>
-                        }
-                    </button>
-                    }
-                </div>
-                @if (selectedBoard) {
-                <button class="btn btn--primary btn--sm" (click)="onSaveBoardConfig()">
-                    <i class="pi pi-save"></i>
-                    <span>Salvar configuração</span>
-                </button>
-                }
-            </div>
-            }
-        </div>
-
-        <div class="integration-card__footer">
-            @if (!trelloConnected()) {
-            <button class="btn btn--primary btn--sm" (click)="toggleTrelloForm()">
-                <i class="pi pi-link"></i>
-                <span>{{ showTrelloForm ? 'Cancelar' : 'Conectar Trello' }}</span>
+          <p class="board-selector__label">Lista "Em progresso":</p>
+          <div class="board-list">
+            @for (list of selectedBoard.lists; track list.listId) {
+            <button class="board-item"
+              [class.board-item--selected]="selectedInProgressList?.listId === list.listId"
+              (click)="onInProgressListSelect(list)">
+              <i class="pi pi-spin pi-spinner" style="animation: none"></i>
+              <span>{{ list.name }}</span>
+              @if (list.detectedType === 'inprogress') {
+              <span class="list-hint">sugerido</span>
+              }
+              @if (selectedInProgressList?.listId === list.listId) {
+              <i class="pi pi-check board-item__check"></i>
+              }
             </button>
             }
+          </div>
         </div>
+
+        <button class="btn btn--primary btn--sm" (click)="onSaveBoardConfig()"
+          [disabled]="isSavingBoard() || !selectedTodayList || !selectedInProgressList">
+          @if (isSavingBoard()) {
+          <i class="pi pi-spinner pi-spin"></i>
+          <span>Salvando...</span>
+          } @else {
+          <i class="pi pi-save"></i>
+          <span>Salvar configuração</span>
+          }
+        </button>
+        }
+      </div>
+      }
     </div>
+
+    <div class="integration-card__footer">
+      @if (!trelloConnected()) {
+      <button class="btn btn--primary btn--sm" (click)="toggleTrelloForm()">
+        <i class="pi pi-link"></i>
+        <span>{{ showTrelloForm ? 'Cancelar' : 'Conectar Trello' }}</span>
+      </button>
+      }
+    </div>
+  </div>
 
 </div>

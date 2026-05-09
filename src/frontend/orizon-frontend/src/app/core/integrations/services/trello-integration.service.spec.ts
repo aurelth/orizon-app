@@ -13,8 +13,8 @@ describe('TrelloIntegrationService', () => {
   let store: InstanceType<typeof IntegrationsStore>;
 
   const mockBoards = [
-    { id: 'board-1', name: 'Projeto Orizon' },
-    { id: 'board-2', name: 'Backlog' },
+    { boardId: 'board-1', name: 'Projeto Orizon', lists: [], color: '#fff' },
+    { boardId: 'board-2', name: 'Backlog', lists: [], color: '#000' },
   ];
 
   beforeEach(() => {
@@ -44,7 +44,10 @@ describe('TrelloIntegrationService', () => {
   it('deve marcar trelloConnected como true após conectar com sucesso', () => {
     (apiService.post as jest.Mock).mockReturnValue(of(void 0));
 
-    service.connect('mock-api-key-32chars-xxxxxxxxxxx', 'mock-token-64chars-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx').subscribe();
+    service.connect(
+      'mock-api-key-32chars-xxxxxxxxxxx',
+      'mock-token-64chars-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+    ).subscribe();
 
     expect(store.trelloConnected()).toBe(true);
   });
@@ -62,7 +65,7 @@ describe('TrelloIntegrationService', () => {
   it('deve retornar e armazenar boards no store', () => {
     (apiService.get as jest.Mock).mockReturnValue(of(mockBoards));
 
-    service.getBoards().subscribe((boards) => {
+    service.getBoards('apikey', 'token').subscribe((boards) => {
       expect(boards).toHaveLength(2);
       expect(boards[0].name).toBe('Projeto Orizon');
     });
@@ -75,7 +78,7 @@ describe('TrelloIntegrationService', () => {
       throwError(() => new Error('Forbidden'))
     );
 
-    service.getBoards().subscribe({ error: () => {} });
+    service.getBoards('apikey', 'token').subscribe({ error: () => {} });
 
     expect(store.error()).toBe('Falha ao carregar boards do Trello.');
   });
@@ -83,7 +86,12 @@ describe('TrelloIntegrationService', () => {
   it('deve salvar configuração de board e atualizar store', () => {
     (apiService.post as jest.Mock).mockReturnValue(of(void 0));
 
-    service.saveBoardConfig({ boardId: 'board-1', listIds: ['list-1', 'list-2'] }).subscribe();
+    service.saveBoardConfig({
+      boardId: 'board-1',
+      boardName: 'Projeto Orizon',
+      todayListId: 'list-1',
+      inProgressListId: 'list-2',
+    }).subscribe();
 
     expect(store.trelloBoardConfig()).toMatchObject({
       boardId: 'board-1',
@@ -96,7 +104,10 @@ describe('TrelloIntegrationService', () => {
       throwError(() => new Error('Bad Request'))
     );
 
-    service.saveBoardConfig({ boardId: 'board-1', listIds: [] }).subscribe({ error: () => {} });
+    service.saveBoardConfig({
+      boardId: 'board-1',
+      boardName: 'Test',
+    }).subscribe({ error: () => {} });
 
     expect(store.error()).toBe('Falha ao salvar configuração do board.');
   });

@@ -55,12 +55,14 @@ try
         options.WorkerCount = builder.Configuration
             .GetValue<int>("Hangfire:WorkerCount", 5);
         options.ServerName = "orizon-worker";
-        options.Queues = new[] { "default" };
+        options.Queues = ["default"];
+        options.SchedulePollingInterval = TimeSpan.FromSeconds(1);
     });
 
     // REPOSITORIES
     builder.Services.AddScoped<IBriefingRepository, BriefingRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
+    builder.Services.AddScoped<ITrelloBoardConfigRepository, TrelloBoardConfigRepository>();
 
     // EXTERNAL SERVICES
     builder.Services.AddHttpClient<IWeatherService, WeatherService>()
@@ -69,8 +71,10 @@ try
     builder.Services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>()
         .AddStandardResilienceHandler();
 
-    builder.Services.AddHttpClient<ITrelloService, TrelloService>()
-        .AddStandardResilienceHandler();
+    builder.Services.AddHttpClient<TrelloService>()
+    .AddStandardResilienceHandler();
+
+    builder.Services.AddScoped<ITrelloService, TrelloService>();
 
     builder.Services.AddScoped<IGmailService, GmailIntegrationService>();
     builder.Services.AddScoped<ICalendarService, CalendarIntegrationService>();

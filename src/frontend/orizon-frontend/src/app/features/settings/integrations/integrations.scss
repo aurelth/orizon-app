@@ -64,7 +64,7 @@
     flex-direction: column;
     gap: 1rem;
 
-    > p {
+    >p {
       font-size: 0.875rem;
       color: var(--color-text-muted);
       line-height: 1.6;
@@ -92,12 +92,18 @@
 
   &--google {
     background: rgba(251, 146, 60, 0.12);
-    i { color: var(--color-primary); }
+
+    i {
+      color: var(--color-primary);
+    }
   }
 
   &--trello {
     background: rgba(110, 231, 183, 0.12);
-    i { color: var(--color-accent); }
+
+    i {
+      color: var(--color-accent);
+    }
   }
 }
 
@@ -148,8 +154,15 @@
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .trello-form {
@@ -183,8 +196,13 @@
     transition: border-color var(--transition);
     font-family: var(--font-mono);
 
-    &::placeholder { color: var(--color-text-dim); }
-    &:focus { border-color: var(--color-primary); }
+    &::placeholder {
+      color: var(--color-text-dim);
+    }
+
+    &:focus {
+      border-color: var(--color-primary);
+    }
   }
 
   &__error {
@@ -205,9 +223,13 @@
   color: var(--color-accent);
   text-decoration: none;
 
-  &:hover { text-decoration: underline; }
+  &:hover {
+    text-decoration: underline;
+  }
 
-  i { font-size: 0.75rem; }
+  i {
+    font-size: 0.75rem;
+  }
 }
 
 .form-actions {
@@ -251,9 +273,13 @@
   text-align: left;
   width: 100%;
 
-  i:first-child { color: var(--color-accent); }
+  i:first-child {
+    color: var(--color-accent);
+  }
 
-  span { flex: 1; }
+  span {
+    flex: 1;
+  }
 
   &:hover {
     border-color: var(--color-primary);
@@ -314,5 +340,21 @@
       color: var(--color-text);
       border-color: var(--color-text-dim);
     }
+  }
+
+  .list-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .list-hint {
+    font-size: 0.7rem;
+    color: var(--color-accent);
+    background: rgba(110, 231, 183, 0.1);
+    padding: 0.1rem 0.375rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(110, 231, 183, 0.2);
   }
 }

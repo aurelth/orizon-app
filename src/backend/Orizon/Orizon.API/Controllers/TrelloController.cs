@@ -19,12 +19,31 @@ public class TrelloController : ControllerBase
         _mediator = mediator;
     }
 
-    [HttpGet("boards")]
-    public async Task<IActionResult> GetBoards(
-        [FromQuery] string apiKey,
-        [FromQuery] string token,
+    [HttpPost("connect")]
+    public async Task<IActionResult> Connect(
+        [FromBody] ConnectTrelloRequest request,
         CancellationToken ct = default)
     {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        await _mediator.Send(
+            new ConnectTrelloCommand(userId, request.ApiKey, request.Token), ct);
+
+        return Ok();
+    }
+
+    [HttpGet("boards")]
+    public async Task<IActionResult> GetBoards(
+        [FromQuery] string? apiKey,
+        [FromQuery] string? token,
+        CancellationToken ct = default)
+    {
+        // usa credenciais da query ou busca do banco via comando
+        if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(token))
+            return BadRequest(new { message = "apiKey e token são obrigatórios." });
+
         var result = await _mediator.Send(
             new GetBoardsQuery(apiKey, token), ct);
 
@@ -46,3 +65,5 @@ public class TrelloController : ControllerBase
         return Ok();
     }
 }
+
+public record ConnectTrelloRequest(string ApiKey, string Token);

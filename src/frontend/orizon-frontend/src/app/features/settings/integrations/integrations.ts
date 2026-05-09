@@ -1,10 +1,10 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { IntegrationsStore } from '../../../core/integrations/store/integrations.store';
 import { GoogleIntegrationService } from '../../../core/integrations/services/google-integration.service';
-import { TrelloIntegrationService, TrelloBoard } from '../../../core/integrations/services/trello-integration.service';
+import { TrelloIntegrationService, TrelloBoard, TrelloList } from '../../../core/integrations/services/trello-integration.service';
 
 @Component({
   selector: 'app-integrations',
@@ -28,9 +28,11 @@ export class IntegrationsComponent implements OnInit {
   readonly error = this.store.error;
 
   trelloForm!: FormGroup;
-  boardForm!: FormGroup;
   showTrelloForm = false;
   selectedBoard: TrelloBoard | null = null;
+  selectedTodayList: TrelloList | null = null;
+  selectedInProgressList: TrelloList | null = null;
+  isSavingBoard = signal(false);
 
   ngOnInit(): void {
     this.trelloForm = this.fb.group({
@@ -38,12 +40,8 @@ export class IntegrationsComponent implements OnInit {
       token: ['', [Validators.required, Validators.minLength(64)]],
     });
 
-    this.boardForm = this.fb.group({
-      boardId: ['', Validators.required],
-    });
-    
     this.googleService.getStatus().subscribe();
-    
+
     const googleParam = this.route.snapshot.queryParamMap.get('google');
     if (googleParam === 'success') {
       this.store.setGoogleConnected(true);
@@ -76,22 +74,40 @@ export class IntegrationsComponent implements OnInit {
     this.trelloService.connect(apiKey, token).subscribe({
       next: () => {
         this.showTrelloForm = false;
-        this.trelloService.getBoards().subscribe();
+        this.trelloService.getBoards(apiKey, token).subscribe();
       },
     });
   }
 
   onBoardSelect(board: TrelloBoard): void {
     this.selectedBoard = board;
-    this.boardForm.patchValue({ boardId: board.id });
+    this.selectedTodayList = null;
+    this.selectedInProgressList = null;
+  }
+
+  onTodayListSelect(list: TrelloList): void {
+    this.selectedTodayList = list;
+  }
+
+  onInProgressListSelect(list: TrelloList): void {
+    this.selectedInProgressList = list;
   }
 
   onSaveBoardConfig(): void {
-    if (this.boardForm.invalid || !this.selectedBoard) return;
+    if (!this.selectedBoard) return;
 
+    this.isSavingBoard.set(true);
     this.trelloService.saveBoardConfig({
-      boardId: this.selectedBoard.id,
-      listIds: [],
-    }).subscribe();
+      boardId: this.selectedBoard.boardId,
+      boardName: this.selectedBoard.name,
+      boardColor: this.selectedBoard.color,
+      todayListId: this.selectedTodayList?.listId,
+      todayListName: this.selectedTodayList?.name,
+      inProgressListId: this.selectedInProgressList?.listId,
+      inProgressListName: this.selectedInProgressList?.name,
+    }).subscribe({
+      next: () => this.isSavingBoard.set(false),
+      error: () => this.isSavingBoard.set(false),
+    });
   }
 }

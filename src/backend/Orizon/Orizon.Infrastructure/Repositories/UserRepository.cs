@@ -57,6 +57,8 @@ public class UserRepository : IUserRepository
         identityUser.TravelLongitude = user.TravelLongitude;
         identityUser.ThemePreference = user.ThemePreference;
         identityUser.TrelloEnabled = user.TrelloEnabled;
+        identityUser.TrelloApiKey = user.TrelloApiKey;
+        identityUser.TrelloToken = user.TrelloToken;
         identityUser.GoogleAccessToken = user.GoogleAccessToken;
         identityUser.GoogleRefreshToken = user.GoogleRefreshToken;
         identityUser.GoogleTokenExpiresAt = user.GoogleTokenExpiresAt;
@@ -84,6 +86,8 @@ public class UserRepository : IUserRepository
             TravelLongitude = identityUser.TravelLongitude,
             ThemePreference = identityUser.ThemePreference,
             TrelloEnabled = identityUser.TrelloEnabled,
+            TrelloApiKey = identityUser.TrelloApiKey,
+            TrelloToken = identityUser.TrelloToken,
             GoogleAccessToken = identityUser.GoogleAccessToken,
             GoogleRefreshToken = identityUser.GoogleRefreshToken,
             GoogleTokenExpiresAt = identityUser.GoogleTokenExpiresAt,

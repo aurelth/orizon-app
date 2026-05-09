@@ -6,7 +6,7 @@ import { IntegrationsComponent } from './integrations';
 import { IntegrationsStore } from '../../../core/integrations/store/integrations.store';
 import { GoogleIntegrationService } from '../../../core/integrations/services/google-integration.service';
 import { TrelloIntegrationService } from '../../../core/integrations/services/trello-integration.service';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
 describe('IntegrationsComponent', () => {
   let component: IntegrationsComponent;
@@ -14,15 +14,25 @@ describe('IntegrationsComponent', () => {
   let trelloService: jest.Mocked<Partial<TrelloIntegrationService>>;
   let store: InstanceType<typeof IntegrationsStore>;
 
+  const mockBoard = {
+    boardId: 'board-1',
+    name: 'Orizon',
+    color: '#fff',
+    lists: [
+      { listId: 'list-1', name: 'Today', detectedType: 'today' },
+      { listId: 'list-2', name: 'In Progress', detectedType: 'inprogress' },
+    ],
+  };
+
   beforeEach(async () => {
     googleService = {
       redirectToGoogle: jest.fn(),
-      getAuthUrl: jest.fn(),
+      getStatus: jest.fn().mockReturnValue(of(null)),
     };
 
     trelloService = {
       connect: jest.fn(),
-      getBoards: jest.fn(),
+      getBoards: jest.fn().mockReturnValue(of([])),
       saveBoardConfig: jest.fn(),
     };
 
@@ -97,20 +107,40 @@ describe('IntegrationsComponent', () => {
   });
 
   it('deve selecionar board corretamente', () => {
-    const board = { id: 'board-1', name: 'Orizon' };
-    component.onBoardSelect(board);
-    expect(component.selectedBoard).toEqual(board);
-    expect(component.boardForm.get('boardId')?.value).toBe('board-1');
+    component.onBoardSelect(mockBoard);
+    expect(component.selectedBoard).toEqual(mockBoard);
+    expect(component.selectedTodayList).toBeNull();
+    expect(component.selectedInProgressList).toBeNull();
   });
 
-  it('deve chamar saveBoardConfig com board selecionado', () => {
+  it('deve selecionar lista Today corretamente', () => {
+    component.onBoardSelect(mockBoard);
+    component.onTodayListSelect(mockBoard.lists[0]);
+    expect(component.selectedTodayList).toEqual(mockBoard.lists[0]);
+  });
+
+  it('deve selecionar lista InProgress corretamente', () => {
+    component.onBoardSelect(mockBoard);
+    component.onInProgressListSelect(mockBoard.lists[1]);
+    expect(component.selectedInProgressList).toEqual(mockBoard.lists[1]);
+  });
+
+  it('deve chamar saveBoardConfig com board e listas selecionadas', () => {
     (trelloService.saveBoardConfig as jest.Mock).mockReturnValue(of(void 0));
-    component.selectedBoard = { id: 'board-1', name: 'Orizon' };
-    component.boardForm.get('boardId')?.setValue('board-1');
+
+    component.selectedBoard = mockBoard;
+    component.selectedTodayList = mockBoard.lists[0];
+    component.selectedInProgressList = mockBoard.lists[1];
     component.onSaveBoardConfig();
+
     expect(trelloService.saveBoardConfig).toHaveBeenCalledWith({
       boardId: 'board-1',
-      listIds: [],
+      boardName: 'Orizon',
+      boardColor: '#fff',
+      todayListId: 'list-1',
+      todayListName: 'Today',
+      inProgressListId: 'list-2',
+      inProgressListName: 'In Progress',
     });
   });
 

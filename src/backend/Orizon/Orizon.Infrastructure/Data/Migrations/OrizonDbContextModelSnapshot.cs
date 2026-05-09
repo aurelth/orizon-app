@@ -215,8 +215,14 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Property<double?>("TravelLongitude")
                         .HasColumnType("double precision");
 
+                    b.Property<string>("TrelloApiKey")
+                        .HasColumnType("text");
+
                     b.Property<bool>("TrelloEnabled")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("TrelloToken")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");

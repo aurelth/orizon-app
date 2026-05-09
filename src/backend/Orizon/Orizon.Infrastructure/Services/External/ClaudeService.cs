@@ -26,13 +26,13 @@ public class ClaudeService : IClaudeService
     }
 
     public async Task<BriefingAISummaryDto> GenerateDailySummaryAsync(
-    IEnumerable<EmailSummaryDto> emails,
-    IEnumerable<CalendarEventDto> events,
-    IEnumerable<TrelloTaskDto>? tasks,
-    WeatherDto weather,
-    string userName,
-    DateOnly today,
-    CancellationToken cancellationToken = default)
+        IEnumerable<EmailSummaryDto> emails,
+        IEnumerable<CalendarEventDto> events,
+        IEnumerable<TrelloTaskDto>? tasks,
+        WeatherDto weather,
+        string userName,
+        DateOnly today,
+        CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Gerando resumo diário com Claude para {User}", userName);
 
@@ -90,11 +90,24 @@ public class ClaudeService : IClaudeService
             _ => ""
         };
 
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById(
+            "E. South America Standard Time");
+        var brasiliaHour = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow, brasiliaZone).Hour;
+
+        var greeting = brasiliaHour switch
+        {
+            >= 5 and < 12 => "Bom dia",
+            >= 12 and < 18 => "Boa tarde",
+            _ => "Boa noite"
+        };
+
         return $"""
-        Você é o assistente do Orizon, um app de briefing matinal personalizado.
-        Gere um resumo conciso e motivador para {userName} começar o dia.
+        Você é o assistente do Orizon, um app de briefing personalizado.
+        Gere um resumo conciso e motivador para {userName}.
 
         DATA DE HOJE: {dayOfWeek}, {today:dd/MM/yyyy}
+        PERÍODO: {greeting}
 
         CLIMA:
         {weather.WeatherEmoji} {weather.Description}
@@ -112,7 +125,7 @@ public class ClaudeService : IClaudeService
 
         Responda APENAS no seguinte formato JSON, sem markdown:
         {"{"}
-          "greeting": "saudação personalizada e motivadora (máx 2 linhas)",
+          "greeting": "{greeting}, {userName}! [frase curta e animada descrevendo como será o dia — máximo 80 caracteres, sem emojis]",
           "weatherSummary": "resumo do clima em linguagem natural (máx 1 linha)",
           "suggestions": "2-3 sugestões cruzadas baseadas nos dados acima",
           "priorityTask": "tarefa mais importante do dia ou null",
@@ -125,7 +138,6 @@ public class ClaudeService : IClaudeService
     {
         try
         {
-            // Remove markdown fences caso o modelo as inclua
             var json = content.Trim();
             if (json.StartsWith("```"))
             {
@@ -162,5 +174,4 @@ public class ClaudeService : IClaudeService
             };
         }
     }
-
 }

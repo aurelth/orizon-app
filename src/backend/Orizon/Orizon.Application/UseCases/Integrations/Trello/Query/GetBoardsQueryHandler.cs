@@ -4,7 +4,8 @@ using Orizon.Application.Interfaces.Services;
 
 namespace Orizon.Application.UseCases.Integrations.Trello.Query;
 
-public class GetBoardsQueryHandler : IRequestHandler<GetBoardsQuery, IEnumerable<TrelloBoardDto>>
+public class GetBoardsQueryHandler
+    : IRequestHandler<GetBoardsQuery, IEnumerable<TrelloBoardDto>>
 {
     private readonly ITrelloService _trelloService;
 

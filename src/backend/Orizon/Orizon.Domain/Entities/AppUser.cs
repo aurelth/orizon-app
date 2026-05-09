@@ -18,6 +18,8 @@ public class AppUser : BaseEntity
     public double? TravelLongitude { get; set; }
     public ThemePreference ThemePreference { get; set; } = ThemePreference.Dark;
     public bool TrelloEnabled { get; set; } = false;
+    public string? TrelloApiKey { get; set; }
+    public string? TrelloToken { get; set; }
     public string? GoogleAccessToken { get; set; }
     public string? GoogleRefreshToken { get; set; }
     public DateTime? GoogleTokenExpiresAt { get; set; }

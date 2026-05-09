@@ -154,12 +154,13 @@ try
     builder.Services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>()
         .AddStandardResilienceHandler();
 
-    builder.Services.AddHttpClient<ITrelloService, TrelloService>()
+    builder.Services.AddHttpClient<TrelloService>()
         .AddStandardResilienceHandler();
+    builder.Services.AddScoped<ITrelloService, TrelloService>();
 
     builder.Services.AddScoped<IGmailService, GmailIntegrationService>();
     builder.Services.AddScoped<ICalendarService, CalendarIntegrationService>();
-    builder.Services.AddScoped<IClaudeService, ClaudeService>();  
+    builder.Services.AddScoped<IClaudeService, ClaudeService>();
     builder.Services.AddHttpClient<IJobScheduler, HangfireJobScheduler>();
 
     // EMAIL — SendGrid
@@ -177,8 +178,8 @@ try
 
     // MEDIATR + CQRS
     builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(
-        typeof(RegisterUserCommand).Assembly));
+        cfg.RegisterServicesFromAssembly(
+            typeof(RegisterUserCommand).Assembly));
 
     builder.Services.AddValidatorsFromAssembly(
         typeof(RegisterUserCommandValidator).Assembly);
@@ -205,7 +206,7 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        app.MapOpenApi();        
+        app.MapOpenApi();
         app.MapScalarApiReference();
     }
 
