@@ -54,4 +54,16 @@ export class BriefingService {
         .catch(() => this.store.setConnecting(false));
     });
   }
+
+  generateBriefing(): Observable<{ jobId: string; message: string }> {
+    return this.api.post<{ jobId: string; message: string }>('/briefings/generate', {}).pipe(
+      tap({
+        next: () => {
+          // aguarda 15s e recarrega o briefing
+          setTimeout(() => this.getTodayBriefing().subscribe(), 15000);
+        },
+        error: () => { },
+      })
+    );
+  }
 }

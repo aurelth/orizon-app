@@ -1,5 +1,7 @@
 using Hangfire;
 using Hangfire.PostgreSql;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
@@ -20,15 +22,15 @@ Log.Information("Iniciando Orizon Worker...");
 
 try
 {
-    var builder = Host.CreateApplicationBuilder(args);
+    var builder = WebApplication.CreateBuilder(args);
 
-    builder.Services.AddSerilog((services, config) =>
+    builder.Host.UseSerilog((context, services, config) =>
         config
-            .ReadFrom.Configuration(builder.Configuration)
+            .ReadFrom.Configuration(context.Configuration)
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
             .WriteTo.Console()
-            .WriteTo.Seq(builder.Configuration["Seq:ServerUrl"]
+            .WriteTo.Seq(context.Configuration["Seq:ServerUrl"]
                 ?? "http://localhost:5341"));
 
     builder.Services.AddDbContext<OrizonDbContext>(options =>
@@ -53,11 +55,10 @@ try
         options.WorkerCount = builder.Configuration
             .GetValue<int>("Hangfire:WorkerCount", 5);
         options.ServerName = "orizon-worker";
-        // Garante que o Worker só processa jobs que ele conhece
         options.Queues = new[] { "default" };
     });
 
-    // REPOSITORIES  
+    // REPOSITORIES
     builder.Services.AddScoped<IBriefingRepository, BriefingRepository>();
     builder.Services.AddScoped<IUserRepository, UserRepository>();
 
@@ -88,22 +89,29 @@ try
         builder.Services.AddScoped<IEmailNotificationService, NullEmailNotificationService>();
     }
 
-    // JOBS    
+    // JOBS
     builder.Services.AddScoped<BriefingJob>();
 
-    var host = builder.Build();
-    
-    using (var scope = host.Services.CreateScope())
+    var app = builder.Build();
+
+    // ENDPOINT INTERNO — acionado pela API para gerar briefing manualmente
+    app.MapPost("/internal/briefing/trigger", () =>
+    {
+        RecurringJob.TriggerJob("morning-briefing");
+        return Results.Accepted("/internal/briefing/trigger", new { message = "Job acionado com sucesso." });
+    });
+
+    using (var scope = app.Services.CreateScope())
     {
         var recurringJobManager = scope.ServiceProvider
             .GetRequiredService<IRecurringJobManager>();
-        
+
         recurringJobManager.RemoveIfExists("morning-briefing");
-        
+
         RecurringJob.AddOrUpdate<BriefingJob>(
             recurringJobId: "morning-briefing",
             methodCall: job => job.ExecuteAsync(CancellationToken.None),
-            cronExpression: "* * * * *",
+            cronExpression: "0 */4 * * *",
             options: new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.FindSystemTimeZoneById(
@@ -115,7 +123,7 @@ try
 
     Log.Information("Orizon Worker iniciado com sucesso");
 
-    await host.RunAsync();
+    await app.RunAsync();
 }
 catch (Exception ex) when (ex is not HostAbortedException)
 {

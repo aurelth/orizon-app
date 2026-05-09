@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR.Client;
-using Orizon.Application.DTOs.Briefing;
+﻿using Orizon.Application.DTOs.Briefing;
 using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
 using Orizon.Domain.Entities;
@@ -75,7 +74,8 @@ public class BriefingJob
 
     private async Task ProcessUserBriefingAsync(AppUser user, CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone));
         var userId = user.Id.ToString();
 
         _logger.LogInformation("Processando briefing para usuário {UserId}", userId);
@@ -146,6 +146,7 @@ public class BriefingJob
                 user.TrelloEnabled ? trelloTasks : null,
                 weather,
                 user.DisplayName,
+                today,
                 ct);
 
             briefing.AISummary = aiSummary.Greeting;
@@ -222,22 +223,26 @@ public class BriefingJob
     }
 
     private async Task NotifyUserAsync(
-        string userId, Guid briefingId, CancellationToken ct)
+    string userId, Guid briefingId, CancellationToken ct)
     {
         try
         {
-            var hubUrl = _configuration["SignalR:HubUrl"]
-                ?? "http://localhost:5010/hubs/briefing";
+            var apiUrl = _configuration["ApiUrl"] ?? "http://localhost:5010";
 
-            var connection = new HubConnectionBuilder()
-                .WithUrl(hubUrl)
-                .WithAutomaticReconnect()
-                .Build();
+            var payload = new
+            {
+                UserId = userId,
+                BriefingId = briefingId
+            };
 
-            await connection.StartAsync(ct);
-            await connection.InvokeAsync(
-                "SendBriefingReady", userId, briefingId, cancellationToken: ct);
-            await connection.StopAsync(ct);
+            var json = System.Text.Json.JsonSerializer.Serialize(payload);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            using var httpClient = new HttpClient();
+            await httpClient.PostAsync($"{apiUrl}/internal/briefing-ready", content, ct);
+
+            _logger.LogInformation(
+                "Notificação SignalR enviada para usuário {UserId}", userId);
         }
         catch (Exception ex)
         {

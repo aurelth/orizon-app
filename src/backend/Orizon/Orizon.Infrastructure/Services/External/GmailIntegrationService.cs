@@ -87,7 +87,17 @@ public class GmailIntegrationService : IGmailService
             var subject = GetHeader(msg, "Subject") ?? "(sem assunto)";
             var from = GetHeader(msg, "From") ?? "Desconhecido";
             var dateStr = GetHeader(msg, "Date");
-            var date = dateStr != null ? DateTime.Parse(dateStr) : DateTime.UtcNow;
+            var date = DateTime.UtcNow;
+            if (dateStr != null)
+            {
+                if (!DateTime.TryParse(dateStr, out date))
+                {                    
+                    var cleanDate = System.Text.RegularExpressions.Regex
+                        .Replace(dateStr, @"\s*\([^)]*\)\s*$", "").Trim();
+                    if (!DateTime.TryParse(cleanDate, out date))
+                        date = DateTime.UtcNow;
+                }
+            }
 
             emails.Add(new EmailSummaryDto
             {

@@ -14,6 +14,7 @@ using Orizon.Application.UseCases.Auth.Commands.RegisterUser;
 using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
 using Orizon.Infrastructure.Repositories;
+using Orizon.Infrastructure.Services;
 using Orizon.Infrastructure.Services.Auth;
 using Orizon.Infrastructure.Services.Email;
 using Orizon.Infrastructure.Services.External;
@@ -158,7 +159,8 @@ try
 
     builder.Services.AddScoped<IGmailService, GmailIntegrationService>();
     builder.Services.AddScoped<ICalendarService, CalendarIntegrationService>();
-    builder.Services.AddScoped<IClaudeService, ClaudeService>();
+    builder.Services.AddScoped<IClaudeService, ClaudeService>();  
+    builder.Services.AddHttpClient<IJobScheduler, HangfireJobScheduler>();
 
     // EMAIL — SendGrid
     var sendGridApiKey = builder.Configuration["Email:SendGridApiKey"];
@@ -175,8 +177,8 @@ try
 
     // MEDIATR + CQRS
     builder.Services.AddMediatR(cfg =>
-        cfg.RegisterServicesFromAssembly(
-            typeof(RegisterUserCommand).Assembly));
+    cfg.RegisterServicesFromAssembly(
+        typeof(RegisterUserCommand).Assembly));
 
     builder.Services.AddValidatorsFromAssembly(
         typeof(RegisterUserCommandValidator).Assembly);

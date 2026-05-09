@@ -30,7 +30,6 @@ public class BriefingJobTests
     private readonly Mock<ILogger<BriefingJob>> _loggerMock = new();
     private readonly BriefingJob _job;
 
-    // Token válido por padrão — expira daqui 1 hora
     private readonly AppUser _testUser = new()
     {
         Id = Guid.NewGuid(),
@@ -84,37 +83,31 @@ public class BriefingJobTests
     [Fact]
     public async Task ExecuteAsync_WhenNoUsers_ShouldNotProcessAnyBriefing()
     {
-        // Arrange
         _userRepoMock
-            .Setup(r => r.GetActiveUsersAsync(default))
+            .Setup(r => r.GetActiveUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<AppUser>());
 
-        // Act
         await _job.ExecuteAsync(default);
 
-        // Assert
         _briefingRepoMock.Verify(
-            r => r.AddAsync(It.IsAny<BriefingEntry>(), default),
+            r => r.AddAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
     [Fact]
     public async Task ExecuteAsync_WhenUserExists_ShouldCreateBriefingWithPendingStatus()
     {
-        // Arrange
         SetupDefaultMocks();
 
         BriefingEntry? capturedBriefing = null;
         _briefingRepoMock
-            .Setup(r => r.AddAsync(It.IsAny<BriefingEntry>(), default))
+            .Setup(r => r.AddAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
             .Callback<BriefingEntry, CancellationToken>(
                 (b, _) => capturedBriefing = b)
             .Returns(Task.CompletedTask);
 
-        // Act
         await _job.ExecuteAsync(default);
 
-        // Assert
         capturedBriefing.Should().NotBeNull();
         capturedBriefing!.UserId.Should().Be(_testUser.Id);
         capturedBriefing.Date.Should().Be(DateOnly.FromDateTime(DateTime.UtcNow));
@@ -123,20 +116,17 @@ public class BriefingJobTests
     [Fact]
     public async Task ExecuteAsync_WhenPipelineSucceeds_ShouldUpdateBriefingWithGeneratedStatus()
     {
-        // Arrange
         SetupDefaultMocks();
 
         BriefingEntry? updatedBriefing = null;
         _briefingRepoMock
-            .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), default))
+            .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
             .Callback<BriefingEntry, CancellationToken>(
                 (b, _) => updatedBriefing = b)
             .Returns(Task.CompletedTask);
 
-        // Act
         await _job.ExecuteAsync(default);
 
-        // Assert
         updatedBriefing.Should().NotBeNull();
         updatedBriefing!.Status.Should().Be(BriefingStatus.Generated);
         updatedBriefing.AISummary.Should().Be(_aiSummary.Greeting);
@@ -146,46 +136,44 @@ public class BriefingJobTests
     [Fact]
     public async Task ExecuteAsync_WhenWeatherServiceFails_ShouldUpdateBriefingWithFailedStatus()
     {
-        // Arrange
         _userRepoMock
-            .Setup(r => r.GetActiveUsersAsync(default))
+            .Setup(r => r.GetActiveUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<AppUser> { _testUser });
 
         _briefingRepoMock
             .Setup(r => r.GetByUserAndDateAsync(
-                _testUser.Id.ToString(), It.IsAny<DateOnly>(), default))
+                _testUser.Id.ToString(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((BriefingEntry?)null);
 
         _briefingRepoMock
-            .Setup(r => r.AddAsync(It.IsAny<BriefingEntry>(), default))
+            .Setup(r => r.AddAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _gmailMock
             .Setup(s => s.GetRecentEmailsWithTokenAsync(
-                _testUser.GoogleAccessToken!, It.IsAny<int>(), default))
+                _testUser.GoogleAccessToken!, It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<EmailSummaryDto>());
 
         _calendarMock
             .Setup(s => s.GetTodayEventsWithTokenAsync(
-                _testUser.GoogleAccessToken!, default))
+                _testUser.GoogleAccessToken!, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<CalendarEventDto>());
 
         _weatherMock
             .Setup(s => s.GetWeatherAsync(
-                _testUser.Latitude, _testUser.Longitude, _testUser.Timezone, default))
+                _testUser.Latitude, _testUser.Longitude, _testUser.Timezone,
+                It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Weather API indisponível"));
 
         BriefingEntry? updatedBriefing = null;
         _briefingRepoMock
-            .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), default))
+            .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
             .Callback<BriefingEntry, CancellationToken>(
                 (b, _) => updatedBriefing = b)
             .Returns(Task.CompletedTask);
 
-        // Act
         await _job.ExecuteAsync(default);
 
-        // Assert
         updatedBriefing.Should().NotBeNull();
         updatedBriefing!.Status.Should().Be(BriefingStatus.Failed);
         updatedBriefing.ErrorMessage.Should().Be("Weather API indisponível");
@@ -194,104 +182,95 @@ public class BriefingJobTests
     [Fact]
     public async Task ExecuteAsync_WhenTrelloDisabled_ShouldNotCallTrelloService()
     {
-        // Arrange
         _testUser.TrelloEnabled = false;
         SetupDefaultMocks();
 
-        // Act
         await _job.ExecuteAsync(default);
 
-        // Assert
         _trelloMock.Verify(
-            s => s.GetActiveTasksAsync(It.IsAny<string>(), default),
+            s => s.GetActiveTasksAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
     [Fact]
     public async Task ExecuteAsync_WhenTrelloEnabled_ShouldCallTrelloService()
     {
-        // Arrange
         _testUser.TrelloEnabled = true;
         SetupDefaultMocks();
 
         _trelloMock
-            .Setup(s => s.GetActiveTasksAsync(_testUser.Id.ToString(), default))
+            .Setup(s => s.GetActiveTasksAsync(
+                _testUser.Id.ToString(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<TrelloTaskDto>());
 
-        // Act
         await _job.ExecuteAsync(default);
 
-        // Assert
         _trelloMock.Verify(
-            s => s.GetActiveTasksAsync(_testUser.Id.ToString(), default),
+            s => s.GetActiveTasksAsync(_testUser.Id.ToString(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
     public async Task ExecuteAsync_WhenUserIsTraveling_ShouldUseTravelCoordinates()
     {
-        // Arrange
         _testUser.IsTraveling = true;
         _testUser.TravelLatitude = 38.7169;
         _testUser.TravelLongitude = -9.1395;
 
         SetupDefaultMocks();
 
-        // Act
         await _job.ExecuteAsync(default);
 
-        // Assert
         _weatherMock.Verify(
-            s => s.GetWeatherAsync(38.7169, -9.1395, _testUser.Timezone, default),
+            s => s.GetWeatherAsync(38.7169, -9.1395, _testUser.Timezone,
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
     public async Task ExecuteAsync_WhenPipelineSucceeds_ShouldSendEmail()
     {
-        // Arrange
         SetupDefaultMocks();
 
-        // Act
         await _job.ExecuteAsync(default);
 
-        // Assert
         _emailMock.Verify(
             s => s.SendBriefingEmailAsync(
                 _testUser.Email,
                 _testUser.DisplayName,
                 It.IsAny<BriefingResultDto>(),
-                default),
+                It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
     [Fact]
     public async Task ExecuteAsync_WhenTokenExpired_ShouldRefreshAndUseNewToken()
     {
-        // Arrange
-        _testUser.GoogleTokenExpiresAt = DateTime.UtcNow.AddMinutes(-1); // expirado
+        _testUser.GoogleTokenExpiresAt = DateTime.UtcNow.AddMinutes(-1);
         var newToken = "refreshed-access-token";
 
         _googleOAuthMock
-            .Setup(s => s.RefreshAccessTokenAsync(_testUser.GoogleRefreshToken!, default))
-            .ReturnsAsync(new GoogleTokensDto(newToken, _testUser.GoogleRefreshToken!, DateTime.UtcNow.AddHours(1)));
+            .Setup(s => s.RefreshAccessTokenAsync(
+                _testUser.GoogleRefreshToken!, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new GoogleTokensDto(
+                newToken, _testUser.GoogleRefreshToken!, DateTime.UtcNow.AddHours(1)));
 
         _userRepoMock
-            .Setup(r => r.UpdateAsync(It.IsAny<AppUser>(), default))
+            .Setup(r => r.UpdateAsync(It.IsAny<AppUser>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         SetupDefaultMocks(accessToken: newToken);
 
-        // Act
         await _job.ExecuteAsync(default);
 
-        // Assert
         _googleOAuthMock.Verify(
-            s => s.RefreshAccessTokenAsync(_testUser.GoogleRefreshToken!, default),
+            s => s.RefreshAccessTokenAsync(
+                _testUser.GoogleRefreshToken!, It.IsAny<CancellationToken>()),
             Times.Once);
 
         _gmailMock.Verify(
-            s => s.GetRecentEmailsWithTokenAsync(newToken, It.IsAny<int>(), default),
+            s => s.GetRecentEmailsWithTokenAsync(
+                newToken, It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Once);
     }
 
@@ -300,33 +279,36 @@ public class BriefingJobTests
         var token = accessToken ?? _testUser.GoogleAccessToken!;
 
         _userRepoMock
-            .Setup(r => r.GetActiveUsersAsync(default))
+            .Setup(r => r.GetActiveUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<AppUser> { _testUser });
 
         _briefingRepoMock
             .Setup(r => r.GetByUserAndDateAsync(
-                _testUser.Id.ToString(), It.IsAny<DateOnly>(), default))
+                _testUser.Id.ToString(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((BriefingEntry?)null);
 
         _briefingRepoMock
-            .Setup(r => r.AddAsync(It.IsAny<BriefingEntry>(), default))
+            .Setup(r => r.AddAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _briefingRepoMock
-            .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), default))
+            .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         _gmailMock
-            .Setup(s => s.GetRecentEmailsWithTokenAsync(token, It.IsAny<int>(), default))
+            .Setup(s => s.GetRecentEmailsWithTokenAsync(
+                token, It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<EmailSummaryDto>());
 
         _calendarMock
-            .Setup(s => s.GetTodayEventsWithTokenAsync(token, default))
+            .Setup(s => s.GetTodayEventsWithTokenAsync(
+                token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<CalendarEventDto>());
 
         _weatherMock
             .Setup(s => s.GetWeatherAsync(
-                It.IsAny<double>(), It.IsAny<double>(), _testUser.Timezone, default))
+                It.IsAny<double>(), It.IsAny<double>(), _testUser.Timezone,
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(_weather);
 
         _claudeMock
@@ -336,7 +318,8 @@ public class BriefingJobTests
                 It.IsAny<IEnumerable<TrelloTaskDto>?>(),
                 It.IsAny<WeatherDto>(),
                 _testUser.DisplayName,
-                default))
+                It.IsAny<DateOnly>(),
+                It.IsAny<CancellationToken>()))
             .ReturnsAsync(_aiSummary);
 
         _emailMock
@@ -344,7 +327,7 @@ public class BriefingJobTests
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<BriefingResultDto>(),
-                default))
+                It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
     }
 }

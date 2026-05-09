@@ -113,4 +113,27 @@ public class JwtService : IJwtService
             return null;
         }
     }
+
+    public string GenerateServiceToken()
+    {
+        var secret = _configuration["Jwt:Secret"]!;
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+        new Claim(JwtRegisteredClaimNames.Sub, "orizon-worker"),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+        new Claim("role", "service"),
+    };
+
+        var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
+            claims: claims,
+            expires: DateTime.UtcNow.AddMinutes(5),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
 }
