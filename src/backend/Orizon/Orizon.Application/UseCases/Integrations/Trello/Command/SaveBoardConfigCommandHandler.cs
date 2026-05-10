@@ -14,23 +14,30 @@ public class SaveBoardConfigCommandHandler : IRequestHandler<SaveBoardConfigComm
     }
 
     public async Task Handle(
-        SaveBoardConfigCommand request,
-        CancellationToken cancellationToken)
+    SaveBoardConfigCommand request,
+    CancellationToken cancellationToken)
     {
-        var existing = await _repository.GetByUserAndBoardAsync(
-            request.UserId,
-            request.BoardId,
-            cancellationToken);
-
-        if (existing != null)
+        // desativa todos os boards anteriores do usuário
+        var existing = await _repository.GetByUserAsync(request.UserId, cancellationToken);
+        foreach (var config in existing.Where(c => c.BoardId != request.BoardId))
         {
-            existing.TodayListId = request.TodayListId;
-            existing.TodayListName = request.TodayListName;
-            existing.InProgressListId = request.InProgressListId;
-            existing.InProgressListName = request.InProgressListName;
-            existing.BoardColor = request.BoardColor;
-            existing.UpdatedAt = DateTime.UtcNow;
-            await _repository.UpdateAsync(existing, cancellationToken);
+            config.IsActive = false;
+            await _repository.UpdateAsync(config, cancellationToken);
+        }
+
+        // upsert no board selecionado
+        var board = existing.FirstOrDefault(c => c.BoardId == request.BoardId);
+
+        if (board != null)
+        {
+            board.IsActive = true;
+            board.TodayListId = request.TodayListId;
+            board.TodayListName = request.TodayListName;
+            board.InProgressListId = request.InProgressListId;
+            board.InProgressListName = request.InProgressListName;
+            board.BoardColor = request.BoardColor;
+            board.UpdatedAt = DateTime.UtcNow;
+            await _repository.UpdateAsync(board, cancellationToken);
         }
         else
         {
