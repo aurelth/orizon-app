@@ -16,7 +16,12 @@
   <div class="integration-card">
     <div class="integration-card__header">
       <div class="integration-icon integration-icon--google">
-        <i class="pi pi-google"></i>
+        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
       </div>
       <div class="integration-info">
         <h3>Google</h3>
@@ -60,7 +65,9 @@
   <div class="integration-card">
     <div class="integration-card__header">
       <div class="integration-icon integration-icon--trello">
-        <i class="pi pi-th-large"></i>
+        <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21 0H3C1.343 0 0 1.343 0 3v18c0 1.657 1.343 3 3 3h18c1.657 0 3-1.343 3-3V3c0-1.657-1.343-3-3-3zM10.44 18.18c0 .795-.645 1.44-1.44 1.44H4.56c-.795 0-1.44-.645-1.44-1.44V4.56c0-.795.645-1.44 1.44-1.44H9c.795 0 1.44.645 1.44 1.44v13.62zm10.44-7.2c0 .795-.645 1.44-1.44 1.44H15c-.795 0-1.44-.645-1.44-1.44V4.56c0-.795.645-1.44 1.44-1.44h4.44c.795 0 1.44.645 1.44 1.44v6.42z" fill="#0052CC"/>
+        </svg>
       </div>
       <div class="integration-info">
         <h3>Trello</h3>
@@ -120,10 +127,15 @@
         <p class="board-selector__label">Selecione o board principal:</p>
         <div class="board-list">
           @for (board of trelloBoards(); track board.boardId) {
-          <button class="board-item" [class.board-item--selected]="selectedBoard?.boardId === board.boardId"
+          <button class="board-item"
+            [class.board-item--selected]="selectedBoard?.boardId === board.boardId"
+            [class.board-item--active]="activeBoardId() === board.boardId && selectedBoard?.boardId !== board.boardId"
             (click)="onBoardSelect(board)">
             <i class="pi pi-th-large"></i>
             <span>{{ board.name }}</span>
+            @if (activeBoardId() === board.boardId && selectedBoard?.boardId !== board.boardId) {
+            <i class="pi pi-bookmark-fill board-item__active" title="Board atual"></i>
+            }
             @if (selectedBoard?.boardId === board.boardId) {
             <i class="pi pi-check board-item__check"></i>
             }

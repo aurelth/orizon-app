@@ -15,11 +15,16 @@ public class TrelloController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IUserRepository _userRepository;
+    private readonly ITrelloBoardConfigRepository _boardConfigRepository;
 
-    public TrelloController(IMediator mediator, IUserRepository userRepository)
+    public TrelloController(
+        IMediator mediator,
+        IUserRepository userRepository,
+        ITrelloBoardConfigRepository boardConfigRepository)
     {
         _mediator = mediator;
         _userRepository = userRepository;
+        _boardConfigRepository = boardConfigRepository;
     }
 
     [HttpGet("status")]
@@ -27,9 +32,32 @@ public class TrelloController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
         var user = await _userRepository.GetByIdAsync(Guid.Parse(userId), ct);
-
         var connected = user?.TrelloEnabled == true && user.TrelloApiKey != null;
         return Ok(new { connected });
+    }
+
+    [HttpGet("config")]
+    public async Task<IActionResult> GetConfig(CancellationToken ct = default)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+        if (!Guid.TryParse(userId, out var userGuid))
+            return Unauthorized();
+
+        var configs = await _boardConfigRepository.GetByUserAsync(userGuid, ct);
+        var active = configs.FirstOrDefault(c => c.IsActive);
+
+        if (active is null)
+            return Ok(new { boardId = (string?)null });
+
+        return Ok(new
+        {
+            boardId = active.BoardId,
+            boardName = active.BoardName,
+            todayListId = active.TodayListId,
+            todayListName = active.TodayListName,
+            inProgressListId = active.InProgressListId,
+            inProgressListName = active.InProgressListName,
+        });
     }
 
     [HttpPost("connect")]
@@ -57,7 +85,6 @@ public class TrelloController : ControllerBase
         if (!Guid.TryParse(userIdStr, out var userId))
             return Unauthorized();
 
-        // se não foram passados apiKey e token, busca do banco
         if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(token))
         {
             var result = await _mediator.Send(new GetUserBoardsQuery(userId), ct);

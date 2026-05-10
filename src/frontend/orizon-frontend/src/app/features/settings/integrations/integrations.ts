@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -26,6 +26,7 @@ export class IntegrationsComponent implements OnInit {
   readonly isLoadingGoogle = this.store.isLoadingGoogle;
   readonly isLoadingTrello = this.store.isLoadingTrello;
   readonly error = this.store.error;
+  readonly activeBoardId = this.store.activeBoardId;
 
   trelloForm!: FormGroup;
   showTrelloForm = false;
@@ -43,7 +44,13 @@ export class IntegrationsComponent implements OnInit {
     });
 
     this.googleService.getStatus().subscribe();
-    this.trelloService.getStatus().subscribe();
+    this.trelloService.getStatus().subscribe({
+      next: () => {
+        if (this.trelloConnected()) {
+          this.trelloService.getConfig().subscribe();
+        }
+      }
+    });
 
     const googleParam = this.route.snapshot.queryParamMap.get('google');
     if (googleParam === 'success') {

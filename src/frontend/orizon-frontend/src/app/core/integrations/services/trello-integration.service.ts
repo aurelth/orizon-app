@@ -26,6 +26,15 @@ export interface SaveBoardConfigRequest {
   inProgressListName?: string;
 }
 
+export interface TrelloBoardConfigResponse {
+  boardId: string | null;
+  boardName?: string;
+  todayListId?: string;
+  todayListName?: string;
+  inProgressListId?: string;
+  inProgressListName?: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TrelloIntegrationService {
   private readonly api = inject(ApiService);
@@ -35,6 +44,19 @@ export class TrelloIntegrationService {
     return this.api.get<{ connected: boolean }>('/trello/status').pipe(
       tap({
         next: ({ connected }) => this.store.setTrelloConnected(connected),
+        error: () => { },
+      })
+    );
+  }
+
+  getConfig(): Observable<TrelloBoardConfigResponse> {
+    return this.api.get<TrelloBoardConfigResponse>('/trello/config').pipe(
+      tap({
+        next: (config) => {
+          if (config.boardId) {
+            this.store.setActiveBoardId(config.boardId);
+          }
+        },
         error: () => { },
       })
     );
@@ -76,6 +98,7 @@ export class TrelloIntegrationService {
             listIds: [request.todayListId, request.inProgressListId]
               .filter(Boolean) as string[],
           });
+          this.store.setActiveBoardId(request.boardId);
         },
         error: () => this.store.setError('Falha ao salvar configuração do board.'),
       })
