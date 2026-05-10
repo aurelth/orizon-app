@@ -31,6 +31,15 @@ export class TrelloIntegrationService {
   private readonly api = inject(ApiService);
   private readonly store = inject(IntegrationsStore);
 
+  getStatus(): Observable<{ connected: boolean }> {
+    return this.api.get<{ connected: boolean }>('/trello/status').pipe(
+      tap({
+        next: ({ connected }) => this.store.setTrelloConnected(connected),
+        error: () => { },
+      })
+    );
+  }
+
   connect(apiKey: string, token: string): Observable<void> {
     this.store.setLoadingTrello(true);
     return this.api.post<void>('/trello/connect', { apiKey, token }).pipe(
@@ -44,8 +53,12 @@ export class TrelloIntegrationService {
     );
   }
 
-  getBoards(apiKey: string, token: string): Observable<TrelloBoard[]> {
-    return this.api.get<TrelloBoard[]>(`/trello/boards?apiKey=${apiKey}&token=${token}`).pipe(
+  getBoards(apiKey?: string, token?: string): Observable<TrelloBoard[]> {
+    const url = apiKey && token
+      ? `/trello/boards?apiKey=${apiKey}&token=${token}`
+      : `/trello/boards`;
+
+    return this.api.get<TrelloBoard[]>(url).pipe(
       tap({
         next: (boards) => this.store.setTrelloBoards(boards),
         error: () => this.store.setError('Falha ao carregar boards do Trello.'),

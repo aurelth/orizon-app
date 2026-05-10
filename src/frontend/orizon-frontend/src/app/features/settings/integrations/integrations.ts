@@ -29,10 +29,12 @@ export class IntegrationsComponent implements OnInit {
 
   trelloForm!: FormGroup;
   showTrelloForm = false;
+  showBoardSelector = false;
   selectedBoard: TrelloBoard | null = null;
   selectedTodayList: TrelloList | null = null;
   selectedInProgressList: TrelloList | null = null;
   isSavingBoard = signal(false);
+  isSavedBoard = signal(false);
 
   ngOnInit(): void {
     this.trelloForm = this.fb.group({
@@ -41,6 +43,7 @@ export class IntegrationsComponent implements OnInit {
     });
 
     this.googleService.getStatus().subscribe();
+    this.trelloService.getStatus().subscribe();
 
     const googleParam = this.route.snapshot.queryParamMap.get('google');
     if (googleParam === 'success') {
@@ -59,6 +62,18 @@ export class IntegrationsComponent implements OnInit {
     this.store.clearError();
   }
 
+  toggleBoardSelector(): void {
+    this.showBoardSelector = !this.showBoardSelector;
+    if (this.showBoardSelector && this.trelloBoards().length === 0) {
+      this.trelloService.getBoards().subscribe();
+    }
+    if (!this.showBoardSelector) {
+      this.selectedBoard = null;
+      this.selectedTodayList = null;
+      this.selectedInProgressList = null;
+    }
+  }
+
   isFieldInvalid(form: FormGroup, field: string): boolean {
     const control = form.get(field);
     return !!(control?.invalid && control?.touched);
@@ -74,6 +89,7 @@ export class IntegrationsComponent implements OnInit {
     this.trelloService.connect(apiKey, token).subscribe({
       next: () => {
         this.showTrelloForm = false;
+        this.showBoardSelector = true;
         this.trelloService.getBoards(apiKey, token).subscribe();
       },
     });
@@ -106,7 +122,12 @@ export class IntegrationsComponent implements OnInit {
       inProgressListId: this.selectedInProgressList?.listId,
       inProgressListName: this.selectedInProgressList?.name,
     }).subscribe({
-      next: () => this.isSavingBoard.set(false),
+      next: () => {
+        this.isSavingBoard.set(false);
+        this.isSavedBoard.set(true);
+        this.showBoardSelector = false;
+        setTimeout(() => this.isSavedBoard.set(false), 3000);
+      },
       error: () => this.isSavingBoard.set(false),
     });
   }

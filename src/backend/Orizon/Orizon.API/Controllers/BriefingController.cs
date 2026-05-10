@@ -25,7 +25,9 @@ public class BriefingController : ControllerBase
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
         var userName = User.FindFirstValue(ClaimTypes.Name) ?? "";
-        var date = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        var date = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone));
 
         var result = await _mediator.Send(
             new GetBriefingByDateQuery(userId, userName, date), ct);

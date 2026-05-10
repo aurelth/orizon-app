@@ -38,7 +38,7 @@
     </div>
     <div class="integration-card__footer">
       @if (googleConnected()) {
-      <button class="btn btn--ghost btn--sm">
+      <button class="btn btn--ghost btn--sm" (click)="connectGoogle()">
         <i class="pi pi-refresh"></i>
         <span>Reconectar</span>
       </button>
@@ -115,7 +115,7 @@
       </form>
       }
 
-      @if (trelloConnected() && trelloBoards().length > 0) {
+      @if (trelloConnected() && showBoardSelector) {
       <div class="board-selector">
         <p class="board-selector__label">Selecione o board principal:</p>
         <div class="board-list">
@@ -136,8 +136,7 @@
           <p class="board-selector__label">Lista "Hoje" (tarefas do dia):</p>
           <div class="board-list">
             @for (list of selectedBoard.lists; track list.listId) {
-            <button class="board-item"
-              [class.board-item--selected]="selectedTodayList?.listId === list.listId"
+            <button class="board-item" [class.board-item--selected]="selectedTodayList?.listId === list.listId"
               (click)="onTodayListSelect(list)">
               <i class="pi pi-sun"></i>
               <span>{{ list.name }}</span>
@@ -154,8 +153,7 @@
           <p class="board-selector__label">Lista "Em progresso":</p>
           <div class="board-list">
             @for (list of selectedBoard.lists; track list.listId) {
-            <button class="board-item"
-              [class.board-item--selected]="selectedInProgressList?.listId === list.listId"
+            <button class="board-item" [class.board-item--selected]="selectedInProgressList?.listId === list.listId"
               (click)="onInProgressListSelect(list)">
               <i class="pi pi-spin pi-spinner" style="animation: none"></i>
               <span>{{ list.name }}</span>
@@ -175,6 +173,9 @@
           @if (isSavingBoard()) {
           <i class="pi pi-spinner pi-spin"></i>
           <span>Salvando...</span>
+          } @else if (isSavedBoard()) {
+          <i class="pi pi-check"></i>
+          <span>Configuração salva!</span>
           } @else {
           <i class="pi pi-save"></i>
           <span>Salvar configuração</span>
@@ -190,6 +191,11 @@
       <button class="btn btn--primary btn--sm" (click)="toggleTrelloForm()">
         <i class="pi pi-link"></i>
         <span>{{ showTrelloForm ? 'Cancelar' : 'Conectar Trello' }}</span>
+      </button>
+      } @else {
+      <button class="btn btn--ghost btn--sm" (click)="toggleBoardSelector()">
+        <i class="pi pi-cog"></i>
+        <span>{{ showBoardSelector ? 'Fechar' : 'Gerenciar boards' }}</span>
       </button>
       }
     </div>

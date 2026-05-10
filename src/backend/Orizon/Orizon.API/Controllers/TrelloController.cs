@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.UseCases.Integrations.Trello.Command;
 using Orizon.Application.UseCases.Integrations.Trello.Query;
 using System.Security.Claims;
@@ -13,10 +14,22 @@ namespace Orizon.API.Controllers;
 public class TrelloController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IUserRepository _userRepository;
 
-    public TrelloController(IMediator mediator)
+    public TrelloController(IMediator mediator, IUserRepository userRepository)
     {
         _mediator = mediator;
+        _userRepository = userRepository;
+    }
+
+    [HttpGet("status")]
+    public async Task<IActionResult> GetStatus(CancellationToken ct = default)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+        var user = await _userRepository.GetByIdAsync(Guid.Parse(userId), ct);
+
+        var connected = user?.TrelloEnabled == true && user.TrelloApiKey != null;
+        return Ok(new { connected });
     }
 
     [HttpPost("connect")]
@@ -40,14 +53,19 @@ public class TrelloController : ControllerBase
         [FromQuery] string? token,
         CancellationToken ct = default)
     {
-        // usa credenciais da query ou busca do banco via comando
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        // se não foram passados apiKey e token, busca do banco
         if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(token))
-            return BadRequest(new { message = "apiKey e token são obrigatórios." });
+        {
+            var result = await _mediator.Send(new GetUserBoardsQuery(userId), ct);
+            return Ok(result);
+        }
 
-        var result = await _mediator.Send(
-            new GetBoardsQuery(apiKey, token), ct);
-
-        return Ok(result);
+        var resultWithParams = await _mediator.Send(new GetBoardsQuery(apiKey, token), ct);
+        return Ok(resultWithParams);
     }
 
     [HttpPost("boards/config")]

@@ -63,10 +63,18 @@ public class CalendarIntegrationService : ICalendarService
             ApplicationName = "Orizon",
         });
 
-        var today = DateTime.UtcNow.Date;
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        var nowBrasilia = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone);
+        var todayStart = new DateTime(nowBrasilia.Year, nowBrasilia.Month, nowBrasilia.Day,
+            0, 0, 0, DateTimeKind.Unspecified);
+        var todayEnd = todayStart.AddDays(1);
+
+        var todayStartUtc = TimeZoneInfo.ConvertTimeToUtc(todayStart, brasiliaZone);
+        var todayEndUtc = TimeZoneInfo.ConvertTimeToUtc(todayEnd, brasiliaZone);
+
         var request = service.Events.List("primary");
-        request.TimeMinDateTimeOffset = today;
-        request.TimeMaxDateTimeOffset = today.AddDays(1);
+        request.TimeMinDateTimeOffset = todayStartUtc;
+        request.TimeMaxDateTimeOffset = todayEndUtc;
         request.SingleEvents = true;
         request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
 
