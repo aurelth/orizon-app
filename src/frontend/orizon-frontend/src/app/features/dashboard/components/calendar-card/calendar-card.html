@@ -17,7 +17,7 @@
       </div>
     } @else {
       <div class="event-list">
-        @for (event of events(); track event.title) {
+        @for (event of visibleEvents(); track event.title) {
           <div class="event-item" [class.event-item--rain]="event.conflictsWithRain">
             <div class="event-time">
               <span>{{ event.startTime | date:'HH:mm' }}</span>
@@ -46,6 +46,18 @@
           </div>
         }
       </div>
+
+      @if (hasMore()) {
+        <button class="btn-toggle" (click)="toggleShowAll()">
+          @if (showAll()) {
+            <i class="pi pi-chevron-up"></i>
+            <span>Ver menos</span>
+          } @else {
+            <i class="pi pi-chevron-down"></i>
+            <span>Ver mais</span>
+          }
+        </button>
+      }
     }
   </div>
 </div>
