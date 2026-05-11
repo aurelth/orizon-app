@@ -27,8 +27,8 @@ export interface SaveBoardConfigRequest {
 }
 
 export interface TrelloBoardConfigResponse {
-  boardId: string | null;
-  boardName?: string;
+  boardId: string;
+  boardName: string;
   todayListId?: string;
   todayListName?: string;
   inProgressListId?: string;
@@ -49,13 +49,11 @@ export class TrelloIntegrationService {
     );
   }
 
-  getConfig(): Observable<TrelloBoardConfigResponse> {
-    return this.api.get<TrelloBoardConfigResponse>('/trello/config').pipe(
+  getConfig(): Observable<TrelloBoardConfigResponse[]> {
+    return this.api.get<TrelloBoardConfigResponse[]>('/trello/config').pipe(
       tap({
-        next: (config) => {
-          if (config.boardId) {
-            this.store.setActiveBoardId(config.boardId);
-          }
+        next: (configs) => {
+          this.store.setActiveBoardIds(configs.map(c => c.boardId));
         },
         error: () => { },
       })
@@ -91,16 +89,17 @@ export class TrelloIntegrationService {
   saveBoardConfig(request: SaveBoardConfigRequest): Observable<void> {
     return this.api.post<void>('/trello/boards/config', request).pipe(
       tap({
-        next: () => {
-          this.store.setTrelloBoardConfig({
-            boardId: request.boardId,
-            boardName: request.boardName,
-            listIds: [request.todayListId, request.inProgressListId]
-              .filter(Boolean) as string[],
-          });
-          this.store.setActiveBoardId(request.boardId);
-        },
+        next: () => this.store.addActiveBoardId(request.boardId),
         error: () => this.store.setError('Falha ao salvar configuração do board.'),
+      })
+    );
+  }
+
+  removeBoardConfig(boardId: string): Observable<void> {
+    return this.api.delete<void>(`/trello/boards/config/${boardId}`).pipe(
+      tap({
+        next: () => this.store.removeActiveBoardId(boardId),
+        error: () => this.store.setError('Falha ao remover configuração do board.'),
       })
     );
   }

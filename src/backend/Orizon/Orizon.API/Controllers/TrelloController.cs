@@ -44,20 +44,17 @@ public class TrelloController : ControllerBase
             return Unauthorized();
 
         var configs = await _boardConfigRepository.GetByUserAsync(userGuid, ct);
-        var active = configs.FirstOrDefault(c => c.IsActive);
-
-        if (active is null)
-            return Ok(new { boardId = (string?)null });
-
-        return Ok(new
+        var activeBoards = configs.Where(c => c.IsActive).Select(c => new
         {
-            boardId = active.BoardId,
-            boardName = active.BoardName,
-            todayListId = active.TodayListId,
-            todayListName = active.TodayListName,
-            inProgressListId = active.InProgressListId,
-            inProgressListName = active.InProgressListName,
+            boardId = c.BoardId,
+            boardName = c.BoardName,
+            todayListId = c.TodayListId,
+            todayListName = c.TodayListName,
+            inProgressListId = c.InProgressListId,
+            inProgressListName = c.InProgressListName,
         });
+
+        return Ok(activeBoards);
     }
 
     [HttpPost("connect")]
@@ -106,6 +103,20 @@ public class TrelloController : ControllerBase
 
         var cmd = command with { UserId = userId };
         await _mediator.Send(cmd, ct);
+
+        return Ok();
+    }
+
+    [HttpDelete("boards/config/{boardId}")]
+    public async Task<IActionResult> RemoveBoardConfig(
+        [FromRoute] string boardId,
+        CancellationToken ct = default)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        await _mediator.Send(new RemoveBoardConfigCommand(userId, boardId), ct);
 
         return Ok();
     }

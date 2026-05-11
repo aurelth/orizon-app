@@ -24,7 +24,7 @@ interface IntegrationsState {
   trelloConnected: boolean;
   trelloBoards: TrelloBoard[];
   trelloBoardConfig: TrelloBoardConfig | null;
-  activeBoardId: string | null;
+  activeBoardIds: string[];
   isLoadingGoogle: boolean;
   isLoadingTrello: boolean;
   error: string | null;
@@ -35,7 +35,7 @@ const initialState: IntegrationsState = {
   trelloConnected: false,
   trelloBoards: [],
   trelloBoardConfig: null,
-  activeBoardId: null,
+  activeBoardIds: [],
   isLoadingGoogle: false,
   isLoadingTrello: false,
   error: null,
@@ -57,8 +57,18 @@ export const IntegrationsStore = signalStore(
     setTrelloBoardConfig(config: TrelloBoardConfig): void {
       patchState(store, { trelloBoardConfig: config });
     },
-    setActiveBoardId(boardId: string): void {
-      patchState(store, { activeBoardId: boardId });
+    setActiveBoardIds(boardIds: string[]): void {
+      patchState(store, { activeBoardIds: boardIds });
+    },
+    addActiveBoardId(boardId: string): void {
+      patchState(store, {
+        activeBoardIds: [...store.activeBoardIds(), boardId]
+      });
+    },
+    removeActiveBoardId(boardId: string): void {
+      patchState(store, {
+        activeBoardIds: store.activeBoardIds().filter(id => id !== boardId)
+      });
     },
     setLoadingGoogle(loading: boolean): void {
       patchState(store, { isLoadingGoogle: loading });

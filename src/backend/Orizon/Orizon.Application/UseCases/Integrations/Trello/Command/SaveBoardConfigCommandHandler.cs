@@ -14,19 +14,11 @@ public class SaveBoardConfigCommandHandler : IRequestHandler<SaveBoardConfigComm
     }
 
     public async Task Handle(
-    SaveBoardConfigCommand request,
-    CancellationToken cancellationToken)
+        SaveBoardConfigCommand request,
+        CancellationToken cancellationToken)
     {
-        // desativa todos os boards anteriores do usuário
-        var existing = await _repository.GetByUserAsync(request.UserId, cancellationToken);
-        foreach (var config in existing.Where(c => c.BoardId != request.BoardId))
-        {
-            config.IsActive = false;
-            await _repository.UpdateAsync(config, cancellationToken);
-        }
-
-        // upsert no board selecionado
-        var board = existing.FirstOrDefault(c => c.BoardId == request.BoardId);
+        var board = await _repository.GetByUserAndBoardAsync(
+            request.UserId, request.BoardId, cancellationToken);
 
         if (board != null)
         {

@@ -123,78 +123,106 @@
       }
 
       @if (trelloConnected() && showBoardSelector) {
-      <div class="board-selector">
-        <p class="board-selector__label">Selecione o board principal:</p>
-        <div class="board-list">
-          @for (board of trelloBoards(); track board.boardId) {
-          <button class="board-item"
-            [class.board-item--selected]="selectedBoard?.boardId === board.boardId"
-            [class.board-item--active]="activeBoardId() === board.boardId && selectedBoard?.boardId !== board.boardId"
-            (click)="onBoardSelect(board)">
-            <i class="pi pi-th-large"></i>
-            <span>{{ board.name }}</span>
-            @if (activeBoardId() === board.boardId && selectedBoard?.boardId !== board.boardId) {
-            <i class="pi pi-bookmark-fill board-item__active" title="Board atual"></i>
-            }
-            @if (selectedBoard?.boardId === board.boardId) {
-            <i class="pi pi-check board-item__check"></i>
-            }
-          </button>
-          }
-        </div>
 
-        @if (selectedBoard) {
-        <div class="list-selector">
-          <p class="board-selector__label">Lista "Hoje" (tarefas do dia):</p>
-          <div class="board-list">
-            @for (list of selectedBoard.lists; track list.listId) {
-            <button class="board-item" [class.board-item--selected]="selectedTodayList?.listId === list.listId"
-              (click)="onTodayListSelect(list)">
-              <i class="pi pi-sun"></i>
-              <span>{{ list.name }}</span>
-              @if (list.detectedType === 'today') {
-              <span class="list-hint">sugerido</span>
-              }
-              @if (selectedTodayList?.listId === list.listId) {
-              <i class="pi pi-check board-item__check"></i>
+        <!-- Modal de confirmação de remoção -->
+        @if (confirmRemoveBoardId) {
+        <div class="confirm-modal">
+          <p>Tem certeza? As tarefas deste board serão removidas do briefing.</p>
+          <div class="confirm-modal__actions">
+            <button class="btn btn--ghost btn--sm" (click)="onCancelRemove()">Cancelar</button>
+            <button class="btn btn--danger btn--sm" [disabled]="isRemovingBoard()" (click)="onConfirmRemove()">
+              @if (isRemovingBoard()) {
+              <i class="pi pi-spinner pi-spin"></i>
+              <span>Removendo...</span>
+              } @else {
+              <span>Sim, remover</span>
               }
             </button>
-            }
-          </div>
-
-          <p class="board-selector__label">Lista "Em progresso":</p>
-          <div class="board-list">
-            @for (list of selectedBoard.lists; track list.listId) {
-            <button class="board-item" [class.board-item--selected]="selectedInProgressList?.listId === list.listId"
-              (click)="onInProgressListSelect(list)">
-              <i class="pi pi-spin pi-spinner" style="animation: none"></i>
-              <span>{{ list.name }}</span>
-              @if (list.detectedType === 'inprogress') {
-              <span class="list-hint">sugerido</span>
-              }
-              @if (selectedInProgressList?.listId === list.listId) {
-              <i class="pi pi-check board-item__check"></i>
-              }
-            </button>
-            }
           </div>
         </div>
-
-        <button class="btn btn--primary btn--sm" (click)="onSaveBoardConfig()"
-          [disabled]="isSavingBoard() || !selectedTodayList || !selectedInProgressList">
-          @if (isSavingBoard()) {
-          <i class="pi pi-spinner pi-spin"></i>
-          <span>Salvando...</span>
-          } @else if (isSavedBoard()) {
-          <i class="pi pi-check"></i>
-          <span>Configuração salva!</span>
-          } @else {
-          <i class="pi pi-save"></i>
-          <span>Salvar configuração</span>
-          }
-        </button>
         }
-      </div>
+
+        <div class="board-selector">
+          <p class="board-selector__label">Boards disponíveis:</p>
+          <div class="board-list">
+            @for (board of trelloBoards(); track board.boardId) {
+            <div class="board-entry" [class.board-entry--active]="isBoardActive(board.boardId)"
+              [class.board-entry--expanded]="expandedBoard?.boardId === board.boardId">
+
+              <div class="board-entry__header">
+                <i class="pi pi-th-large board-entry__icon"></i>
+                <span class="board-entry__name">{{ board.name }}</span>
+
+                @if (isBoardActive(board.boardId)) {
+                <button class="btn-action btn-action--remove" (click)="onRequestRemove(board.boardId)">
+                  <i class="pi pi-trash"></i>
+                  Remover
+                </button>
+                } @else {
+                <button class="btn-action btn-action--add" (click)="onBoardExpand(board)">
+                  <i class="pi pi-plus"></i>
+                  Adicionar
+                </button>
+                }
+              </div>
+
+              @if (expandedBoard?.boardId === board.boardId) {
+              <div class="board-entry__lists">
+                <p class="board-selector__label">Lista "Hoje":</p>
+                <div class="board-list">
+                  @for (list of board.lists; track list.listId) {
+                  <button class="board-item" [class.board-item--selected]="selectedTodayList?.listId === list.listId"
+                    (click)="onTodayListSelect(list)">
+                    <i class="pi pi-sun"></i>
+                    <span>{{ list.name }}</span>
+                    @if (list.detectedType === 'today') {
+                    <span class="list-hint">sugerido</span>
+                    }
+                    @if (selectedTodayList?.listId === list.listId) {
+                    <i class="pi pi-check board-item__check"></i>
+                    }
+                  </button>
+                  }
+                </div>
+
+                <p class="board-selector__label">Lista "Em progresso":</p>
+                <div class="board-list">
+                  @for (list of board.lists; track list.listId) {
+                  <button class="board-item"
+                    [class.board-item--selected]="selectedInProgressList?.listId === list.listId"
+                    (click)="onInProgressListSelect(list)">
+                    <i class="pi pi-spin pi-spinner" style="animation: none"></i>
+                    <span>{{ list.name }}</span>
+                    @if (list.detectedType === 'inprogress') {
+                    <span class="list-hint">sugerido</span>
+                    }
+                    @if (selectedInProgressList?.listId === list.listId) {
+                    <i class="pi pi-check board-item__check"></i>
+                    }
+                  </button>
+                  }
+                </div>
+
+                <div class="board-entry__confirm">
+                  <button class="btn btn--ghost btn--sm" (click)="onBoardExpand(board)">Cancelar</button>
+                  <button class="btn btn--primary btn--sm"
+                    [disabled]="isSavingBoard() || !selectedTodayList || !selectedInProgressList"
+                    (click)="onConfirmAdd()">
+                    @if (isSavingBoard()) {
+                    <i class="pi pi-spinner pi-spin"></i>
+                    <span>Salvando...</span>
+                    } @else {
+                    <i class="pi pi-check"></i>
+                    <span>Confirmar</span>
+                    }
+                  </button>
+                </div>
+              </div>
+              }
+            </div>
+            }
+          </div>
+        </div>
       }
     </div>
 
