@@ -2,19 +2,16 @@
 using Orizon.Application.Interfaces.Repositories;
 using Orizon.Domain.Entities;
 using Orizon.Infrastructure.Data;
-using Orizon.Infrastructure.Mappers;
 
 namespace Orizon.Infrastructure.Repositories;
 
 public class UserRepository : IUserRepository
 {
     private readonly OrizonDbContext _context;
-    private readonly UserMapper _mapper;
 
     public UserRepository(OrizonDbContext context)
     {
         _context = context;
-        _mapper = new UserMapper();
     }
 
     public async Task<IEnumerable<AppUser>> GetActiveUsersAsync(
@@ -26,8 +23,7 @@ public class UserRepository : IUserRepository
                 u.GoogleRefreshToken != null)
             .ToListAsync(ct);
 
-        // Mapeamento limpo com Mapperly
-        return identityUsers.Select(_mapper.ToAppUser);
+        return identityUsers.Select(MapToDomain);
     }
 
     public async Task<AppUser?> GetByIdAsync(
@@ -37,9 +33,7 @@ public class UserRepository : IUserRepository
         var identityUser = await _context.Users
             .FirstOrDefaultAsync(u => u.Id == id.ToString(), ct);
 
-        return identityUser is null
-            ? null
-            : _mapper.ToAppUser(identityUser);
+        return identityUser is null ? null : MapToDomain(identityUser);
     }
 
     public async Task UpdateAsync(
@@ -51,15 +45,53 @@ public class UserRepository : IUserRepository
 
         if (identityUser is null) return;
 
-        // Mapperly mapeia os campos automaticamente
-        var updated = _mapper.ToIdentityUser(user);
-        updated.Id = identityUser.Id;
-        updated.PasswordHash = identityUser.PasswordHash;
-        updated.SecurityStamp = identityUser.SecurityStamp;
+        identityUser.DisplayName = user.DisplayName;
+        identityUser.ProfilePictureUrl = user.ProfilePictureUrl;
+        identityUser.LocationName = user.LocationName;
+        identityUser.Latitude = user.Latitude;
+        identityUser.Longitude = user.Longitude;
+        identityUser.Timezone = user.Timezone;
+        identityUser.IsTraveling = user.IsTraveling;
+        identityUser.TravelLocationName = user.TravelLocationName;
+        identityUser.TravelLatitude = user.TravelLatitude;
+        identityUser.TravelLongitude = user.TravelLongitude;
+        identityUser.ThemePreference = user.ThemePreference;
+        identityUser.TrelloEnabled = user.TrelloEnabled;
+        identityUser.TrelloApiKey = user.TrelloApiKey;
+        identityUser.TrelloToken = user.TrelloToken;
+        identityUser.GoogleAccessToken = user.GoogleAccessToken;
+        identityUser.GoogleRefreshToken = user.GoogleRefreshToken;
+        identityUser.GoogleTokenExpiresAt = user.GoogleTokenExpiresAt;
+        identityUser.GoogleConnectedAt = user.GoogleConnectedAt;
 
-        _context.Entry(identityUser).CurrentValues
-            .SetValues(updated);
-
+        _context.Users.Update(identityUser);
         await _context.SaveChangesAsync(ct);
+    }
+
+    private static AppUser MapToDomain(Identity.AppIdentityUser identityUser)
+    {
+        return new AppUser
+        {
+            Id = Guid.Parse(identityUser.Id),
+            Email = identityUser.Email ?? string.Empty,
+            DisplayName = identityUser.DisplayName,
+            ProfilePictureUrl = identityUser.ProfilePictureUrl,
+            LocationName = identityUser.LocationName,
+            Latitude = identityUser.Latitude,
+            Longitude = identityUser.Longitude,
+            Timezone = identityUser.Timezone,
+            IsTraveling = identityUser.IsTraveling,
+            TravelLocationName = identityUser.TravelLocationName,
+            TravelLatitude = identityUser.TravelLatitude,
+            TravelLongitude = identityUser.TravelLongitude,
+            ThemePreference = identityUser.ThemePreference,
+            TrelloEnabled = identityUser.TrelloEnabled,
+            TrelloApiKey = identityUser.TrelloApiKey,
+            TrelloToken = identityUser.TrelloToken,
+            GoogleAccessToken = identityUser.GoogleAccessToken,
+            GoogleRefreshToken = identityUser.GoogleRefreshToken,
+            GoogleTokenExpiresAt = identityUser.GoogleTokenExpiresAt,
+            GoogleConnectedAt = identityUser.GoogleConnectedAt,
+        };
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Orizon.Application.DTOs.Trello;
+using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
 
 namespace Orizon.Infrastructure.Services.External;
@@ -8,14 +9,20 @@ namespace Orizon.Infrastructure.Services.External;
 public class TrelloService : ITrelloService
 {
     private readonly HttpClient _httpClient;
+    private readonly IUserRepository _userRepository;
+    private readonly ITrelloBoardConfigRepository _boardConfigRepository;
     private readonly ILogger<TrelloService> _logger;
     private const string BaseUrl = "https://api.trello.com/1";
 
     public TrelloService(
         HttpClient httpClient,
+        IUserRepository userRepository,
+        ITrelloBoardConfigRepository boardConfigRepository,
         ILogger<TrelloService> logger)
     {
         _httpClient = httpClient;
+        _userRepository = userRepository;
+        _boardConfigRepository = boardConfigRepository;
         _logger = logger;
     }
 
@@ -76,12 +83,44 @@ public class TrelloService : ITrelloService
         return result;
     }
 
-    public Task<IEnumerable<TrelloTaskDto>> GetActiveTasksAsync(
+    public async Task<IEnumerable<TrelloTaskDto>> GetActiveTasksAsync(
         string userId,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException(
-            "GetActiveTasksAsync requer configuração do usuário — implementado na Fase 7");
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            _logger.LogWarning("UserId inválido: {UserId}", userId);
+            return [];
+        }
+
+        var user = await _userRepository.GetByIdAsync(userGuid, cancellationToken);
+
+        if (user is null || !user.TrelloEnabled)
+        {
+            _logger.LogInformation("Usuário {UserId} não possui Trello habilitado", userId);
+            return [];
+        }
+
+        if (string.IsNullOrEmpty(user.TrelloApiKey) || string.IsNullOrEmpty(user.TrelloToken))
+        {
+            _logger.LogWarning("Usuário {UserId} não possui credenciais Trello", userId);
+            return [];
+        }
+
+        var configs = await _boardConfigRepository.GetByUserAsync(userGuid, cancellationToken);
+        if (!configs.Any())
+        {
+            _logger.LogInformation("Usuário {UserId} não possui boards configurados", userId);
+            return [];
+        }
+
+        _logger.LogInformation("Buscando tarefas Trello para usuário {UserId}", userId);
+
+        return await GetTasksFromConfiguredBoardsAsync(
+            user.TrelloApiKey,
+            user.TrelloToken,
+            configs,
+            cancellationToken);
     }
 
     public async Task<IEnumerable<TrelloTaskDto>> GetTasksFromConfiguredBoardsAsync(

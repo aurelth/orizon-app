@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, input, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { CalendarEvent } from '../../../../core/briefing/models/briefing.model';
 
@@ -11,6 +11,18 @@ import { CalendarEvent } from '../../../../core/briefing/models/briefing.model';
 })
 export class CalendarCardComponent {
   readonly events = input<CalendarEvent[]>([]);
+
+  readonly showAll = signal(false);
+
+  readonly visibleEvents = computed(() =>
+    this.showAll() ? this.events() : this.events().slice(0, 4)
+  );
+
+  readonly hasMore = computed(() => this.events().length > 4);
+
+  toggleShowAll(): void {
+    this.showAll.update(v => !v);
+  }
 
   formatDuration(start: string, end: string): string {
     const s = new Date(start);

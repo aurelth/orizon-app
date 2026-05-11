@@ -22,17 +22,26 @@
     <div class="dashboard-empty">
       <div class="empty-icon">🌅</div>
       <h2>Briefing não disponível</h2>
-      <p>Seu briefing diário ainda não foi gerado. Volte às 6h da manhã!</p>
-      <a routerLink="/settings" class="btn btn--primary">
-        Configurar integrações
-      </a>
+      <p>Seu briefing é atualizado às 0h, 4h, 8h, 12h, 16h e 20h.</p>
+      <button class="btn btn--primary" (click)="generateBriefing()" [disabled]="isGenerating()">
+        @if (isGenerating()) {
+        <i class="pi pi-spinner pi-spin"></i> Gerando...
+        } @else {
+        <i class="pi pi-refresh"></i> Gerar agora
+        }
+      </button>
     </div>
     } @else if (briefing()) {
     <div class="dashboard-greeting">
       <h1>{{ briefing()!.aiSummary.greeting }}</h1>
-      <p class="dashboard-date">
-        {{ briefing()!.date | date:'EEEE, d \'de\' MMMM':'':'pt-BR' }}
-      </p>
+      <p class="dashboard-date">{{ formatDate(briefing()!.date) }}</p>
+      <button class="btn btn--ghost" (click)="generateBriefing()" [disabled]="isGenerating()">
+        @if (isGenerating()) {
+        <i class="pi pi-spinner pi-spin"></i> Atualizando...
+        } @else {
+        <i class="pi pi-refresh"></i> Atualizar briefing
+        }
+      </button>
     </div>
 
     <div class="dashboard-grid">

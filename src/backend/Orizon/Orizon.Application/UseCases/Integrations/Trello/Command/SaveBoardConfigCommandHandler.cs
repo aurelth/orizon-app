@@ -17,20 +17,19 @@ public class SaveBoardConfigCommandHandler : IRequestHandler<SaveBoardConfigComm
         SaveBoardConfigCommand request,
         CancellationToken cancellationToken)
     {
-        var existing = await _repository.GetByUserAndBoardAsync(
-            request.UserId,
-            request.BoardId,
-            cancellationToken);
+        var board = await _repository.GetByUserAndBoardAsync(
+            request.UserId, request.BoardId, cancellationToken);
 
-        if (existing != null)
+        if (board != null)
         {
-            existing.TodayListId = request.TodayListId;
-            existing.TodayListName = request.TodayListName;
-            existing.InProgressListId = request.InProgressListId;
-            existing.InProgressListName = request.InProgressListName;
-            existing.BoardColor = request.BoardColor;
-            existing.UpdatedAt = DateTime.UtcNow;
-            await _repository.UpdateAsync(existing, cancellationToken);
+            board.IsActive = true;
+            board.TodayListId = request.TodayListId;
+            board.TodayListName = request.TodayListName;
+            board.InProgressListId = request.InProgressListId;
+            board.InProgressListName = request.InProgressListName;
+            board.BoardColor = request.BoardColor;
+            board.UpdatedAt = DateTime.UtcNow;
+            await _repository.UpdateAsync(board, cancellationToken);
         }
         else
         {

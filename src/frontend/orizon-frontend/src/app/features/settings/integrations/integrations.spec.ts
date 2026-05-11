@@ -6,24 +6,43 @@ import { IntegrationsComponent } from './integrations';
 import { IntegrationsStore } from '../../../core/integrations/store/integrations.store';
 import { GoogleIntegrationService } from '../../../core/integrations/services/google-integration.service';
 import { TrelloIntegrationService } from '../../../core/integrations/services/trello-integration.service';
+import { BriefingService } from '../../../core/briefing/services/briefing.service';
 import { of, throwError } from 'rxjs';
 
 describe('IntegrationsComponent', () => {
   let component: IntegrationsComponent;
   let googleService: jest.Mocked<Partial<GoogleIntegrationService>>;
   let trelloService: jest.Mocked<Partial<TrelloIntegrationService>>;
+  let briefingService: jest.Mocked<Partial<BriefingService>>;
   let store: InstanceType<typeof IntegrationsStore>;
+
+  const mockBoard = {
+    boardId: 'board-1',
+    name: 'Orizon',
+    color: '#fff',
+    lists: [
+      { listId: 'list-1', name: 'Today', detectedType: 'today' },
+      { listId: 'list-2', name: 'In Progress', detectedType: 'inprogress' },
+    ],
+  };
 
   beforeEach(async () => {
     googleService = {
       redirectToGoogle: jest.fn(),
-      getAuthUrl: jest.fn(),
+      getStatus: jest.fn().mockReturnValue(of({ connected: false })),
     };
 
     trelloService = {
       connect: jest.fn(),
-      getBoards: jest.fn(),
+      getBoards: jest.fn().mockReturnValue(of([])),
       saveBoardConfig: jest.fn(),
+      getStatus: jest.fn().mockReturnValue(of({ connected: false })),
+      getConfig: jest.fn().mockReturnValue(of([])),
+      removeBoardConfig: jest.fn(),
+    };
+
+    briefingService = {
+      generateBriefing: jest.fn().mockReturnValue(of({ jobId: '1', message: 'ok' })),
     };
 
     await TestBed.configureTestingModule({
@@ -34,6 +53,7 @@ describe('IntegrationsComponent', () => {
         IntegrationsStore,
         { provide: GoogleIntegrationService, useValue: googleService },
         { provide: TrelloIntegrationService, useValue: trelloService },
+        { provide: BriefingService, useValue: briefingService },
       ],
     }).compileComponents();
 
@@ -53,6 +73,14 @@ describe('IntegrationsComponent', () => {
 
   it('deve inicializar showTrelloForm como false', () => {
     expect(component.showTrelloForm).toBe(false);
+  });
+
+  it('deve chamar getStatus do Google no ngOnInit', () => {
+    expect(googleService.getStatus).toHaveBeenCalled();
+  });
+
+  it('deve chamar getStatus do Trello no ngOnInit', () => {
+    expect(trelloService.getStatus).toHaveBeenCalled();
   });
 
   it('deve alternar showTrelloForm ao chamar toggleTrelloForm', () => {
@@ -96,22 +124,86 @@ describe('IntegrationsComponent', () => {
     expect(trelloService.getBoards).toHaveBeenCalled();
   });
 
-  it('deve selecionar board corretamente', () => {
-    const board = { id: 'board-1', name: 'Orizon' };
-    component.onBoardSelect(board);
-    expect(component.selectedBoard).toEqual(board);
-    expect(component.boardForm.get('boardId')?.value).toBe('board-1');
+  it('deve retornar true em isBoardActive quando board está nos activeBoardIds', () => {
+    store.setActiveBoardIds(['board-1', 'board-2']);
+    expect(component.isBoardActive('board-1')).toBe(true);
+    expect(component.isBoardActive('board-3')).toBe(false);
   });
 
-  it('deve chamar saveBoardConfig com board selecionado', () => {
+  it('deve expandir board ao chamar onBoardExpand', () => {
+    component.onBoardExpand(mockBoard);
+    expect(component.expandedBoard).toEqual(mockBoard);
+    expect(component.selectedTodayList).toBeNull();
+    expect(component.selectedInProgressList).toBeNull();
+  });
+
+  it('deve colapsar board ao chamar onBoardExpand no mesmo board', () => {
+    component.onBoardExpand(mockBoard);
+    component.onBoardExpand(mockBoard);
+    expect(component.expandedBoard).toBeNull();
+  });
+
+  it('deve selecionar lista Today corretamente', () => {
+    component.onTodayListSelect(mockBoard.lists[0]);
+    expect(component.selectedTodayList).toEqual(mockBoard.lists[0]);
+  });
+
+  it('deve selecionar lista InProgress corretamente', () => {
+    component.onInProgressListSelect(mockBoard.lists[1]);
+    expect(component.selectedInProgressList).toEqual(mockBoard.lists[1]);
+  });
+
+  it('deve setar confirmRemoveBoardId ao chamar onRequestRemove', () => {
+    component.onRequestRemove('board-1');
+    expect(component.confirmRemoveBoardId).toBe('board-1');
+  });
+
+  it('deve limpar confirmRemoveBoardId ao chamar onCancelRemove', () => {
+    component.confirmRemoveBoardId = 'board-1';
+    component.onCancelRemove();
+    expect(component.confirmRemoveBoardId).toBeNull();
+  });
+
+  it('deve chamar removeBoardConfig e regenerar briefing ao confirmar remoção', () => {
+    (trelloService.removeBoardConfig as jest.Mock).mockReturnValue(of(void 0));
+    component.confirmRemoveBoardId = 'board-1';
+    component.onConfirmRemove();
+
+    expect(trelloService.removeBoardConfig).toHaveBeenCalledWith('board-1');
+    expect(briefingService.generateBriefing).toHaveBeenCalled();
+  });
+
+  it('deve limpar confirmRemoveBoardId após confirmar remoção', () => {
+    (trelloService.removeBoardConfig as jest.Mock).mockReturnValue(of(void 0));
+    component.confirmRemoveBoardId = 'board-1';
+    component.onConfirmRemove();
+
+    expect(component.confirmRemoveBoardId).toBeNull();
+  });
+
+  it('deve chamar saveBoardConfig e regenerar briefing ao confirmar adição', () => {
     (trelloService.saveBoardConfig as jest.Mock).mockReturnValue(of(void 0));
-    component.selectedBoard = { id: 'board-1', name: 'Orizon' };
-    component.boardForm.get('boardId')?.setValue('board-1');
-    component.onSaveBoardConfig();
+    component.expandedBoard = mockBoard;
+    component.selectedTodayList = mockBoard.lists[0];
+    component.selectedInProgressList = mockBoard.lists[1];
+    component.onConfirmAdd();
+
     expect(trelloService.saveBoardConfig).toHaveBeenCalledWith({
       boardId: 'board-1',
-      listIds: [],
+      boardName: 'Orizon',
+      boardColor: '#fff',
+      todayListId: 'list-1',
+      todayListName: 'Today',
+      inProgressListId: 'list-2',
+      inProgressListName: 'In Progress',
     });
+    expect(briefingService.generateBriefing).toHaveBeenCalled();
+  });
+
+  it('não deve chamar saveBoardConfig quando expandedBoard é null', () => {
+    component.expandedBoard = null;
+    component.onConfirmAdd();
+    expect(trelloService.saveBoardConfig).not.toHaveBeenCalled();
   });
 
   it('deve validar campo inválido corretamente', () => {

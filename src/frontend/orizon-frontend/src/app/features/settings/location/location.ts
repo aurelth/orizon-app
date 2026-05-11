@@ -35,6 +35,8 @@ export class LocationComponent implements OnInit {
     this.searchForm = this.fb.group({
       query: ['', [Validators.required, Validators.minLength(2)]],
     });
+
+    this.locationService.getLocation().subscribe();
   }
 
   detectLocation(): void {
@@ -60,5 +62,7 @@ export class LocationComponent implements OnInit {
     this.store.setLocation(result.city, { lat: result.lat, lon: result.lon });
     this.searchResults.set([]);
     this.searchForm.reset();
+    
+    this.locationService.saveLocation(result.city, result.lat, result.lon).subscribe();
   }
 }

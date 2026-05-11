@@ -31,17 +31,19 @@ public class ClaudeService : IClaudeService
         IEnumerable<TrelloTaskDto>? tasks,
         WeatherDto weather,
         string userName,
+        DateOnly today,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Gerando resumo diário com Claude para {User}", userName);
 
-        var prompt = BuildPrompt(emails, events, tasks, weather, userName);
+        var prompt = BuildPrompt(emails, events, tasks, weather, userName, today);
 
         var message = await _client.Messages.GetClaudeMessageAsync(
             new MessageParameters
             {
                 Model = "claude-sonnet-4-5",
                 MaxTokens = 1024,
+                System = [new SystemMessage("Você responde APENAS com JSON puro e válido, sem markdown, sem blocos de código, sem texto adicional antes ou depois.")],
                 Messages =
                 [
                     new Message(RoleType.User, prompt)
@@ -60,7 +62,8 @@ public class ClaudeService : IClaudeService
         IEnumerable<CalendarEventDto> events,
         IEnumerable<TrelloTaskDto>? tasks,
         WeatherDto weather,
-        string userName)
+        string userName,
+        DateOnly today)
     {
         var emailList = string.Join("\n", emails.Select(e =>
             $"- [{e.CategoryEmoji} {e.Category}] De: {e.From} | Assunto: {e.Subject}"));
@@ -75,51 +78,86 @@ public class ClaudeService : IClaudeService
                 (t.IsStuck ? $" ⚠️ parado há {t.DaysInProgress} dias" : "")))
             : "Trello não configurado";
 
+        var dayOfWeek = today.DayOfWeek switch
+        {
+            DayOfWeek.Monday => "Segunda-feira",
+            DayOfWeek.Tuesday => "Terça-feira",
+            DayOfWeek.Wednesday => "Quarta-feira",
+            DayOfWeek.Thursday => "Quinta-feira",
+            DayOfWeek.Friday => "Sexta-feira",
+            DayOfWeek.Saturday => "Sábado",
+            DayOfWeek.Sunday => "Domingo",
+            _ => ""
+        };
+
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById(
+            "E. South America Standard Time");
+        var brasiliaHour = TimeZoneInfo.ConvertTimeFromUtc(
+            DateTime.UtcNow, brasiliaZone).Hour;
+
+        var greeting = brasiliaHour switch
+        {
+            >= 5 and < 12 => "Bom dia",
+            >= 12 and < 18 => "Boa tarde",
+            _ => "Boa noite"
+        };
+
         return $"""
-            Você é o assistente do Orizon, um app de briefing matinal personalizado.
-            Gere um resumo conciso e motivador para {userName} começar o dia.
+        Você é o assistente do Orizon, um app de briefing personalizado.
+        Gere um resumo conciso e motivador para {userName}.
 
-            CLIMA:
-            {weather.WeatherEmoji} {weather.Description}
-            Temperatura: {weather.CurrentTemperature}°C (min {weather.MinTemperature}°C, max {weather.MaxTemperature}°C)
-            {(weather.WillRain ? $"⚠️ Vai chover a partir das {weather.RainStartHour}h" : "Sem chuva prevista")}
+        DATA DE HOJE: {dayOfWeek}, {today:dd/MM/yyyy}
+        PERÍODO: {greeting}
 
-            EMAILS NÃO LIDOS (últimas 24h):
-            {(emails.Any() ? emailList : "Nenhum email não lido")}
+        CLIMA:
+        {weather.WeatherEmoji} {weather.Description}
+        Temperatura: {weather.CurrentTemperature}°C (min {weather.MinTemperature}°C, max {weather.MaxTemperature}°C)
+        {(weather.WillRain ? $"⚠️ Vai chover a partir das {weather.RainStartHour}h" : "Sem chuva prevista")}
 
-            AGENDA DE HOJE:
-            {(events.Any() ? eventList : "Nenhum evento hoje")}
+        EMAILS NÃO LIDOS (últimas 24h):
+        {(emails.Any() ? emailList : "Nenhum email não lido")}
 
-            TAREFAS TRELLO:
-            {taskList}
+        AGENDA DE HOJE:
+        {(events.Any() ? eventList : "Nenhum evento hoje")}
 
-            Responda APENAS no seguinte formato JSON, sem markdown:
-            {"{"}
-              "greeting": "saudação personalizada e motivadora (máx 2 linhas)",
-              "weatherSummary": "resumo do clima em linguagem natural (máx 1 linha)",
-              "suggestions": "2-3 sugestões cruzadas baseadas nos dados acima",
-              "priorityTask": "tarefa mais importante do dia ou null",
-              "actionChips": ["chip1", "chip2", "chip3"]
-            {"}"}
-            """;
+        TAREFAS TRELLO:
+        {taskList}
+
+        Responda APENAS no seguinte formato JSON, sem markdown:
+        {"{"}
+          "greeting": "{greeting}, {userName}! [frase curta e animada descrevendo como será o dia — máximo 80 caracteres, sem emojis]",
+          "weatherSummary": "resumo do clima em linguagem natural (máx 1 linha)",
+          "suggestions": "2-3 sugestões cruzadas baseadas nos dados acima",
+          "priorityTask": "tarefa mais importante do dia ou null",
+          "actionChips": ["chip1", "chip2", "chip3"]
+        {"}"}
+        """;
     }
 
     private static BriefingAISummaryDto ParseResponse(string content, string userName)
     {
         try
         {
-            var json = System.Text.Json.JsonDocument.Parse(content).RootElement;
+            var json = content.Trim();
+            if (json.StartsWith("```"))
+            {
+                var start = json.IndexOf('\n') + 1;
+                var end = json.LastIndexOf("```");
+                json = json[start..end].Trim();
+            }
+
+            var doc = System.Text.Json.JsonDocument.Parse(json).RootElement;
 
             return new BriefingAISummaryDto
             {
-                Greeting = json.GetProperty("greeting").GetString()
+                Greeting = doc.GetProperty("greeting").GetString()
                     ?? $"Bom dia, {userName}!",
-                WeatherSummary = json.GetProperty("weatherSummary").GetString() ?? "",
-                Suggestions = json.GetProperty("suggestions").GetString() ?? "",
-                PriorityTask = json.TryGetProperty("priorityTask", out var pt)
+                WeatherSummary = doc.GetProperty("weatherSummary").GetString() ?? "",
+                Suggestions = doc.GetProperty("suggestions").GetString() ?? "",
+                PriorityTask = doc.TryGetProperty("priorityTask", out var pt)
                     ? pt.GetString()
                     : null,
-                ActionChips = json.GetProperty("actionChips")
+                ActionChips = doc.GetProperty("actionChips")
                     .EnumerateArray()
                     .Select(c => c.GetString() ?? "")
                     .Where(c => !string.IsNullOrEmpty(c))

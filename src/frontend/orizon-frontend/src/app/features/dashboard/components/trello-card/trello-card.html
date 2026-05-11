@@ -16,10 +16,10 @@
         <span>Nenhuma tarefa pendente</span>
       </div>
     } @else {
-      @if (inProgressTasks().length > 0) {
+      @if (visibleInProgress().length > 0) {
         <div class="task-section">
           <p class="task-section__label">Em progresso</p>
-          @for (task of inProgressTasks(); track task.cardId) {
+          @for (task of visibleInProgress(); track task.cardId) {
             <div class="task-item" [class.task-item--stuck]="task.isStuck">
               <div class="task-item__board" [style.background]="task.boardColor + '20'">
                 {{ task.boardName }}
@@ -36,10 +36,10 @@
         </div>
       }
 
-      @if (todayTasks().length > 0) {
+      @if (visibleToday().length > 0) {
         <div class="task-section">
           <p class="task-section__label">Para hoje</p>
-          @for (task of todayTasks(); track task.cardId) {
+          @for (task of visibleToday(); track task.cardId) {
             <div class="task-item">
               <div class="task-item__board" [style.background]="task.boardColor + '20'">
                 {{ task.boardName }}
@@ -48,6 +48,18 @@
             </div>
           }
         </div>
+      }
+
+      @if (hasMore()) {
+        <button class="btn-toggle" (click)="toggleShowAll()">
+          @if (showAll()) {
+            <i class="pi pi-chevron-up"></i>
+            <span>Ver menos</span>
+          } @else {
+            <i class="pi pi-chevron-down"></i>
+            <span>Ver mais</span>
+          }
+        </button>
       }
     }
   </div>

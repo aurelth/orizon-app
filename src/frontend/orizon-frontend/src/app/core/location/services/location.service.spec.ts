@@ -20,7 +20,10 @@ describe('LocationService', () => {
       configurable: true,
     });
 
-    httpClient = { get: jest.fn() };
+    httpClient = {
+      get: jest.fn(),
+      post: jest.fn().mockReturnValue(of(void 0)),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -46,7 +49,6 @@ describe('LocationService', () => {
     expect(store.isDetecting()).toBe(true);
   });
 
-  // ALTERADO: usando done callback do Jest para aguardar resolução assíncrona da Promise
   it('deve retornar cidade usando address.city quando disponível', (done) => {
     mockGeolocation.getCurrentPosition.mockImplementation((success: PositionCallback) =>
       success({ coords: { latitude: -26.9194, longitude: -49.0661 } } as GeolocationPosition)

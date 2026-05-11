@@ -171,6 +171,18 @@ namespace Orizon.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("GoogleAccessToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("GoogleConnectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GoogleRefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("GoogleTokenExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("IsTraveling")
                         .HasColumnType("boolean");
 
@@ -203,8 +215,14 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Property<double?>("TravelLongitude")
                         .HasColumnType("double precision");
 
+                    b.Property<string>("TrelloApiKey")
+                        .HasColumnType("text");
+
                     b.Property<bool>("TrelloEnabled")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("TrelloToken")
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -398,10 +416,13 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Property<string>("GoogleAccessToken")
                         .HasColumnType("text");
 
+                    b.Property<DateTime?>("GoogleConnectedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("GoogleRefreshToken")
                         .HasColumnType("text");
 
-                    b.Property<DateTime?>("GoogleTokenExpiry")
+                    b.Property<DateTime?>("GoogleTokenExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsTraveling")

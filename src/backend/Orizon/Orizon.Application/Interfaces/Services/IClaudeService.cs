@@ -7,12 +7,13 @@ using Orizon.Application.DTOs.Weather;
 namespace Orizon.Application.Interfaces.Services;
 
 public interface IClaudeService
-{    
+{
     Task<BriefingAISummaryDto> GenerateDailySummaryAsync(
         IEnumerable<EmailSummaryDto> emails,
         IEnumerable<CalendarEventDto> events,
         IEnumerable<TrelloTaskDto>? tasks,
         WeatherDto weather,
         string userName,
+        DateOnly today,
         CancellationToken cancellationToken = default);
 }

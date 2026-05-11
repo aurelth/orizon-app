@@ -3,25 +3,50 @@ using Google.Apis.Calendar.v3;
 using Google.Apis.Services;
 using Microsoft.Extensions.Logging;
 using Orizon.Application.DTOs.Calendar;
+using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
 
 namespace Orizon.Infrastructure.Services.External;
 
 public class CalendarIntegrationService : ICalendarService
 {
+    private readonly IUserRepository _userRepository;
     private readonly ILogger<CalendarIntegrationService> _logger;
 
-    public CalendarIntegrationService(ILogger<CalendarIntegrationService> logger)
+    public CalendarIntegrationService(
+        IUserRepository userRepository,
+        ILogger<CalendarIntegrationService> logger)
     {
+        _userRepository = userRepository;
         _logger = logger;
     }
 
-    public Task<IEnumerable<CalendarEventDto>> GetTodayEventsAsync(
+    public async Task<IEnumerable<CalendarEventDto>> GetTodayEventsAsync(
         string userId,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException(
-            "CalendarService requer accessToken do usuário — implementado na Fase 7");
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            _logger.LogWarning("UserId inválido: {UserId}", userId);
+            return [];
+        }
+
+        var user = await _userRepository.GetByIdAsync(userGuid, cancellationToken);
+
+        if (user is null)
+        {
+            _logger.LogWarning("Usuário {UserId} não encontrado para buscar eventos", userId);
+            return [];
+        }
+
+        if (string.IsNullOrEmpty(user.GoogleAccessToken))
+        {
+            _logger.LogWarning("Usuário {UserId} não possui Google Access Token", userId);
+            return [];
+        }
+
+        return await GetTodayEventsWithTokenAsync(
+            user.GoogleAccessToken, cancellationToken);
     }
 
     public async Task<IEnumerable<CalendarEventDto>> GetTodayEventsWithTokenAsync(
@@ -38,10 +63,18 @@ public class CalendarIntegrationService : ICalendarService
             ApplicationName = "Orizon",
         });
 
-        var today = DateTime.UtcNow.Date;
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        var nowBrasilia = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone);
+        var todayStart = new DateTime(nowBrasilia.Year, nowBrasilia.Month, nowBrasilia.Day,
+            0, 0, 0, DateTimeKind.Unspecified);
+        var todayEnd = todayStart.AddDays(1);
+
+        var todayStartUtc = TimeZoneInfo.ConvertTimeToUtc(todayStart, brasiliaZone);
+        var todayEndUtc = TimeZoneInfo.ConvertTimeToUtc(todayEnd, brasiliaZone);
+
         var request = service.Events.List("primary");
-        request.TimeMinDateTimeOffset = today;
-        request.TimeMaxDateTimeOffset = today.AddDays(1);
+        request.TimeMinDateTimeOffset = todayStartUtc;
+        request.TimeMaxDateTimeOffset = todayEndUtc;
         request.SingleEvents = true;
         request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
 

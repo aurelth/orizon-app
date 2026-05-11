@@ -17,7 +17,7 @@
       </div>
     } @else {
       <div class="email-list">
-        @for (email of emails(); track email.subject) {
+        @for (email of visibleEmails(); track email.subject) {
           <div class="email-item">
             <div class="email-item__header">
               <span class="email-category">
@@ -29,10 +29,22 @@
             </div>
             <p class="email-from">{{ email.from }}</p>
             <p class="email-subject">{{ email.subject }}</p>
-            <p class="email-summary">{{ email.aiSummary }}</p>
+            <p class="email-summary">{{ email.aiSummary | slice:0:120 }}{{ email.aiSummary.length > 120 ? '...' : '' }}</p>
           </div>
         }
       </div>
+
+      @if (hasMore()) {
+        <button class="btn-toggle" (click)="toggleShowAll()">
+          @if (showAll()) {
+            <i class="pi pi-chevron-up"></i>
+            <span>Ver menos</span>
+          } @else {
+            <i class="pi pi-chevron-down"></i>
+            <span>Ver mais</span>
+          }
+        </button>
+      }
     }
   </div>
 </div>

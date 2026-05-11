@@ -1,4 +1,6 @@
 using FluentValidation;
+using Hangfire;
+using Hangfire.PostgreSql;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -12,6 +14,7 @@ using Orizon.Application.UseCases.Auth.Commands.RegisterUser;
 using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
 using Orizon.Infrastructure.Repositories;
+using Orizon.Infrastructure.Services;
 using Orizon.Infrastructure.Services.Auth;
 using Orizon.Infrastructure.Services.Email;
 using Orizon.Infrastructure.Services.External;
@@ -108,6 +111,16 @@ try
 
     builder.Services.AddSignalR();
 
+    // HANGFIRE DASHBOARD
+    builder.Services.AddHangfire(config =>
+        config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UsePostgreSqlStorage(options =>
+                options.UseNpgsqlConnection(
+                    builder.Configuration.GetConnectionString("PostgreSQL"))));
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("OrizonPolicy", policy =>
@@ -141,12 +154,14 @@ try
     builder.Services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>()
         .AddStandardResilienceHandler();
 
-    builder.Services.AddHttpClient<ITrelloService, TrelloService>()
+    builder.Services.AddHttpClient<TrelloService>()
         .AddStandardResilienceHandler();
+    builder.Services.AddScoped<ITrelloService, TrelloService>();
 
     builder.Services.AddScoped<IGmailService, GmailIntegrationService>();
     builder.Services.AddScoped<ICalendarService, CalendarIntegrationService>();
     builder.Services.AddScoped<IClaudeService, ClaudeService>();
+    builder.Services.AddHttpClient<IJobScheduler, HangfireJobScheduler>();
 
     // EMAIL — SendGrid
     var sendGridApiKey = builder.Configuration["Email:SendGridApiKey"];
@@ -191,7 +206,7 @@ try
 
     if (app.Environment.IsDevelopment())
     {
-        app.MapOpenApi();        
+        app.MapOpenApi();
         app.MapScalarApiReference();
     }
 
@@ -204,6 +219,15 @@ try
     app.MapHub<BriefingHub>("/hubs/briefing");
     app.MapHealthChecks("/health/ready");
     app.MapHealthChecks("/health/live");
+
+    // HANGFIRE DASHBOARD — apenas em desenvolvimento
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = [new Hangfire.Dashboard.LocalRequestsOnlyAuthorizationFilter()]
+        });
+    }
 
     Log.Information("Orizon API iniciada com sucesso");
 

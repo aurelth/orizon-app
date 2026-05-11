@@ -4,6 +4,7 @@ using Orizon.Application.DTOs.Briefing;
 using Orizon.Application.Interfaces.Services;
 using SendGrid;
 using SendGrid.Helpers.Mail;
+using System.Globalization;
 
 namespace Orizon.Infrastructure.Services.Email;
 
@@ -38,7 +39,7 @@ public class EmailNotificationService : IEmailNotificationService
         {
             From = new EmailAddress(fromEmail, fromName),
             Subject = $"☀️ Seu briefing de {briefing.Date:dd/MM} está pronto, {userName}!",
-            HtmlContent = BuildEmailHtml(briefing, userName),
+            HtmlContent = BuildEmailHtml(briefing),
         };
 
         msg.AddTo(new EmailAddress(toEmail, userName));
@@ -56,59 +57,143 @@ public class EmailNotificationService : IEmailNotificationService
         }
     }
 
-    private static string BuildEmailHtml(BriefingResultDto briefing, string userName)
+    private static string BuildEmailHtml(BriefingResultDto briefing)
     {
-        var css = """
-            <style>
-            body { font-family: Inter, sans-serif; background: #0f0d0d; color: #fafaf9; margin: 0; padding: 0; }
-            .container { max-width: 600px; margin: 0 auto; padding: 2rem; }
-            .header { text-align: center; margin-bottom: 2rem; }
-            .brand { font-size: 1.5rem; font-weight: 700; color: #fb923c; }
-            .greeting { font-size: 1.2rem; color: #fafaf9; margin: 1rem 0; }
-            .section { background: #1c1917; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
-            .section-title { font-size: 0.875rem; color: #78716c; text-transform: uppercase; margin-bottom: 0.5rem; }
-            .chip { display: inline-block; background: #292524; border-radius: 999px; padding: 0.25rem 0.75rem; font-size: 0.8rem; margin: 0.25rem; color: #fb923c; }
-            .footer { text-align: center; color: #44403c; font-size: 0.75rem; margin-top: 2rem; }
-            </style>
-            """;
+        var ptBR = CultureInfo.GetCultureInfo("pt-BR");
+        var dateFormatted = briefing.Date.ToString("dddd, dd 'de' MMMM", ptBR);
+        var dateCapitalized = char.ToUpper(dateFormatted[0]) + dateFormatted[1..];
 
-        var prioritySection = briefing.AISummary.PriorityTask != null
+        var eventsHtml = briefing.CalendarEvents.Any()
+            ? string.Join("", briefing.CalendarEvents.Take(3).Select(e =>
+            {
+                var start = DateTime.Parse(e.StartTime.ToString());
+                return $"""
+                    <tr>
+                      <td style="padding:6px 0;color:#6b7280;font-size:13px;width:48px;vertical-align:top;font-family:monospace;">{start:HH:mm}</td>
+                      <td style="padding:6px 8px;font-size:13px;color:#111827;vertical-align:top;border-left:2px solid #fb923c;">{e.Title}</td>
+                    </tr>
+                    """;
+            }))
+            : "<tr><td colspan='2' style='color:#9ca3af;font-size:13px;padding:6px 0;'>Sem eventos hoje</td></tr>";
+
+        var emailsHtml = briefing.Emails.Any()
+            ? string.Join("", briefing.Emails.Take(3).Select(e => $"""
+                <div style="padding:10px 0;border-bottom:1px solid #f3f4f6;">
+                  <div style="font-size:11px;color:#9ca3af;margin-bottom:2px;">{e.From}</div>
+                  <div style="font-size:13px;color:#111827;font-weight:600;">{e.Subject}</div>
+                </div>
+                """))
+            : "<div style='color:#9ca3af;font-size:13px;padding:6px 0;'>Nenhum email não lido</div>";
+
+        var chips = string.Join("", briefing.AISummary.ActionChips.Select(c =>
+            $"""<span style="display:inline-block;background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;border-radius:999px;padding:4px 12px;font-size:12px;margin:3px 3px 3px 0;">{c}</span>"""));
+
+        var chipsSection = chips.Length > 0
+            ? $"<div style='margin-top:14px;'>{chips}</div>"
+            : "";
+
+        var priorityHtml = briefing.AISummary.PriorityTask != null
             ? $"""
-              <div class="section">
-                <div class="section-title">🎯 Tarefa prioritária</div>
-                <p>{briefing.AISummary.PriorityTask}</p>
-              </div>
+              <tr>
+                <td style="padding-bottom:12px;">
+                  <div style="background:#fff7ed;border:1px solid #fed7aa;border-left:4px solid #ea580c;border-radius:8px;padding:14px 16px;">
+                    <div style="font-size:11px;font-weight:700;color:#ea580c;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">🎯 Tarefa prioritária</div>
+                    <div style="font-size:14px;color:#111827;font-weight:500;">{briefing.AISummary.PriorityTask}</div>
+                  </div>
+                </td>
+              </tr>
               """
             : "";
 
-        var chips = string.Join("",
-            briefing.AISummary.ActionChips.Select(c =>
-                $"<span class=\"chip\">{c}</span>"));
-
         return $"""
             <!DOCTYPE html>
-            <html>
-            <head><meta charset="utf-8">{css}</head>
-            <body>
-              <div class="container">
-                <div class="header">
-                  <div class="brand">🌅 Orizon</div>
-                  <p style="color:#78716c;font-size:0.8rem;">Your day, before it begins</p>
-                </div>
-                <p class="greeting">{briefing.AISummary.Greeting}</p>
-                <div class="section">
-                  <div class="section-title">☁️ Clima</div>
-                  <p>{briefing.Weather.WeatherEmoji} {briefing.Weather.Description} — {briefing.Weather.CurrentTemperature}°C</p>
-                  <p style="color:#78716c;">{briefing.AISummary.WeatherSummary}</p>
-                </div>
-                <div class="section">
-                  <div class="section-title">💡 Sugestões do dia</div>
-                  <p>{briefing.AISummary.Suggestions}</p>
-                  <div>{chips}</div>
-                </div>
-                {prioritySection}
-                <p class="footer">Gerado por Orizon em {briefing.GeneratedAt:dd/MM/yyyy HH:mm}</p>
-              </div>
+            <html lang="pt-BR">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width,initial-scale=1">
+              <title>Orizon Briefing</title>
+            </head>
+            <body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f3f4f6;padding:32px 16px;">
+                <tr>
+                  <td align="center">
+                    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;">
+
+                      <!-- Header -->
+                      <tr>
+                        <td align="center" style="padding-bottom:28px;">
+                          <div style="font-size:28px;font-weight:800;color:#ea580c;letter-spacing:-1px;">🌅 Orizon</div>
+                          <div style="font-size:12px;color:#9ca3af;margin-top:4px;letter-spacing:0.5px;">Your day, before it begins</div>
+                        </td>
+                      </tr>
+
+                      <!-- Greeting -->
+                      <tr>
+                        <td style="padding-bottom:20px;">
+                          <div style="font-size:22px;font-weight:700;color:#111827;line-height:1.4;">{briefing.AISummary.Greeting}</div>
+                          <div style="font-size:14px;color:#6b7280;margin-top:6px;">{dateCapitalized}</div>
+                        </td>
+                      </tr>
+
+                      <!-- Clima -->
+                      <tr>
+                        <td style="padding-bottom:12px;">
+                          <div style="background:#ffffff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                            <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">☁️ Clima</div>
+                            <div style="font-size:28px;font-weight:800;color:#111827;">{briefing.Weather.WeatherEmoji} {briefing.Weather.CurrentTemperature}°C</div>
+                            <div style="font-size:13px;color:#6b7280;margin-top:4px;">{briefing.Weather.Description} &nbsp;·&nbsp; mín {briefing.Weather.MinTemperature}° / máx {briefing.Weather.MaxTemperature}°</div>
+                            <div style="font-size:13px;color:#374151;margin-top:10px;line-height:1.5;">{briefing.AISummary.WeatherSummary}</div>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <!-- Sugestões -->
+                      <tr>
+                        <td style="padding-bottom:12px;">
+                          <div style="background:#ffffff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                            <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">💡 Sugestões do dia</div>
+                            <div style="font-size:14px;color:#111827;line-height:1.7;">{briefing.AISummary.Suggestions}</div>
+                            {chipsSection}
+                          </div>
+                        </td>
+                      </tr>
+
+                      <!-- Tarefa prioritária -->
+                      {priorityHtml}
+
+                      <!-- Agenda -->
+                      <tr>
+                        <td style="padding-bottom:12px;">
+                          <div style="background:#ffffff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                            <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">📅 Agenda de hoje</div>
+                            <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                              {eventsHtml}
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <!-- Emails -->
+                      <tr>
+                        <td style="padding-bottom:12px;">
+                          <div style="background:#ffffff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                            <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;">✉️ Emails importantes</div>
+                            {emailsHtml}
+                          </div>
+                        </td>
+                      </tr>
+
+                      <!-- Footer -->
+                      <tr>
+                        <td align="center" style="padding-top:16px;padding-bottom:8px;">
+                          <div style="font-size:11px;color:#9ca3af;">Gerado por Orizon em {briefing.GeneratedAt:dd/MM/yyyy HH:mm}</div>
+                        </td>
+                      </tr>
+
+                    </table>
+                  </td>
+                </tr>
+              </table>
             </body>
             </html>
             """;

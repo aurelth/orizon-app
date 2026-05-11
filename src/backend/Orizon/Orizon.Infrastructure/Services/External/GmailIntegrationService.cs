@@ -4,25 +4,50 @@ using Google.Apis.Gmail.v1.Data;
 using Google.Apis.Services;
 using Microsoft.Extensions.Logging;
 using Orizon.Application.DTOs.Email;
+using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
 
 namespace Orizon.Infrastructure.Services.External;
 
 public class GmailIntegrationService : IGmailService
 {
+    private readonly IUserRepository _userRepository;
     private readonly ILogger<GmailIntegrationService> _logger;
 
-    public GmailIntegrationService(ILogger<GmailIntegrationService> logger)
+    public GmailIntegrationService(
+        IUserRepository userRepository,
+        ILogger<GmailIntegrationService> logger)
     {
+        _userRepository = userRepository;
         _logger = logger;
     }
 
-    public Task<IEnumerable<EmailSummaryDto>> GetRecentEmailsAsync(
+    public async Task<IEnumerable<EmailSummaryDto>> GetRecentEmailsAsync(
         string userId,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException(
-            "GmailService requer accessToken do usuário — implementado na Fase 7");
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            _logger.LogWarning("UserId inválido: {UserId}", userId);
+            return [];
+        }
+
+        var user = await _userRepository.GetByIdAsync(userGuid, cancellationToken);
+
+        if (user is null)
+        {
+            _logger.LogWarning("Usuário {UserId} não encontrado para buscar emails", userId);
+            return [];
+        }
+
+        if (string.IsNullOrEmpty(user.GoogleAccessToken))
+        {
+            _logger.LogWarning("Usuário {UserId} não possui Google Access Token", userId);
+            return [];
+        }
+
+        return await GetRecentEmailsWithTokenAsync(
+            user.GoogleAccessToken, cancellationToken: cancellationToken);
     }
 
     public async Task<IEnumerable<EmailSummaryDto>> GetRecentEmailsWithTokenAsync(
@@ -62,7 +87,17 @@ public class GmailIntegrationService : IGmailService
             var subject = GetHeader(msg, "Subject") ?? "(sem assunto)";
             var from = GetHeader(msg, "From") ?? "Desconhecido";
             var dateStr = GetHeader(msg, "Date");
-            var date = dateStr != null ? DateTime.Parse(dateStr) : DateTime.UtcNow;
+            var date = DateTime.UtcNow;
+            if (dateStr != null)
+            {
+                if (!DateTime.TryParse(dateStr, out date))
+                {                    
+                    var cleanDate = System.Text.RegularExpressions.Regex
+                        .Replace(dateStr, @"\s*\([^)]*\)\s*$", "").Trim();
+                    if (!DateTime.TryParse(cleanDate, out date))
+                        date = DateTime.UtcNow;
+                }
+            }
 
             emails.Add(new EmailSummaryDto
             {
