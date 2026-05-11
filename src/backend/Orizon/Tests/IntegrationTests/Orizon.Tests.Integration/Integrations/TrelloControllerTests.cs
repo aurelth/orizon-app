@@ -90,8 +90,20 @@ public class TrelloControllerTests : IAsyncLifetime
         var context = scope.ServiceProvider
             .GetRequiredService<OrizonDbContext>();
 
-        await context.Database.EnsureDeletedAsync();
-        await context.Database.MigrateAsync();
+        var maxRetries = 5;
+        for (var i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                await context.Database.EnsureDeletedAsync();
+                await context.Database.MigrateAsync();
+                break;
+            }
+            catch (Exception) when (i < maxRetries - 1)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2));
+            }
+        }
 
         var register = new RegisterUserCommand(
             "Aurel", "trello@orizonapp.io", "Test@12345");
