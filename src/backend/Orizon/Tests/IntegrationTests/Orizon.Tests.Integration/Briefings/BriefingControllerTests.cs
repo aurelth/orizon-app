@@ -202,7 +202,9 @@ public class BriefingControllerTests : IAsyncLifetime
         var (userId, token) = await RegisterAndGetUserIdAsync(
             "today@orizonapp.io");
 
-        await SeedBriefingAsync(userId, DateOnly.FromDateTime(DateTime.UtcNow));
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone));
+        await SeedBriefingAsync(userId, today);
 
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);

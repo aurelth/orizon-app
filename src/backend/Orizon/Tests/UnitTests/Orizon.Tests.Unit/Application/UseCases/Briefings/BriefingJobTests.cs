@@ -108,9 +108,13 @@ public class BriefingJobTests
 
         await _job.ExecuteAsync(default);
 
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        var expectedDate = DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone));
+
         capturedBriefing.Should().NotBeNull();
         capturedBriefing!.UserId.Should().Be(_testUser.Id);
-        capturedBriefing.Date.Should().Be(DateOnly.FromDateTime(DateTime.UtcNow));
+        capturedBriefing.Date.Should().Be(expectedDate);
     }
 
     [Fact]
@@ -272,6 +276,61 @@ public class BriefingJobTests
             s => s.GetRecentEmailsWithTokenAsync(
                 newToken, It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenTokenValid_ShouldNotRefreshToken()
+    {
+        _testUser.GoogleTokenExpiresAt = DateTime.UtcNow.AddHours(2);
+        SetupDefaultMocks();
+
+        await _job.ExecuteAsync(default);
+
+        _googleOAuthMock.Verify(
+            s => s.RefreshAccessTokenAsync(
+                It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenNoRefreshToken_ShouldSkipGoogleServices()
+    {
+        _testUser.GoogleTokenExpiresAt = DateTime.UtcNow.AddMinutes(-1);
+        _testUser.GoogleRefreshToken = null;
+        SetupDefaultMocks(accessToken: "");
+
+        await _job.ExecuteAsync(default);
+
+        _gmailMock.Verify(
+            s => s.GetRecentEmailsWithTokenAsync(
+                It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenExistingBriefing_ShouldUpdateInsteadOfCreate()
+    {
+        var existingBriefing = new BriefingEntry
+        {
+            Id = Guid.NewGuid(),
+            UserId = _testUser.Id,
+            Date = DateOnly.FromDateTime(DateTime.UtcNow),
+            Status = BriefingStatus.Generated,
+        };
+
+        SetupDefaultMocks();
+
+        // sobrescreve após SetupDefaultMocks para retornar briefing existente
+        _briefingRepoMock
+            .Setup(r => r.GetByUserAndDateAsync(
+                _testUser.Id.ToString(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(existingBriefing);
+
+        await _job.ExecuteAsync(default);
+
+        _briefingRepoMock.Verify(
+            r => r.AddAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     private void SetupDefaultMocks(string? accessToken = null)

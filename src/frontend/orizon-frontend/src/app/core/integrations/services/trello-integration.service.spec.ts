@@ -21,6 +21,7 @@ describe('TrelloIntegrationService', () => {
     apiService = {
       post: jest.fn(),
       get: jest.fn(),
+      delete: jest.fn(),
     };
 
     TestBed.configureTestingModule({
@@ -83,7 +84,7 @@ describe('TrelloIntegrationService', () => {
     expect(store.error()).toBe('Falha ao carregar boards do Trello.');
   });
 
-  it('deve salvar configuração de board e atualizar store', () => {
+  it('deve salvar configuração de board e adicionar ao activeBoardIds', () => {
     (apiService.post as jest.Mock).mockReturnValue(of(void 0));
 
     service.saveBoardConfig({
@@ -93,10 +94,7 @@ describe('TrelloIntegrationService', () => {
       inProgressListId: 'list-2',
     }).subscribe();
 
-    expect(store.trelloBoardConfig()).toMatchObject({
-      boardId: 'board-1',
-      listIds: ['list-1', 'list-2'],
-    });
+    expect(store.activeBoardIds()).toContain('board-1');
   });
 
   it('deve definir erro quando saveBoardConfig falhar', () => {
@@ -110,5 +108,37 @@ describe('TrelloIntegrationService', () => {
     }).subscribe({ error: () => {} });
 
     expect(store.error()).toBe('Falha ao salvar configuração do board.');
+  });
+
+  it('deve popular activeBoardIds ao chamar getConfig', () => {
+    const mockConfig = [
+      { boardId: 'board-1', boardName: 'Board 1' },
+      { boardId: 'board-2', boardName: 'Board 2' },
+    ];
+    (apiService.get as jest.Mock).mockReturnValue(of(mockConfig));
+
+    service.getConfig().subscribe();
+
+    expect(store.activeBoardIds()).toEqual(['board-1', 'board-2']);
+  });
+
+  it('deve remover boardId do store ao chamar removeBoardConfig com sucesso', () => {
+    store.setActiveBoardIds(['board-1', 'board-2']);
+    (apiService.delete as jest.Mock).mockReturnValue(of(void 0));
+
+    service.removeBoardConfig('board-1').subscribe();
+
+    expect(store.activeBoardIds()).not.toContain('board-1');
+    expect(store.activeBoardIds()).toContain('board-2');
+  });
+
+  it('deve definir erro quando removeBoardConfig falhar', () => {
+    (apiService.delete as jest.Mock).mockReturnValue(
+      throwError(() => new Error('Not Found'))
+    );
+
+    service.removeBoardConfig('board-1').subscribe({ error: () => {} });
+
+    expect(store.error()).toBe('Falha ao remover configuração do board.');
   });
 });
