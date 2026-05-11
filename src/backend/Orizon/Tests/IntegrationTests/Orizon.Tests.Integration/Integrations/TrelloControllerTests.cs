@@ -95,8 +95,7 @@ public class TrelloControllerTests : IAsyncLifetime
         {
             try
             {
-                await context.Database.EnsureDeletedAsync();
-                await context.Database.MigrateAsync();
+                await context.Database.EnsureCreatedAsync();
                 break;
             }
             catch (Exception) when (i < maxRetries - 1)
