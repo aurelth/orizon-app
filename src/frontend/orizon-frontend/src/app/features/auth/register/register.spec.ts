@@ -119,4 +119,49 @@ describe('RegisterComponent', () => {
     component.onSubmit();
     expect(component.error()).toBe('Email já cadastrado');
   });
+
+  // Testes de validação de senha
+  it('deve invalidar senha sem letra maiúscula', () => {
+    component.form.get('password')?.setValue('test@12345');
+    component.form.get('password')?.markAsTouched();
+    expect(component.form.get('password')?.invalid).toBe(true);
+    expect(component.form.get('password')?.errors?.['pattern']).toBeTruthy();
+  });
+
+  it('deve invalidar senha sem letra minúscula', () => {
+    component.form.get('password')?.setValue('TEST@12345');
+    component.form.get('password')?.markAsTouched();
+    expect(component.form.get('password')?.invalid).toBe(true);
+    expect(component.form.get('password')?.errors?.['pattern']).toBeTruthy();
+  });
+
+  it('deve invalidar senha sem número', () => {
+    component.form.get('password')?.setValue('Test@abcde');
+    component.form.get('password')?.markAsTouched();
+    expect(component.form.get('password')?.invalid).toBe(true);
+    expect(component.form.get('password')?.errors?.['pattern']).toBeTruthy();
+  });
+
+  it('deve invalidar senha com menos de 8 caracteres', () => {
+    component.form.get('password')?.setValue('Te1');
+    component.form.get('password')?.markAsTouched();
+    expect(component.form.get('password')?.invalid).toBe(true);
+    expect(component.form.get('password')?.errors?.['minlength']).toBeTruthy();
+  });
+
+  it('deve validar senha com maiúscula, minúscula e número', () => {
+    component.form.get('password')?.setValue('Test@12345');
+    component.form.get('password')?.markAsTouched();
+    expect(component.form.get('password')?.valid).toBe(true);
+  });
+
+  it('deve retornar isFieldInvalid true quando campo tocado e inválido', () => {
+    component.form.get('password')?.setValue('');
+    component.form.get('password')?.markAsTouched();
+    expect(component.isFieldInvalid('password')).toBe(true);
+  });
+
+  it('deve retornar isFieldInvalid false quando campo não tocado', () => {
+    expect(component.isFieldInvalid('password')).toBe(false);
+  });
 });

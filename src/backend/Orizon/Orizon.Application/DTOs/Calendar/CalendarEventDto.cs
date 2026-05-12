@@ -9,4 +9,6 @@ public class CalendarEventDto
     public string? MeetLink { get; set; }
     public string? Description { get; set; }
     public bool ConflictsWithRain { get; set; } = false;
+    public bool IsBirthday { get; set; } = false;
+    public bool IsAllDay { get; set; } = false;
 }

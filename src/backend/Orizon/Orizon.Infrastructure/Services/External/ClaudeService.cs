@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Orizon.Application.DTOs.Briefing;
 using Orizon.Application.DTOs.Calendar;
 using Orizon.Application.DTOs.Email;
+using Orizon.Application.DTOs.Tasks;
 using Orizon.Application.DTOs.Trello;
 using Orizon.Application.DTOs.Weather;
 using Orizon.Application.Interfaces.Services;
@@ -28,7 +29,8 @@ public class ClaudeService : IClaudeService
     public async Task<BriefingAISummaryDto> GenerateDailySummaryAsync(
         IEnumerable<EmailSummaryDto> emails,
         IEnumerable<CalendarEventDto> events,
-        IEnumerable<TrelloTaskDto>? tasks,
+        IEnumerable<GoogleTaskDto>? googleTasks,
+        IEnumerable<TrelloTaskDto>? trelloTasks,
         WeatherDto weather,
         string userName,
         DateOnly today,
@@ -36,7 +38,7 @@ public class ClaudeService : IClaudeService
     {
         _logger.LogInformation("Gerando resumo diário com Claude para {User}", userName);
 
-        var prompt = BuildPrompt(emails, events, tasks, weather, userName, today);
+        var prompt = BuildPrompt(emails, events, googleTasks, trelloTasks, weather, userName, today);
 
         var message = await _client.Messages.GetClaudeMessageAsync(
             new MessageParameters
@@ -60,7 +62,8 @@ public class ClaudeService : IClaudeService
     private static string BuildPrompt(
         IEnumerable<EmailSummaryDto> emails,
         IEnumerable<CalendarEventDto> events,
-        IEnumerable<TrelloTaskDto>? tasks,
+        IEnumerable<GoogleTaskDto>? googleTasks,
+        IEnumerable<TrelloTaskDto>? trelloTasks,
         WeatherDto weather,
         string userName,
         DateOnly today)
@@ -68,15 +71,28 @@ public class ClaudeService : IClaudeService
         var emailList = string.Join("\n", emails.Select(e =>
             $"- [{e.CategoryEmoji} {e.Category}] De: {e.From} | Assunto: {e.Subject}"));
 
-        var eventList = string.Join("\n", events.Select(e =>
+        var regularEvents = events.Where(e => !e.IsBirthday).ToList();
+        var birthdays = events.Where(e => e.IsBirthday).ToList();
+
+        var eventList = string.Join("\n", regularEvents.Select(e =>
             $"- {e.StartTime:HH:mm} às {e.EndTime:HH:mm}: {e.Title}" +
             (e.MeetLink != null ? " (Google Meet)" : "")));
 
-        var taskList = tasks != null
-            ? string.Join("\n", tasks.Select(t =>
+        var birthdayList = string.Join("\n", birthdays.Select(e =>
+            $"- 🎂 {e.Title}"));
+
+        var googleTaskList = googleTasks != null && googleTasks.Any()
+            ? string.Join("\n", googleTasks.Select(t =>
+                $"- [{t.TaskListName}] {t.Title}" +
+                (t.IsOverdue ? " ⚠️ atrasada" : "") +
+                (t.DueDate.HasValue ? $" (vence {t.DueDate.Value:dd/MM})" : "")))
+            : null;
+
+        var trelloTaskList = trelloTasks != null
+            ? string.Join("\n", trelloTasks.Select(t =>
                 $"- [{t.ColumnType}] {t.Title}" +
                 (t.IsStuck ? $" ⚠️ parado há {t.DaysInProgress} dias" : "")))
-            : "Trello não configurado";
+            : null;
 
         var dayOfWeek = today.DayOfWeek switch
         {
@@ -102,6 +118,20 @@ public class ClaudeService : IClaudeService
             _ => "Boa noite"
         };
 
+        var tasksSection = new System.Text.StringBuilder();
+        if (googleTaskList != null)
+        {
+            tasksSection.AppendLine("TAREFAS GOOGLE TASKS:");
+            tasksSection.AppendLine(googleTaskList);
+        }
+        if (trelloTaskList != null)
+        {
+            tasksSection.AppendLine("TAREFAS TRELLO:");
+            tasksSection.AppendLine(trelloTaskList);
+        }
+        if (tasksSection.Length == 0)
+            tasksSection.AppendLine("Nenhuma tarefa configurada");
+
         return $"""
         Você é o assistente do Orizon, um app de briefing personalizado.
         Gere um resumo conciso e motivador para {userName}.
@@ -118,10 +148,11 @@ public class ClaudeService : IClaudeService
         {(emails.Any() ? emailList : "Nenhum email não lido")}
 
         AGENDA DE HOJE:
-        {(events.Any() ? eventList : "Nenhum evento hoje")}
+        {(regularEvents.Any() ? eventList : "Nenhum evento hoje")}
 
-        TAREFAS TRELLO:
-        {taskList}
+        {(birthdays.Any() ? $"ANIVERSÁRIOS DE HOJE:\n{birthdayList}" : "")}
+
+        {tasksSection}
 
         Responda APENAS no seguinte formato JSON, sem markdown:
         {"{"}

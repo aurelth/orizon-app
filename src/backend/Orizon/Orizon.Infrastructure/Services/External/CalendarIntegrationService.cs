@@ -53,7 +53,7 @@ public class CalendarIntegrationService : ICalendarService
         string accessToken,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Buscando eventos do Google Calendar");
+        _logger.LogInformation("Buscando eventos e aniversários do Google Calendar");
 
         var credential = GoogleCredential.FromAccessToken(accessToken);
 
@@ -72,42 +72,78 @@ public class CalendarIntegrationService : ICalendarService
         var todayStartUtc = TimeZoneInfo.ConvertTimeToUtc(todayStart, brasiliaZone);
         var todayEndUtc = TimeZoneInfo.ConvertTimeToUtc(todayEnd, brasiliaZone);
 
-        var request = service.Events.List("primary");
-        request.TimeMinDateTimeOffset = todayStartUtc;
-        request.TimeMaxDateTimeOffset = todayEndUtc;
-        request.SingleEvents = true;
-        request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
+        // busca eventos do calendário principal e aniversários em paralelo
+        var primaryTask = FetchEventsFromCalendarAsync(
+            service, "primary", todayStartUtc, todayEndUtc, isBirthday: false, cancellationToken);
 
-        var events = await request.ExecuteAsync(cancellationToken);
+        var birthdayTask = FetchEventsFromCalendarAsync(
+            service, "#contacts@group.v.calendar.google.com",
+            todayStartUtc, todayEndUtc, isBirthday: true, cancellationToken);
 
-        if (events.Items == null || !events.Items.Any())
-            return [];
+        await Task.WhenAll(primaryTask, birthdayTask);
 
-        return events.Items.Select(e =>
+        var allEvents = (await primaryTask).Concat(await birthdayTask)
+            .OrderBy(e => e.StartTime)
+            .ToList();
+
+        return allEvents;
+    }
+
+    private static async Task<IEnumerable<CalendarEventDto>> FetchEventsFromCalendarAsync(
+        CalendarService service,
+        string calendarId,
+        DateTime timeMin,
+        DateTime timeMax,
+        bool isBirthday,
+        CancellationToken cancellationToken)
+    {
+        try
         {
-            var start = e.Start.DateTimeDateTimeOffset?.DateTime
-                ?? DateTime.Parse(e.Start.Date);
-            var end = e.End.DateTimeDateTimeOffset?.DateTime
-                ?? DateTime.Parse(e.End.Date);
+            var request = service.Events.List(calendarId);
+            request.TimeMinDateTimeOffset = timeMin;
+            request.TimeMaxDateTimeOffset = timeMax;
+            request.SingleEvents = true;
+            request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
 
-            var attendees = e.Attendees?
-                .Select(a => a.Email)
-                .Where(email => email != null)
-                .Cast<string>()
-                .ToList() ?? [];
+            var events = await request.ExecuteAsync(cancellationToken);
 
-            var meetLink = e.ConferenceData?.EntryPoints?
-                .FirstOrDefault(ep => ep.EntryPointType == "video")?.Uri;
+            if (events.Items == null || !events.Items.Any())
+                return [];
 
-            return new CalendarEventDto
+            return events.Items.Select(e =>
             {
-                Title = e.Summary ?? "(sem título)",
-                StartTime = start,
-                EndTime = end,
-                Participants = attendees,
-                MeetLink = meetLink,
-                Description = e.Description,
-            };
-        });
+                var isAllDay = e.Start.DateTimeDateTimeOffset == null;
+                var start = e.Start.DateTimeDateTimeOffset?.DateTime
+                    ?? DateTime.Parse(e.Start.Date);
+                var end = e.End.DateTimeDateTimeOffset?.DateTime
+                    ?? DateTime.Parse(e.End.Date);
+
+                var attendees = e.Attendees?
+                    .Select(a => a.Email)
+                    .Where(email => email != null)
+                    .Cast<string>()
+                    .ToList() ?? [];
+
+                var meetLink = e.ConferenceData?.EntryPoints?
+                    .FirstOrDefault(ep => ep.EntryPointType == "video")?.Uri;
+
+                return new CalendarEventDto
+                {
+                    Title = e.Summary ?? "(sem título)",
+                    StartTime = start,
+                    EndTime = end,
+                    Participants = attendees,
+                    MeetLink = meetLink,
+                    Description = e.Description,
+                    IsBirthday = isBirthday,
+                    IsAllDay = isAllDay,
+                };
+            });
+        }
+        catch (Exception)
+        {
+            // calendário pode não existir ou não ter permissão — retorna vazio silenciosamente
+            return [];
+        }
     }
 }

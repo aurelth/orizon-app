@@ -8,6 +8,7 @@ import { EmailsCardComponent } from './components/emails-card/emails-card';
 import { CalendarCardComponent } from './components/calendar-card/calendar-card';
 import { TrelloCardComponent } from './components/trello-card/trello-card';
 import { AiSuggestionsCardComponent } from './components/ai-suggestions-card/ai-suggestions-card';
+import { GoogleTasksCardComponent } from './components/google-tasks-card/google-tasks-card';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -21,6 +22,7 @@ import { environment } from '../../../environments/environment';
     CalendarCardComponent,
     TrelloCardComponent,
     AiSuggestionsCardComponent,
+    GoogleTasksCardComponent,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -38,6 +40,7 @@ export class DashboardComponent implements OnInit {
   readonly emails = computed(() => this.store.briefing()?.emails ?? []);
   readonly calendarEvents = computed(() => this.store.briefing()?.calendarEvents ?? []);
   readonly trelloTasks = computed(() => this.store.briefing()?.trelloTasks ?? null);
+  readonly googleTasks = computed(() => this.store.briefing()?.googleTasks ?? null);
   readonly aiSummary = computed(() => this.store.briefing()?.aiSummary);
   readonly isGenerating = signal(false);
 

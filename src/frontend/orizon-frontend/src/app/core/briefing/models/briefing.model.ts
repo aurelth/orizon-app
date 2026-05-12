@@ -30,6 +30,8 @@ export interface CalendarEvent {
   meetLink: string | null;
   description: string | null;
   conflictsWithRain: boolean;
+  isBirthday: boolean;
+  isAllDay: boolean;
 }
 
 export interface TrelloTask {
@@ -42,6 +44,15 @@ export interface TrelloTask {
   movedToInProgressAt: string | null;
   daysInProgress: number | null;
   isStuck: boolean;
+}
+
+export interface GoogleTask {
+  id: string;
+  title: string;
+  notes: string | null;
+  dueDate: string | null;
+  isOverdue: boolean;
+  taskListName: string;
 }
 
 export interface AISummary {
@@ -60,6 +71,7 @@ export interface BriefingResult {
   emails: EmailSummary[];
   calendarEvents: CalendarEvent[];
   trelloTasks: TrelloTask[] | null;
+  googleTasks: GoogleTask[] | null;
   aiSummary: AISummary;
   generatedAt: string;
 }

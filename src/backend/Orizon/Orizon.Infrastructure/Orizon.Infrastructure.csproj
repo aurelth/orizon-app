@@ -14,6 +14,7 @@
 		<PackageReference Include="Anthropic.SDK" Version="5.10.0" />
 		<PackageReference Include="Google.Apis.Calendar.v3" Version="1.73.0.4073" />
 		<PackageReference Include="Google.Apis.Gmail.v1" Version="1.73.0.4120" />
+		<PackageReference Include="Google.Apis.Tasks.v1" Version="1.74.0.3958" />
 		<PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
 		<PackageReference Include="Hangfire.PostgreSql" Version="1.21.1" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.*" />
@@ -36,6 +37,12 @@
 
 	<ItemGroup>
 		<Folder Include="Services\Cache\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>Orizon.Tests.Unit</_Parameter1>
+		</AssemblyAttribute>
 	</ItemGroup>
 
 </Project>
