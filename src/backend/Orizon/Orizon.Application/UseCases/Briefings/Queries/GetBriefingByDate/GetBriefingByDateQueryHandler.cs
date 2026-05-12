@@ -2,6 +2,7 @@
 using Orizon.Application.DTOs.Briefing;
 using Orizon.Application.DTOs.Calendar;
 using Orizon.Application.DTOs.Email;
+using Orizon.Application.DTOs.Tasks;
 using Orizon.Application.DTOs.Trello;
 using Orizon.Application.DTOs.Weather;
 using Orizon.Application.Interfaces.Repositories;
@@ -50,9 +51,14 @@ public class GetBriefingByDateQueryHandler
               ?? Enumerable.Empty<CalendarEventDto>()
             : Enumerable.Empty<CalendarEventDto>();
 
-        var tasks = briefing.TrelloTasksJson is not null
+        var trelloTasks = briefing.TrelloTasksJson is not null
             ? JsonSerializer.Deserialize<IEnumerable<TrelloTaskDto>>(
                 briefing.TrelloTasksJson, _jsonOptions)
+            : null;
+
+        var googleTasks = briefing.GoogleTasksJson is not null
+            ? JsonSerializer.Deserialize<IEnumerable<GoogleTaskDto>>(
+                briefing.GoogleTasksJson, _jsonOptions)
             : null;
 
         BriefingAISummaryDto? aiSummary = null;
@@ -74,7 +80,8 @@ public class GetBriefingByDateQueryHandler
             Weather = weather!,
             Emails = emails,
             CalendarEvents = events,
-            TrelloTasks = tasks,
+            TrelloTasks = trelloTasks,
+            GoogleTasks = googleTasks,
             AISummary = aiSummary!,
             GeneratedAt = briefing.GeneratedAt ?? DateTime.UtcNow,
         };

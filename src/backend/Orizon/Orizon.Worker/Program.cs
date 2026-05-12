@@ -78,6 +78,7 @@ try
 
     builder.Services.AddScoped<IGmailService, GmailIntegrationService>();
     builder.Services.AddScoped<ICalendarService, CalendarIntegrationService>();
+    builder.Services.AddScoped<IGoogleTasksService, GoogleTasksIntegrationService>();
     builder.Services.AddScoped<IClaudeService, ClaudeService>();
 
     // EMAIL

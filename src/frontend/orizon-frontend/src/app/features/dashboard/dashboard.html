@@ -53,6 +53,9 @@
       <app-ai-suggestions-card [aiSummary]="aiSummary()!" />
       <app-emails-card [emails]="emails()" />
       <app-calendar-card [events]="calendarEvents()" />
+      @if (googleTasks()?.length) {
+      <app-google-tasks-card [tasks]="googleTasks()!" />
+      }
       @if (trelloTasks()) {
       <app-trello-card [tasks]="trelloTasks()!" />
       }

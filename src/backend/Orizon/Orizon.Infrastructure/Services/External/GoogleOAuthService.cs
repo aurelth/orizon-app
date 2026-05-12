@@ -30,7 +30,8 @@ public class GoogleOAuthService : IGoogleOAuthService
         var scopes = Uri.EscapeDataString(
             "openid email profile " +
             "https://www.googleapis.com/auth/gmail.readonly " +
-            "https://www.googleapis.com/auth/calendar.readonly");
+            "https://www.googleapis.com/auth/calendar.readonly " +
+            "https://www.googleapis.com/auth/tasks.readonly ");
 
         return "https://accounts.google.com/o/oauth2/v2/auth" +
             $"?client_id={ClientId}" +

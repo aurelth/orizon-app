@@ -2,6 +2,7 @@
 using Moq;
 using Orizon.Application.DTOs.Calendar;
 using Orizon.Application.DTOs.Email;
+using Orizon.Application.DTOs.Tasks;
 using Orizon.Application.DTOs.Trello;
 using Orizon.Application.DTOs.Weather;
 using Orizon.Application.Interfaces.Repositories;
@@ -37,7 +38,6 @@ public class GetBriefingByDateQueryHandlerTests
     [Fact]
     public async Task Handle_WhenBriefingExists_ShouldReturnBriefingResultDto()
     {
-        // Arrange
         var userId = Guid.NewGuid();
         var briefingId = Guid.NewGuid();
 
@@ -63,10 +63,8 @@ public class GetBriefingByDateQueryHandlerTests
         var query = new GetBriefingByDateQuery(
             userId.ToString(), "Aurel", _today);
 
-        // Act
         var result = await _handler.Handle(query, default);
 
-        // Assert
         result.Should().NotBeNull();
         result!.BriefingId.Should().Be(briefingId);
         result.UserName.Should().Be("Aurel");
@@ -79,7 +77,6 @@ public class GetBriefingByDateQueryHandlerTests
     [Fact]
     public async Task Handle_WhenBriefingNotFound_ShouldReturnNull()
     {
-        // Arrange
         var userId = Guid.NewGuid();
 
         _briefingRepoMock
@@ -90,17 +87,14 @@ public class GetBriefingByDateQueryHandlerTests
         var query = new GetBriefingByDateQuery(
             userId.ToString(), "Aurel", _today);
 
-        // Act
         var result = await _handler.Handle(query, default);
 
-        // Assert
         result.Should().BeNull();
     }
 
     [Fact]
     public async Task Handle_WhenTrelloTasksExist_ShouldDeserializeTrelloTasks()
     {
-        // Arrange
         var userId = Guid.NewGuid();
         var tasks = new List<TrelloTaskDto>
         {
@@ -126,14 +120,9 @@ public class GetBriefingByDateQueryHandlerTests
                 userId.ToString(), _today, default))
             .ReturnsAsync(briefing);
 
-        var query = new GetBriefingByDateQuery(
-            userId.ToString(), "Aurel", _today);
+        var result = await _handler.Handle(
+            new GetBriefingByDateQuery(userId.ToString(), "Aurel", _today), default);
 
-        // Act
-        var result = await _handler.Handle(query, default);
-
-        // Assert
-        result.Should().NotBeNull();
         result!.TrelloTasks.Should().NotBeNull();
         result.TrelloTasks!.Should().HaveCount(1);
         result.TrelloTasks!.First().Title.Should().Be("Implementar Fase 7");
@@ -142,7 +131,6 @@ public class GetBriefingByDateQueryHandlerTests
     [Fact]
     public async Task Handle_WhenTrelloTasksNull_ShouldReturnNullTrelloTasks()
     {
-        // Arrange
         var userId = Guid.NewGuid();
 
         var briefing = new BriefingEntry
@@ -164,14 +152,124 @@ public class GetBriefingByDateQueryHandlerTests
                 userId.ToString(), _today, default))
             .ReturnsAsync(briefing);
 
-        var query = new GetBriefingByDateQuery(
-            userId.ToString(), "Aurel", _today);
+        var result = await _handler.Handle(
+            new GetBriefingByDateQuery(userId.ToString(), "Aurel", _today), default);
 
-        // Act
-        var result = await _handler.Handle(query, default);
-
-        // Assert
-        result.Should().NotBeNull();
         result!.TrelloTasks.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WhenGoogleTasksExist_ShouldDeserializeGoogleTasks()
+    {
+        var userId = Guid.NewGuid();
+        var googleTasks = new List<GoogleTaskDto>
+        {
+            new()
+            {
+                Id = "task-1",
+                Title = "Revisar PR do Orizon",
+                TaskListName = "Minha lista",
+                DueDate = DateTime.Today,
+                IsOverdue = false,
+            }
+        };
+
+        var briefing = new BriefingEntry
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Date = _today,
+            Status = BriefingStatus.Generated,
+            GeneratedAt = DateTime.UtcNow,
+            WeatherJson = JsonSerializer.Serialize(_weather),
+            EmailSummaryJson = JsonSerializer.Serialize(new List<EmailSummaryDto>()),
+            CalendarEventsJson = JsonSerializer.Serialize(new List<CalendarEventDto>()),
+            GoogleTasksJson = JsonSerializer.Serialize(googleTasks),
+            AISummary = "Bom dia!",
+        };
+
+        _briefingRepoMock
+            .Setup(r => r.GetByUserAndDateAsync(
+                userId.ToString(), _today, default))
+            .ReturnsAsync(briefing);
+
+        var result = await _handler.Handle(
+            new GetBriefingByDateQuery(userId.ToString(), "Aurel", _today), default);
+
+        result!.GoogleTasks.Should().NotBeNull();
+        result.GoogleTasks!.Should().HaveCount(1);
+        result.GoogleTasks!.First().Title.Should().Be("Revisar PR do Orizon");
+    }
+
+    [Fact]
+    public async Task Handle_WhenGoogleTasksNull_ShouldReturnNullGoogleTasks()
+    {
+        var userId = Guid.NewGuid();
+
+        var briefing = new BriefingEntry
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Date = _today,
+            Status = BriefingStatus.Generated,
+            GeneratedAt = DateTime.UtcNow,
+            WeatherJson = JsonSerializer.Serialize(_weather),
+            EmailSummaryJson = JsonSerializer.Serialize(new List<EmailSummaryDto>()),
+            CalendarEventsJson = JsonSerializer.Serialize(new List<CalendarEventDto>()),
+            GoogleTasksJson = null,
+            AISummary = "Bom dia!",
+        };
+
+        _briefingRepoMock
+            .Setup(r => r.GetByUserAndDateAsync(
+                userId.ToString(), _today, default))
+            .ReturnsAsync(briefing);
+
+        var result = await _handler.Handle(
+            new GetBriefingByDateQuery(userId.ToString(), "Aurel", _today), default);
+
+        result!.GoogleTasks.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_WhenBirthdayEventExists_ShouldDeserializeWithIsBirthdayTrue()
+    {
+        var userId = Guid.NewGuid();
+        var events = new List<CalendarEventDto>
+        {
+            new()
+            {
+                Title = "Aniversário de João",
+                StartTime = DateTime.Today,
+                EndTime = DateTime.Today.AddDays(1),
+                IsBirthday = true,
+                IsAllDay = true,
+            }
+        };
+
+        var briefing = new BriefingEntry
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            Date = _today,
+            Status = BriefingStatus.Generated,
+            GeneratedAt = DateTime.UtcNow,
+            WeatherJson = JsonSerializer.Serialize(_weather),
+            EmailSummaryJson = JsonSerializer.Serialize(new List<EmailSummaryDto>()),
+            CalendarEventsJson = JsonSerializer.Serialize(events),
+            AISummary = "Bom dia!",
+        };
+
+        _briefingRepoMock
+            .Setup(r => r.GetByUserAndDateAsync(
+                userId.ToString(), _today, default))
+            .ReturnsAsync(briefing);
+
+        var result = await _handler.Handle(
+            new GetBriefingByDateQuery(userId.ToString(), "Aurel", _today), default);
+
+        result!.CalendarEvents.Should().HaveCount(1);
+        result.CalendarEvents.First().IsBirthday.Should().BeTrue();
+        result.CalendarEvents.First().IsAllDay.Should().BeTrue();
     }
 }

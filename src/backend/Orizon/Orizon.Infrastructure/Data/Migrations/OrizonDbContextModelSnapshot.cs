@@ -265,6 +265,9 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("GeneratedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("GoogleTasksJson")
+                        .HasColumnType("text");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");

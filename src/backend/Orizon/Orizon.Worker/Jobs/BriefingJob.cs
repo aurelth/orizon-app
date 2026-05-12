@@ -13,6 +13,7 @@ public class BriefingJob
     private readonly IBriefingRepository _briefingRepository;
     private readonly IGmailService _gmailService;
     private readonly ICalendarService _calendarService;
+    private readonly IGoogleTasksService _googleTasksService;
     private readonly ITrelloService _trelloService;
     private readonly IWeatherService _weatherService;
     private readonly IClaudeService _claudeService;
@@ -26,6 +27,7 @@ public class BriefingJob
         IBriefingRepository briefingRepository,
         IGmailService gmailService,
         ICalendarService calendarService,
+        IGoogleTasksService googleTasksService,
         ITrelloService trelloService,
         IWeatherService weatherService,
         IClaudeService claudeService,
@@ -38,6 +40,7 @@ public class BriefingJob
         _briefingRepository = briefingRepository;
         _gmailService = gmailService;
         _calendarService = calendarService;
+        _googleTasksService = googleTasksService;
         _trelloService = trelloService;
         _weatherService = weatherService;
         _claudeService = claudeService;
@@ -80,7 +83,6 @@ public class BriefingJob
 
         _logger.LogInformation("Processando briefing para usuário {UserId}", userId);
 
-        // UPSERT
         var existing = await _briefingRepository.GetByUserAndDateAsync(userId, today, ct);
         var isNew = existing is null;
 
@@ -99,17 +101,14 @@ public class BriefingJob
 
         try
         {
-            // renova token Google se expirado ou prestes a expirar
             var googleToken = await EnsureValidGoogleTokenAsync(user, ct);
 
-            // localização
             var lat = user.IsTraveling && user.TravelLatitude.HasValue
                 ? user.TravelLatitude.Value : user.Latitude;
             var lon = user.IsTraveling && user.TravelLongitude.HasValue
                 ? user.TravelLongitude.Value : user.Longitude;
             var timezone = user.Timezone;
 
-            // Task.WhenAll seguro: nenhuma task toca o DbContext
             var emailsTask = !string.IsNullOrEmpty(googleToken)
                 ? _gmailService.GetRecentEmailsWithTokenAsync(googleToken, cancellationToken: ct)
                 : Task.FromResult<IEnumerable<Application.DTOs.Email.EmailSummaryDto>>(
@@ -120,6 +119,11 @@ public class BriefingJob
                 : Task.FromResult<IEnumerable<Application.DTOs.Calendar.CalendarEventDto>>(
                     Enumerable.Empty<Application.DTOs.Calendar.CalendarEventDto>());
 
+            var googleTasksTask = !string.IsNullOrEmpty(googleToken)
+                ? _googleTasksService.GetTodayTasksWithTokenAsync(googleToken, ct)
+                : Task.FromResult<IEnumerable<Application.DTOs.Tasks.GoogleTaskDto>>(
+                    Enumerable.Empty<Application.DTOs.Tasks.GoogleTaskDto>());
+
             var weatherTask = _weatherService.GetWeatherAsync(lat, lon, timezone, ct);
 
             var trelloTask = user.TrelloEnabled
@@ -127,15 +131,17 @@ public class BriefingJob
                 : Task.FromResult<IEnumerable<Application.DTOs.Trello.TrelloTaskDto>>(
                     Enumerable.Empty<Application.DTOs.Trello.TrelloTaskDto>());
 
-            await Task.WhenAll(emailsTask, eventsTask, weatherTask, trelloTask);
+            await Task.WhenAll(emailsTask, eventsTask, googleTasksTask, weatherTask, trelloTask);
 
             var emails = await emailsTask;
             var events = await eventsTask;
+            var googleTasks = await googleTasksTask;
             var weather = await weatherTask;
             var trelloTasks = await trelloTask;
 
             briefing.EmailSummaryJson = JsonSerializer.Serialize(emails);
             briefing.CalendarEventsJson = JsonSerializer.Serialize(events);
+            briefing.GoogleTasksJson = JsonSerializer.Serialize(googleTasks);
             briefing.WeatherJson = JsonSerializer.Serialize(weather);
             briefing.TrelloTasksJson = user.TrelloEnabled
                 ? JsonSerializer.Serialize(trelloTasks) : null;
@@ -143,6 +149,7 @@ public class BriefingJob
             var aiSummary = await _claudeService.GenerateDailySummaryAsync(
                 emails,
                 events,
+                googleTasks,
                 user.TrelloEnabled ? trelloTasks : null,
                 weather,
                 user.DisplayName,
@@ -169,6 +176,7 @@ public class BriefingJob
                     Weather = weather,
                     Emails = emails,
                     CalendarEvents = events,
+                    GoogleTasks = googleTasks,
                     TrelloTasks = user.TrelloEnabled ? trelloTasks : null,
                     AISummary = aiSummary,
                     GeneratedAt = briefing.GeneratedAt.Value,
@@ -189,7 +197,6 @@ public class BriefingJob
         }
     }
 
-    // Renova o token se expirado ou expirando em menos de 5 minutos
     private async Task<string> EnsureValidGoogleTokenAsync(
         AppUser user, CancellationToken ct)
     {
@@ -223,18 +230,13 @@ public class BriefingJob
     }
 
     private async Task NotifyUserAsync(
-    string userId, Guid briefingId, CancellationToken ct)
+        string userId, Guid briefingId, CancellationToken ct)
     {
         try
         {
             var apiUrl = _configuration["ApiUrl"] ?? "http://localhost:5010";
 
-            var payload = new
-            {
-                UserId = userId,
-                BriefingId = briefingId
-            };
-
+            var payload = new { UserId = userId, BriefingId = briefingId };
             var json = System.Text.Json.JsonSerializer.Serialize(payload);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 

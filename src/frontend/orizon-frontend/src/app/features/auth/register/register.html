@@ -2,7 +2,7 @@
   <div class="auth-form-side">
     <div class="auth-form-container">
       <div class="brand">
-        <span class="brand-name">Orizon</span>
+        <a routerLink="/dashboard" class="brand-name">Orizon</a>
         <span class="brand-tagline">Your day, before it begins</span>
       </div>
 
@@ -60,16 +60,37 @@
               <i [class]="showPassword ? 'pi pi-eye' : 'pi pi-eye-slash'"></i>
             </button>
           </div>
-          @if (isFieldInvalid('password')) {
-            <span class="field__error">
-              @if (form.get('password')?.errors?.['required']) {
-                Senha é obrigatória
-              } @else if (form.get('password')?.errors?.['minlength']) {
-                Senha deve ter no mínimo 8 caracteres
-              } @else {
-                Senha deve conter maiúscula, minúscula e número
-              }
-            </span>
+          @if (form.get('password')?.touched && form.get('password')?.invalid) {
+            <div class="password-rules">
+              <span class="password-rule"
+                [class.password-rule--ok]="form.get('password')?.value?.length >= 8">
+                <i class="pi"
+                  [class.pi-check]="form.get('password')?.value?.length >= 8"
+                  [class.pi-times]="!form.get('password')?.value || form.get('password')?.value?.length < 8"></i>
+                Mínimo 8 caracteres
+              </span>
+              <span class="password-rule"
+                [class.password-rule--ok]="/[A-Z]/.test(form.get('password')?.value || '')">
+                <i class="pi"
+                  [class.pi-check]="/[A-Z]/.test(form.get('password')?.value || '')"
+                  [class.pi-times]="!/[A-Z]/.test(form.get('password')?.value || '')"></i>
+                Uma letra maiúscula
+              </span>
+              <span class="password-rule"
+                [class.password-rule--ok]="/[a-z]/.test(form.get('password')?.value || '')">
+                <i class="pi"
+                  [class.pi-check]="/[a-z]/.test(form.get('password')?.value || '')"
+                  [class.pi-times]="!/[a-z]/.test(form.get('password')?.value || '')"></i>
+                Uma letra minúscula
+              </span>
+              <span class="password-rule"
+                [class.password-rule--ok]="/[0-9]/.test(form.get('password')?.value || '')">
+                <i class="pi"
+                  [class.pi-check]="/[0-9]/.test(form.get('password')?.value || '')"
+                  [class.pi-times]="!/[0-9]/.test(form.get('password')?.value || '')"></i>
+                Um número
+              </span>
+            </div>
           }
         </div>
 

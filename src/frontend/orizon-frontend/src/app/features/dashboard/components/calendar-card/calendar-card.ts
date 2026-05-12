@@ -14,9 +14,18 @@ export class CalendarCardComponent {
 
   readonly showAll = signal(false);
 
-  readonly visibleEvents = computed(() =>
-    this.showAll() ? this.events() : this.events().slice(0, 4)
+  readonly regularEvents = computed(() =>
+    this.events().filter(e => !e.isBirthday)
   );
+
+  readonly birthdays = computed(() =>
+    this.events().filter(e => e.isBirthday)
+  );
+
+  readonly visibleEvents = computed(() => {
+    const all = this.events();
+    return this.showAll() ? all : all.slice(0, 4);
+  });
 
   readonly hasMore = computed(() => this.events().length > 4);
 

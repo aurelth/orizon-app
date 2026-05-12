@@ -18,32 +18,45 @@
     } @else {
       <div class="event-list">
         @for (event of visibleEvents(); track event.title) {
-          <div class="event-item" [class.event-item--rain]="event.conflictsWithRain">
-            <div class="event-time">
-              <span>{{ event.startTime | date:'HH:mm' }}</span>
-              <div class="event-time__line"></div>
+          @if (event.isBirthday) {
+            <div class="event-item event-item--birthday">
+              <div class="event-time">
+                <span>🎂</span>
+                <div class="event-time__line"></div>
+              </div>
+              <div class="event-content">
+                <p class="event-title">{{ event.title }}</p>
+                <p class="event-duration">Aniversário</p>
+              </div>
             </div>
-            <div class="event-content">
-              <p class="event-title">{{ event.title }}</p>
-              <p class="event-duration">
-                {{ formatDuration(event.startTime, event.endTime) }}
-                @if (event.participants.length > 0) {
-                  · {{ event.participants.length }} participantes
+          } @else {
+            <div class="event-item" [class.event-item--rain]="event.conflictsWithRain">
+              <div class="event-time">
+                <span>{{ event.startTime | date:'HH:mm' }}</span>
+                <div class="event-time__line"></div>
+              </div>
+              <div class="event-content">
+                <p class="event-title">{{ event.title }}</p>
+                <p class="event-duration">
+                  {{ formatDuration(event.startTime, event.endTime) }}
+                  @if (event.participants.length > 0) {
+                    · {{ event.participants.length }} participantes
+                  }
+                </p>
+                @if (event.conflictsWithRain) {
+                  <span class="event-rain-warning">
+                    ☔ Conflito com chuva prevista
+                  </span>
                 }
-              </p>
-              @if (event.conflictsWithRain) {
-                <span class="event-rain-warning">
-                  ☔ Conflito com chuva prevista
-                </span>
-              }
-              @if (event.meetLink) {
-                <a [href]="event.meetLink" target="_blank" class="event-meet-link">
-                  <i class="pi pi-video"></i>
-                  Entrar no Meet
-                </a>
-              }
+                @if (event.meetLink) {
+                  <a [href]="event.meetLink" target="_blank" class="event-meet-link">
+                    <i class="pi pi-video"></i>
+                    Entrar no Meet
+                  </a>
+                }
+              </div>
             </div>
-          </div>
+          }
         }
       </div>
 

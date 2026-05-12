@@ -1,0 +1,51 @@
+<div class="card">
+  <div class="card__header">
+    <div class="card-icon card-icon--primary">
+      <i class="pi pi-check-square"></i>
+    </div>
+    <div>
+      <h3 class="card__title">Google Tasks</h3>
+      <p class="card__subtitle">{{ tasks().length }} tarefas</p>
+    </div>
+  </div>
+
+  <div class="card__body">
+    @if (tasks().length === 0) {
+      <div class="card__empty">
+        <i class="pi pi-check"></i>
+        <span>Nenhuma tarefa pendente</span>
+      </div>
+    } @else {
+      <div class="task-list">
+        @for (task of visibleTasks(); track task.id) {
+          <div class="task-item" [class.task-item--overdue]="task.isOverdue">
+            <div class="task-item__header">
+              <span class="task-item__list">{{ task.taskListName }}</span>
+              @if (task.dueDate) {
+                <span class="task-item__due" [class.task-item__due--overdue]="task.isOverdue">
+                  {{ task.isOverdue ? '⚠️' : '📅' }} {{ formatDueDate(task.dueDate) }}
+                </span>
+              }
+            </div>
+            <p class="task-item__title">{{ task.title }}</p>
+            @if (task.notes) {
+              <p class="task-item__notes">{{ task.notes | slice:0:80 }}{{ task.notes.length > 80 ? '...' : '' }}</p>
+            }
+          </div>
+        }
+      </div>
+
+      @if (hasMore()) {
+        <button class="btn-toggle" (click)="toggleShowAll()">
+          @if (showAll()) {
+            <i class="pi pi-chevron-up"></i>
+            <span>Ver menos</span>
+          } @else {
+            <i class="pi pi-chevron-down"></i>
+            <span>Ver mais</span>
+          }
+        </button>
+      }
+    }
+  </div>
+</div>

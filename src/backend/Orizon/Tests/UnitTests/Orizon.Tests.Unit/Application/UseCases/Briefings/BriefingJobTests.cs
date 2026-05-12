@@ -5,6 +5,7 @@ using Moq;
 using Orizon.Application.DTOs.Briefing;
 using Orizon.Application.DTOs.Calendar;
 using Orizon.Application.DTOs.Email;
+using Orizon.Application.DTOs.Tasks;
 using Orizon.Application.DTOs.Trello;
 using Orizon.Application.DTOs.Weather;
 using Orizon.Application.Interfaces.Repositories;
@@ -21,6 +22,7 @@ public class BriefingJobTests
     private readonly Mock<IBriefingRepository> _briefingRepoMock = new();
     private readonly Mock<IGmailService> _gmailMock = new();
     private readonly Mock<ICalendarService> _calendarMock = new();
+    private readonly Mock<IGoogleTasksService> _googleTasksMock = new();
     private readonly Mock<ITrelloService> _trelloMock = new();
     private readonly Mock<IWeatherService> _weatherMock = new();
     private readonly Mock<IClaudeService> _claudeMock = new();
@@ -71,6 +73,7 @@ public class BriefingJobTests
             _briefingRepoMock.Object,
             _gmailMock.Object,
             _calendarMock.Object,
+            _googleTasksMock.Object,
             _trelloMock.Object,
             _weatherMock.Object,
             _claudeMock.Object,
@@ -163,6 +166,11 @@ public class BriefingJobTests
                 _testUser.GoogleAccessToken!, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<CalendarEventDto>());
 
+        _googleTasksMock
+            .Setup(s => s.GetTodayTasksWithTokenAsync(
+                _testUser.GoogleAccessToken!, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<GoogleTaskDto>());
+
         _weatherMock
             .Setup(s => s.GetWeatherAsync(
                 _testUser.Latitude, _testUser.Longitude, _testUser.Timezone,
@@ -212,6 +220,34 @@ public class BriefingJobTests
         _trelloMock.Verify(
             s => s.GetActiveTasksAsync(_testUser.Id.ToString(), It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenGoogleTokenValid_ShouldCallGoogleTasksService()
+    {
+        SetupDefaultMocks();
+
+        await _job.ExecuteAsync(default);
+
+        _googleTasksMock.Verify(
+            s => s.GetTodayTasksWithTokenAsync(
+                _testUser.GoogleAccessToken!, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenNoGoogleToken_ShouldNotCallGoogleTasksService()
+    {
+        _testUser.GoogleTokenExpiresAt = DateTime.UtcNow.AddMinutes(-1);
+        _testUser.GoogleRefreshToken = null;
+        SetupDefaultMocks(accessToken: "");
+
+        await _job.ExecuteAsync(default);
+
+        _googleTasksMock.Verify(
+            s => s.GetTodayTasksWithTokenAsync(
+                It.IsAny<string>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     [Fact]
@@ -320,7 +356,6 @@ public class BriefingJobTests
 
         SetupDefaultMocks();
 
-        // sobrescreve após SetupDefaultMocks para retornar briefing existente
         _briefingRepoMock
             .Setup(r => r.GetByUserAndDateAsync(
                 _testUser.Id.ToString(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
@@ -364,6 +399,11 @@ public class BriefingJobTests
                 token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<CalendarEventDto>());
 
+        _googleTasksMock
+            .Setup(s => s.GetTodayTasksWithTokenAsync(
+                token, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<GoogleTaskDto>());
+
         _weatherMock
             .Setup(s => s.GetWeatherAsync(
                 It.IsAny<double>(), It.IsAny<double>(), _testUser.Timezone,
@@ -374,6 +414,7 @@ public class BriefingJobTests
             .Setup(s => s.GenerateDailySummaryAsync(
                 It.IsAny<IEnumerable<EmailSummaryDto>>(),
                 It.IsAny<IEnumerable<CalendarEventDto>>(),
+                It.IsAny<IEnumerable<GoogleTaskDto>?>(),
                 It.IsAny<IEnumerable<TrelloTaskDto>?>(),
                 It.IsAny<WeatherDto>(),
                 _testUser.DisplayName,
