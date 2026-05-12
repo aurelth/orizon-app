@@ -1,0 +1,85 @@
+<div class="page-header">
+  <h1 class="page-title">Perfil</h1>
+  <p class="page-subtitle">Gerencie suas informações pessoais e preferências</p>
+</div>
+
+@if (error()) {
+<div class="alert alert--error">
+  <i class="pi pi-exclamation-circle"></i>
+  <span>{{ error() }}</span>
+</div>
+}
+
+<div class="profile-card">
+  @if (isLoading()) {
+  <div class="profile-loading">
+    <i class="pi pi-spinner pi-spin"></i>
+    <span>Carregando perfil...</span>
+  </div>
+  } @else {
+  <div class="profile-info">
+    <div class="profile-avatar">
+      @if (profile()?.profilePictureUrl) {
+      <img [src]="profile()!.profilePictureUrl!" [alt]="profile()!.displayName" />
+      } @else {
+      <div class="profile-avatar__placeholder">
+        <i class="pi pi-user"></i>
+      </div>
+      }
+    </div>
+    <div class="profile-meta">
+      <p class="profile-email">{{ profile()?.email }}</p>
+      @if (profile()?.locationName) {
+      <p class="profile-location">
+        <i class="pi pi-map-marker"></i>
+        {{ profile()?.locationName }}
+      </p>
+      }
+    </div>
+  </div>
+
+  <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" novalidate class="profile-form">
+    <div class="field" [class.field--error]="isFieldInvalid('displayName')">
+      <label for="displayName">Nome</label>
+      <input id="displayName" type="text" formControlName="displayName"
+        placeholder="Seu nome" />
+      @if (isFieldInvalid('displayName')) {
+      <span class="field__error">Nome obrigatório (mínimo 2 caracteres)</span>
+      }
+    </div>
+
+    <div class="field">
+      <label>Tema</label>
+      <div class="theme-selector">
+        <button type="button" class="theme-option"
+          [class.theme-option--selected]="profileForm.get('themePreference')?.value === 'Dark'"
+          (click)="setTheme('Dark')">
+          <i class="pi pi-moon"></i>
+          <span>Escuro</span>
+        </button>
+        <button type="button" class="theme-option"
+          [class.theme-option--selected]="profileForm.get('themePreference')?.value === 'Light'"
+          (click)="setTheme('Light')">
+          <i class="pi pi-sun"></i>
+          <span>Claro</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary btn--sm"
+        [disabled]="isSaving() || !hasChanges()">
+        @if (isSaving()) {
+        <i class="pi pi-spinner pi-spin"></i>
+        <span>Salvando...</span>
+        } @else if (isSaved()) {
+        <span>Salvo</span>
+        } @else {
+        <i class="pi pi-save"></i>
+        <span>Salvar alterações</span>
+        }
+      </button>
+    </div>
+  </form>
+  }
+</div>

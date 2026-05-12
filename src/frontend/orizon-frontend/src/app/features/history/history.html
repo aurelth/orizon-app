@@ -1,0 +1,79 @@
+<div class="history-layout">
+  <header class="history-header">
+    <div class="header-brand">
+      <a routerLink="/dashboard" class="brand-name">Orizon</a>
+      <span class="brand-tagline">Your day, before it begins</span>
+    </div>
+    <nav class="header-nav">
+      <a routerLink="/dashboard" class="header-nav__link">
+        <i class="pi pi-home"></i>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/settings" class="header-nav__link">
+        <i class="pi pi-cog"></i>
+        <span>Configurações</span>
+      </a>
+    </nav>
+  </header>
+
+  <main class="history-main">
+    <div class="page-header">
+      <h1 class="page-title">Histórico</h1>
+      <p class="page-subtitle">Seus briefings anteriores</p>
+    </div>
+
+    @if (isLoading()) {
+    <div class="history-loading">
+      <i class="pi pi-spinner pi-spin"></i>
+      <span>Carregando histórico...</span>
+    </div>
+    } @else if (error()) {
+    <div class="history-error">
+      <i class="pi pi-exclamation-circle"></i>
+      <span>{{ error() }}</span>
+    </div>
+    } @else if (!history()?.items?.length) {
+    <div class="history-empty">
+      <div class="empty-icon">📅</div>
+      <h2>Nenhum briefing encontrado</h2>
+      <p>Seus briefings aparecerão aqui após serem gerados.</p>
+      <a routerLink="/dashboard" class="btn btn--primary">Ir para o Dashboard</a>
+    </div>
+    } @else {
+    <div class="history-list">
+      @for (item of history()!.items; track item.briefingId) {
+      <button class="history-item" (click)="openBriefing(item.date)">
+        <div class="history-item__date">
+          <i class="pi pi-calendar"></i>
+          <span>{{ formatDate(item.date) }}</span>
+        </div>
+        <div class="history-item__greeting">
+          {{ item.greeting }}
+        </div>
+        <i class="pi pi-chevron-right history-item__arrow"></i>
+      </button>
+      }
+    </div>
+
+    @if (history()!.totalPages > 1) {
+    <div class="history-pagination">
+      <button class="btn btn--ghost btn--sm"
+        [disabled]="currentPage === 1"
+        (click)="loadHistory(currentPage - 1)">
+        <i class="pi pi-chevron-left"></i>
+        Anterior
+      </button>
+      <span class="pagination-info">
+        {{ currentPage }} / {{ history()!.totalPages }}
+      </span>
+      <button class="btn btn--ghost btn--sm"
+        [disabled]="currentPage === history()!.totalPages"
+        (click)="loadHistory(currentPage + 1)">
+        Próximo
+        <i class="pi pi-chevron-right"></i>
+      </button>
+    </div>
+    }
+    }
+  </main>
+</div>

@@ -1,10 +1,14 @@
 <div class="dashboard-layout">
   <header class="dashboard-header">
     <div class="header-brand">
-      <span class="brand-name">Orizon</span>
+      <a routerLink="/dashboard" class="brand-name">Orizon</a>
       <span class="brand-tagline">Your day, before it begins</span>
     </div>
     <nav class="header-nav">
+      <a routerLink="/history" class="header-nav__link">
+        <i class="pi pi-calendar"></i>
+        <span>Histórico</span>
+      </a>
       <a routerLink="/settings" class="header-nav__link">
         <i class="pi pi-cog"></i>
         <span>Configurações</span>
@@ -46,13 +50,9 @@
 
     <div class="dashboard-grid">
       <app-weather-card [weather]="weather()!" [weatherSummary]="weatherSummary()" />
-
       <app-ai-suggestions-card [aiSummary]="aiSummary()!" />
-
       <app-emails-card [emails]="emails()" />
-
       <app-calendar-card [events]="calendarEvents()" />
-
       @if (trelloTasks()) {
       <app-trello-card [tasks]="trelloTasks()!" />
       }

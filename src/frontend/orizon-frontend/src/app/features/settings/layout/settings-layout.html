@@ -1,7 +1,7 @@
 <div class="settings-layout">
   <aside class="settings-sidebar">
     <div class="sidebar-brand">
-      <span class="brand-name">Orizon</span>
+      <a routerLink="/dashboard" class="brand-name">Orizon</a>
       <span class="brand-tagline">Your day, before it begins</span>
     </div>
 
@@ -11,7 +11,17 @@
         <span>Dashboard</span>
       </a>
 
+      <a routerLink="/history" class="nav-item nav-item--dashboard">
+        <i class="pi pi-calendar"></i>
+        <span>Histórico</span>
+      </a>
+
       <span class="nav-section-label">Configurações</span>
+
+      <a routerLink="profile" routerLinkActive="nav-item--active" class="nav-item">
+        <i class="pi pi-user"></i>
+        <span>Perfil</span>
+      </a>
 
       <a routerLink="integrations" routerLinkActive="nav-item--active" class="nav-item">
         <i class="pi pi-link"></i>

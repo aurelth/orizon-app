@@ -1,0 +1,54 @@
+<div class="detail-layout">
+  <header class="detail-header">
+    <div class="header-brand">
+      <a routerLink="/dashboard" class="brand-name">Orizon</a>
+      <span class="brand-tagline">Your day, before it begins</span>
+    </div>
+    <nav class="header-nav">
+      <a routerLink="/history" class="header-nav__link">
+        <i class="pi pi-arrow-left"></i>
+        <span>Histórico</span>
+      </a>
+      <a routerLink="/dashboard" class="header-nav__link">
+        <i class="pi pi-home"></i>
+        <span>Dashboard</span>
+      </a>
+    </nav>
+  </header>
+
+  <main class="detail-main">
+    @if (isLoading()) {
+    <div class="detail-loading">
+      <i class="pi pi-spinner pi-spin"></i>
+      <span>Carregando briefing...</span>
+    </div>
+    } @else if (error()) {
+    <div class="detail-error">
+      <div class="empty-icon">📅</div>
+      <h2>{{ error() }}</h2>
+      <a routerLink="/history" class="btn btn--primary">Voltar ao histórico</a>
+    </div>
+    } @else if (briefing()) {
+    <div class="detail-greeting">
+      <h1>{{ briefing()!.aiSummary.greeting }}</h1>
+      <p class="detail-date">{{ formatDate(briefing()!.date) }}</p>
+    </div>
+
+    <div class="detail-grid">
+      <app-weather-card
+        [weather]="briefing()!.weather"
+        [weatherSummary]="briefing()!.aiSummary.weatherSummary" />
+
+      <app-ai-suggestions-card [aiSummary]="briefing()!.aiSummary" />
+
+      <app-emails-card [emails]="briefing()!.emails" />
+
+      <app-calendar-card [events]="briefing()!.calendarEvents" />
+
+      @if (briefing()!.trelloTasks) {
+      <app-trello-card [tasks]="briefing()!.trelloTasks!" />
+      }
+    </div>
+    }
+  </main>
+</div>
