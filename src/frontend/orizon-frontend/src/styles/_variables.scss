@@ -30,3 +30,26 @@
 
   --transition: 200ms ease;
 }
+
+html.theme-light {
+  --color-bg:          #f9fafb;
+  --color-bg-surface:  #ffffff;
+  --color-bg-elevated: #f3f4f6;
+  --color-border:      #e5e7eb;
+
+  --color-primary:     #ea580c;
+  --color-primary-dim: #c2410c;
+  --color-accent:      #059669;
+
+  --color-text:        #111827;
+  --color-text-muted:  #6b7280;
+  --color-text-dim:    #9ca3af;
+
+  --color-success:     #059669;
+  --color-error:       #dc2626;
+  --color-warning:     #d97706;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.16);
+}

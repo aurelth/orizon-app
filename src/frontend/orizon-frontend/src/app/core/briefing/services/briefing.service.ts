@@ -5,6 +5,22 @@ import { BriefingStore } from '../store/briefing.store';
 import { AuthService } from '../../auth/services/auth.service';
 import { BriefingResult } from '../models/briefing.model';
 
+export interface BriefingHistoryItem {
+  briefingId: string;
+  date: string;
+  status: string;
+  greeting: string;
+  generatedAt: string;
+}
+
+export interface BriefingHistoryResult {
+  items: BriefingHistoryItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class BriefingService {
   private readonly api = inject(ApiService);
@@ -31,13 +47,18 @@ export class BriefingService {
     );
   }
 
+  getHistory(page = 1, pageSize = 10): Observable<BriefingHistoryResult> {
+    return this.api.get<BriefingHistoryResult>(
+      `/briefings/history?page=${page}&pageSize=${pageSize}`
+    );
+  }
+
   connectSignalR(hubUrl: string): void {
     this.store.setConnecting(true);
 
     const token = this.authService.getAccessToken();
     const url = `${hubUrl}?access_token=${token}`;
 
-    // importação dinâmica para não aumentar o bundle inicial
     import('@microsoft/signalr').then(({ HubConnectionBuilder, LogLevel }) => {
       const connection = new HubConnectionBuilder()
         .withUrl(url)
@@ -59,7 +80,6 @@ export class BriefingService {
     return this.api.post<{ jobId: string; message: string }>('/briefings/generate', {}).pipe(
       tap({
         next: () => {
-          // aguarda 15s e recarrega o briefing
           setTimeout(() => this.getTodayBriefing().subscribe(), 15000);
         },
         error: () => { },

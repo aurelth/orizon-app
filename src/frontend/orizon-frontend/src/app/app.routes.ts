@@ -25,6 +25,12 @@ export const routes: Routes = [
       import('./features/dashboard/dashboard.routes').then((m) => m.dashboardRoutes),
   },
   {
+    path: 'history',
+    canActivate: [authGuard],
+    loadChildren: () =>
+      import('./features/history/history.routes').then((m) => m.historyRoutes),
+  },
+  {
     path: '**',
     redirectTo: 'auth/login',
   },

@@ -22,6 +22,11 @@ export const settingsRoutes: Routes = [
           import('./travel-mode/travel-mode').then((m) => m.TravelModeComponent),
       },
       {
+        path: 'profile',
+        loadComponent: () =>
+          import('./profile/profile').then((m) => m.ProfileComponent),
+      },
+      {
         path: '',
         redirectTo: 'integrations',
         pathMatch: 'full',

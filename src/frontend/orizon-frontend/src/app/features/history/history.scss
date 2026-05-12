@@ -1,0 +1,218 @@
+.history-layout {
+  min-height: 100vh;
+  background: var(--color-bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.history-header {
+  background: var(--color-bg-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+
+  .brand-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    letter-spacing: -0.5px;
+  }
+
+  .brand-tagline {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    letter-spacing: 0.5px;
+  }
+}
+
+.header-nav {
+  display: flex;
+  gap: 0.5rem;
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    text-decoration: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
+    transition: all var(--transition);
+
+    &:hover {
+      background: var(--color-bg-elevated);
+      color: var(--color-text);
+    }
+  }
+}
+
+.history-main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+
+  .page-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--color-text);
+    letter-spacing: -0.5px;
+    margin-bottom: 0.375rem;
+  }
+
+  .page-subtitle {
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+  }
+}
+
+.history-loading,
+.history-error {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  padding: 2rem 0;
+
+  i { color: var(--color-primary); }
+}
+
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  gap: 1rem;
+  text-align: center;
+
+  .empty-icon { font-size: 3rem; }
+
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  p { color: var(--color-text-muted); }
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: left;
+  width: 100%;
+
+  &:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-elevated);
+  }
+
+  &__date {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    min-width: 220px;
+
+    i { color: var(--color-primary); }
+  }
+
+  &__greeting {
+    flex: 1;
+    font-size: 0.875rem;
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__arrow {
+    color: var(--color-text-dim);
+    font-size: 0.75rem;
+  }
+}
+
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition);
+  text-decoration: none;
+
+  &--sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  &--primary {
+    background: var(--color-primary);
+    color: var(--color-bg);
+    font-weight: 600;
+    padding: 0.625rem 1.25rem;
+
+    &:hover { background: var(--color-primary-dim); }
+  }
+
+  &--ghost {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+
+    &:hover:not(:disabled) {
+      color: var(--color-text);
+      border-color: var(--color-text-dim);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+  }
+}
