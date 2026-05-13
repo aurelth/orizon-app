@@ -47,14 +47,108 @@ public class EmailNotificationService : IEmailNotificationService
         var response = await _sendGridClient.SendEmailAsync(msg, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
-        {
             _logger.LogError("Falha ao enviar email para {Email} — Status: {Status}",
                 toEmail, response.StatusCode);
-        }
         else
-        {
             _logger.LogInformation("Email enviado com sucesso para {Email}", toEmail);
-        }
+    }
+
+    public async Task SendPasswordResetEmailAsync(
+        string toEmail,
+        string userName,
+        string resetToken,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation(
+            "Enviando email de redefinição de senha para {Email}", toEmail);
+
+        var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@orizonapp.io";
+        var fromName = _configuration["Email:FromName"] ?? "Orizon";
+        var frontendUrl = _configuration["App:FrontendUrl"] ?? "http://localhost:4200";
+
+        var resetLink =
+            $"{frontendUrl}/auth/reset-password?email={Uri.EscapeDataString(toEmail)}&token={resetToken}";
+
+        var msg = new SendGridMessage
+        {
+            From = new EmailAddress(fromEmail, fromName),
+            Subject = "🔐 Redefinição de senha — Orizon",
+            HtmlContent = BuildPasswordResetEmailHtml(userName, resetLink),
+        };
+
+        msg.AddTo(new EmailAddress(toEmail, userName));
+
+        var response = await _sendGridClient.SendEmailAsync(msg, cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+            _logger.LogError(
+                "Falha ao enviar email de redefinição para {Email} — Status: {Status}",
+                toEmail, response.StatusCode);
+        else
+            _logger.LogInformation(
+                "Email de redefinição enviado com sucesso para {Email}", toEmail);
+    }
+
+    private static string BuildPasswordResetEmailHtml(string userName, string resetLink)
+    {
+        return $"""
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width,initial-scale=1">
+              <title>Redefinição de senha — Orizon</title>
+            </head>
+            <body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f3f4f6;padding:32px 16px;">
+                <tr>
+                  <td align="center">
+                    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;">
+
+                      <!-- Header -->
+                      <tr>
+                        <td align="center" style="padding-bottom:28px;">
+                          <div style="font-size:28px;font-weight:800;color:#ea580c;letter-spacing:-1px;">🌅 Orizon</div>
+                          <div style="font-size:12px;color:#9ca3af;margin-top:4px;letter-spacing:0.5px;">Your day, before it begins</div>
+                        </td>
+                      </tr>
+
+                      <!-- Card -->
+                      <tr>
+                        <td style="padding-bottom:12px;">
+                          <div style="background:#ffffff;border-radius:12px;padding:32px 28px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                            <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;">🔐 Redefinição de senha</div>
+                            <div style="font-size:20px;font-weight:700;color:#111827;margin-bottom:12px;">Olá, {userName}!</div>
+                            <div style="font-size:14px;color:#6b7280;line-height:1.7;margin-bottom:24px;">
+                              Recebemos uma solicitação para redefinir a senha da sua conta Orizon. Clique no botão abaixo para criar uma nova senha.
+                            </div>
+                            <div style="text-align:center;margin-bottom:24px;">
+                              <a href="{resetLink}"
+                                style="display:inline-block;background:#ea580c;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;padding:14px 32px;border-radius:8px;">
+                                Redefinir senha
+                              </a>
+                            </div>
+                            <div style="font-size:12px;color:#9ca3af;line-height:1.6;border-top:1px solid #f3f4f6;padding-top:16px;">
+                              Este link expira em <strong>1 hora</strong>. Se você não solicitou a redefinição de senha, ignore este email — sua conta está segura.
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <!-- Footer -->
+                      <tr>
+                        <td align="center" style="padding-top:16px;">
+                          <div style="font-size:11px;color:#9ca3af;">Orizon — seu briefing diário personalizado</div>
+                        </td>
+                      </tr>
+
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+            """;
     }
 
     private static string BuildEmailHtml(BriefingResultDto briefing)

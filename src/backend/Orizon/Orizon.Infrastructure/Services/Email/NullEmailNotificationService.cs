@@ -13,4 +13,13 @@ public class NullEmailNotificationService : IEmailNotificationService
     {
         return Task.CompletedTask;
     }
+
+    public Task SendPasswordResetEmailAsync(
+        string toEmail,
+        string userName,
+        string resetToken,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.CompletedTask;
+    }
 }
