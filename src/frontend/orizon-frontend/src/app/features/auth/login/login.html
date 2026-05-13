@@ -2,7 +2,7 @@
   <div class="auth-form-side">
     <div class="auth-form-container">
       <div class="brand">
-        <span class="brand-name">Orizon</span>
+        <a routerLink="/dashboard" class="brand-name">Orizon</a>
         <span class="brand-tagline">Your day, before it begins</span>
       </div>
 
@@ -54,6 +54,11 @@
           @if (isFieldInvalid('password')) {
             <span class="field__error">Senha deve ter no mínimo 8 caracteres</span>
           }
+          <div class="field__hint">
+            <a routerLink="/auth/forgot-password" class="field__forgot">
+              Esqueci minha senha
+            </a>
+          </div>
         </div>
 
         @if (error()) {

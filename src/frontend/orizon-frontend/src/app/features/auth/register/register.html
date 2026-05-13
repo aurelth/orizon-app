@@ -120,7 +120,7 @@
           </div>
         }
 
-        <button type="submit" class="btn btn--primary" [disabled]="isLoading()">
+        <button type="submit" class="btn btn--primary" [disabled]="isLoading() || form.invalid">
           @if (isLoading()) {
             <i class="pi pi-spinner pi-spin"></i>
             <span>Criando conta...</span>

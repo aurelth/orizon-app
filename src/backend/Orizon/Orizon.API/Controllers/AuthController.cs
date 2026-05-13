@@ -2,10 +2,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Orizon.Application.UseCases.Auth.Commands.ForgotPassword;
 using Orizon.Application.UseCases.Auth.Commands.Login;
 using Orizon.Application.UseCases.Auth.Commands.Logout;
 using Orizon.Application.UseCases.Auth.Commands.RefreshToken;
 using Orizon.Application.UseCases.Auth.Commands.RegisterUser;
+using Orizon.Application.UseCases.Auth.Commands.ResetPassword;
 using System.Security.Claims;
 
 namespace Orizon.API.Controllers;
@@ -25,7 +27,6 @@ public class AuthController : ControllerBase
         _logger = logger;
     }
 
-    // POST /auth/register
     [HttpPost("register")]
     [AllowAnonymous]
     public async Task<IActionResult> Register(
@@ -35,8 +36,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _mediator.Send(command, ct);
-            _logger.LogInformation(
-                "Novo usuário registrado: {Email}", command.Email);
+            _logger.LogInformation("Novo usuário registrado: {Email}", command.Email);
             return Created("/auth/login", result);
         }
         catch (ValidationException ex)
@@ -53,7 +53,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    // POST /auth/login
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login(
@@ -63,8 +62,7 @@ public class AuthController : ControllerBase
         try
         {
             var result = await _mediator.Send(command, ct);
-            _logger.LogInformation(
-                "Login bem-sucedido: {Email}", command.Email);
+            _logger.LogInformation("Login bem-sucedido: {Email}", command.Email);
             return Ok(result);
         }
         catch (ValidationException ex)
@@ -81,7 +79,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    // POST /auth/refresh
     [HttpPost("refresh")]
     [AllowAnonymous]
     public async Task<IActionResult> Refresh(
@@ -107,7 +104,6 @@ public class AuthController : ControllerBase
         }
     }
 
-    // POST /auth/logout
     [HttpPost("logout")]
     [Authorize]
     public async Task<IActionResult> Logout(CancellationToken ct)
@@ -136,6 +132,53 @@ public class AuthController : ControllerBase
         {
             _logger.LogError(ex, "Erro ao efetuar logout");
             return StatusCode(500, new { message = "Erro interno." });
+        }
+    }
+
+    [HttpPost("forgot-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword(
+        [FromBody] ForgotPasswordCommand command,
+        CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(command, ct);
+            // sempre retorna 200 para não revelar se o email existe
+            return Ok(new { message = "Se este email estiver cadastrado, você receberá as instruções em breve." });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new
+            {
+                message = "Dados inválidos.",
+                errors = ex.Errors.Select(e => e.ErrorMessage)
+            });
+        }
+    }
+
+    [HttpPost("reset-password")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ResetPassword(
+        [FromBody] ResetPasswordCommand command,
+        CancellationToken ct)
+    {
+        try
+        {
+            await _mediator.Send(command, ct);
+            return Ok(new { message = "Senha redefinida com sucesso." });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new
+            {
+                message = "Dados inválidos.",
+                errors = ex.Errors.Select(e => e.ErrorMessage)
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 }

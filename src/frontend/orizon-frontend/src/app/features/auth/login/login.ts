@@ -55,6 +55,7 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/dashboard']);
       },
       error: (err) => {
+        this.authStore.setLoading(false);
         this.authStore.setError(
           err.error?.message ?? 'Email ou senha inválidos.'
         );
