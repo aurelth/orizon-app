@@ -43,6 +43,7 @@ export class DashboardComponent implements OnInit {
   readonly googleTasks = computed(() => this.store.briefing()?.googleTasks ?? null);
   readonly aiSummary = computed(() => this.store.briefing()?.aiSummary);
   readonly isGenerating = signal(false);
+  readonly generateError = signal<string | null>(null);
 
   ngOnInit(): void {
     this.briefingService.getTodayBriefing().subscribe();
@@ -53,9 +54,15 @@ export class DashboardComponent implements OnInit {
 
   generateBriefing(): void {
     this.isGenerating.set(true);
+    this.generateError.set(null);
     this.briefingService.generateBriefing().subscribe({
       next: () => this.isGenerating.set(false),
-      error: () => this.isGenerating.set(false),
+      error: (err) => {
+        this.isGenerating.set(false);
+        this.generateError.set(
+          err.error?.message ?? 'Erro ao gerar briefing. Tente novamente.'
+        );
+      },
     });
   }
 

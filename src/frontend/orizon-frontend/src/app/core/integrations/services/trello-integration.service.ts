@@ -103,4 +103,17 @@ export class TrelloIntegrationService {
       })
     );
   }
+
+  disconnect(): Observable<void> {
+    return this.api.delete<void>('/trello/disconnect').pipe(
+      tap({
+        next: () => {
+          this.store.setTrelloConnected(false);
+          this.store.setActiveBoardIds([]);
+          this.store.setTrelloBoards([]);
+        },
+        error: () => this.store.setError('Falha ao desconectar Trello.'),
+      })
+    );
+  }
 }

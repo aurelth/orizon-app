@@ -35,6 +35,7 @@ describe('RegisterComponent', () => {
         provideRouter([
           { path: 'dashboard', component: RegisterComponent },
           { path: 'settings', component: RegisterComponent },
+          { path: 'onboarding', component: RegisterComponent },
         ]),
         AuthStore,
         { provide: AuthService, useValue: authService },

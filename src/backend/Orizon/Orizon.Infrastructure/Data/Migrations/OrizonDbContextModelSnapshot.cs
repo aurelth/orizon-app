@@ -17,7 +17,7 @@ namespace Orizon.Infrastructure.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.15")
+                .HasAnnotation("ProductVersion", "9.0.16")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -182,6 +182,9 @@ namespace Orizon.Infrastructure.Data.Migrations
 
                     b.Property<DateTime?>("GoogleTokenExpiresAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("HasCompletedOnboarding")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsTraveling")
                         .HasColumnType("boolean");
@@ -427,6 +430,9 @@ namespace Orizon.Infrastructure.Data.Migrations
 
                     b.Property<DateTime?>("GoogleTokenExpiresAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("HasCompletedOnboarding")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsTraveling")
                         .HasColumnType("boolean");

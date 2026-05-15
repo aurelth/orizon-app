@@ -39,6 +39,7 @@ describe('IntegrationsComponent', () => {
       getStatus: jest.fn().mockReturnValue(of({ connected: false })),
       getConfig: jest.fn().mockReturnValue(of([])),
       removeBoardConfig: jest.fn(),
+      disconnect: jest.fn().mockReturnValue(of(void 0)),
     };
 
     briefingService = {
@@ -209,5 +210,35 @@ describe('IntegrationsComponent', () => {
   it('deve validar campo inválido corretamente', () => {
     component.trelloForm.get('apiKey')?.markAsTouched();
     expect(component.isFieldInvalid(component.trelloForm, 'apiKey')).toBe(true);
+  });
+
+  it('deve chamar onRequestDisconnectTrello e setar confirmDisconnectTrello', () => {
+    component.onRequestDisconnectTrello();
+    expect(component.confirmDisconnectTrello).toBe(true);
+  });
+
+  it('deve chamar onCancelDisconnectTrello e resetar confirmDisconnectTrello', () => {
+    component.confirmDisconnectTrello = true;
+    component.onCancelDisconnectTrello();
+    expect(component.confirmDisconnectTrello).toBe(false);
+  });
+
+  it('deve chamar onConfirmDisconnectTrello e desconectar Trello', () => {
+    (trelloService.disconnect as jest.Mock).mockReturnValue(of(void 0));
+    component.confirmDisconnectTrello = true;
+    component.onConfirmDisconnectTrello();
+
+    expect(trelloService.disconnect).toHaveBeenCalled();
+    expect(component.confirmDisconnectTrello).toBe(false);
+    expect(component.showTrelloForm).toBe(false);
+    expect(component.showBoardSelector).toBe(false);
+  });
+
+  it('deve setar isDisconnectingTrello false quando desconexão falhar', () => {
+    (trelloService.disconnect as jest.Mock).mockReturnValue(
+      throwError(() => new Error('error'))
+    );
+    component.onConfirmDisconnectTrello();
+    expect(component.isDisconnectingTrello()).toBe(false);
   });
 });

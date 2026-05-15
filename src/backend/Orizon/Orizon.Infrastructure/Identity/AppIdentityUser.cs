@@ -23,4 +23,5 @@ public class AppIdentityUser : IdentityUser
     public DateTime? GoogleConnectedAt { get; set; }
     public string? TrelloApiKey { get; set; }
     public string? TrelloToken { get; set; }
+    public bool HasCompletedOnboarding { get; set; } = false;
 }

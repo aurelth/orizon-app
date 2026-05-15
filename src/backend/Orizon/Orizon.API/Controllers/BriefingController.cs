@@ -75,8 +75,15 @@ public class BriefingController : ControllerBase
     [HttpPost("generate")]
     public async Task<IActionResult> Generate(CancellationToken ct = default)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
-        var result = await _mediator.Send(new GenerateBriefingCommand(userId), ct);
-        return Accepted(result);
+        try
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+            var result = await _mediator.Send(new GenerateBriefingCommand(userId), ct);
+            return Accepted(result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 }

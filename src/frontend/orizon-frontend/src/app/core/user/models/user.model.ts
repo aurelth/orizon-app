@@ -12,4 +12,5 @@ export interface UserProfile {
   themePreference: 'Dark' | 'Light';
   googleConnected: boolean;
   trelloEnabled: boolean;
+  hasCompletedOnboarding: boolean;
 }

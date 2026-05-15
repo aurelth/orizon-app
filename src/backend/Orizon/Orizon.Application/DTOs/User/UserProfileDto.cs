@@ -15,4 +15,5 @@ public class UserProfileDto
     public string ThemePreference { get; set; } = "Dark";
     public bool GoogleConnected { get; set; }
     public bool TrelloEnabled { get; set; }
+    public bool HasCompletedOnboarding { get; set; }
 }

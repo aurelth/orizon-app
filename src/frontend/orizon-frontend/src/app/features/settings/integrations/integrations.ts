@@ -39,6 +39,8 @@ export class IntegrationsComponent implements OnInit {
   confirmRemoveBoardId: string | null = null;
   isSavingBoard = signal(false);
   isRemovingBoard = signal(false);
+  isDisconnectingTrello = signal(false);
+  confirmDisconnectTrello = false;
 
   ngOnInit(): void {
     this.trelloForm = this.fb.group({
@@ -179,6 +181,32 @@ export class IntegrationsComponent implements OnInit {
         this.regenerateBriefing();
       },
       error: () => this.isRemovingBoard.set(false),
+    });
+  }
+
+  onRequestDisconnectTrello(): void {
+    this.confirmDisconnectTrello = true;
+  }
+
+  onCancelDisconnectTrello(): void {
+    this.confirmDisconnectTrello = false;
+  }
+
+  onConfirmDisconnectTrello(): void {
+    this.isDisconnectingTrello.set(true);
+    this.trelloService.disconnect().subscribe({
+      next: () => {
+        this.isDisconnectingTrello.set(false);
+        this.confirmDisconnectTrello = false;
+        this.showTrelloForm = false;
+        this.showBoardSelector = false;
+        this.expandedBoard = null;
+        this.selectedTodayList = null;
+        this.selectedInProgressList = null;
+        this.confirmRemoveBoardId = null;
+        this.trelloForm.reset();
+      },
+      error: () => this.isDisconnectingTrello.set(false),
     });
   }
 
