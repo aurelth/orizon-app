@@ -124,7 +124,6 @@
 
       @if (trelloConnected() && showBoardSelector) {
 
-        <!-- Modal de confirmação de remoção -->
         @if (confirmRemoveBoardId) {
         <div class="confirm-modal">
           <p>Tem certeza? As tarefas deste board serão removidas do briefing.</p>
@@ -224,6 +223,25 @@
           </div>
         </div>
       }
+
+      <!-- Confirmação de desconexão -->
+      @if (confirmDisconnectTrello) {
+      <div class="confirm-modal confirm-modal--danger">
+        <p>Tem certeza que deseja desconectar o Trello? Todas as configurações de boards serão removidas.</p>
+        <div class="confirm-modal__actions">
+          <button class="btn btn--ghost btn--sm" (click)="onCancelDisconnectTrello()">Cancelar</button>
+          <button class="btn btn--danger btn--sm" [disabled]="isDisconnectingTrello()"
+            (click)="onConfirmDisconnectTrello()">
+            @if (isDisconnectingTrello()) {
+            <i class="pi pi-spinner pi-spin"></i>
+            <span>Desconectando...</span>
+            } @else {
+            <span>Sim, desconectar</span>
+            }
+          </button>
+        </div>
+      </div>
+      }
     </div>
 
     <div class="integration-card__footer">
@@ -233,10 +251,16 @@
         <span>{{ showTrelloForm ? 'Cancelar' : 'Conectar Trello' }}</span>
       </button>
       } @else {
-      <button class="btn btn--ghost btn--sm" (click)="toggleBoardSelector()">
-        <i class="pi pi-cog"></i>
-        <span>{{ showBoardSelector ? 'Fechar' : 'Gerenciar boards' }}</span>
-      </button>
+      <div class="footer-actions">
+        <button class="btn btn--ghost btn--sm" (click)="toggleBoardSelector()">
+          <i class="pi pi-cog"></i>
+          <span>{{ showBoardSelector ? 'Fechar' : 'Gerenciar boards' }}</span>
+        </button>
+        <button class="btn btn--danger btn--sm" (click)="onRequestDisconnectTrello()">
+          <i class="pi pi-times"></i>
+          <span>Desconectar</span>
+        </button>
+      </div>
       }
     </div>
   </div>

@@ -24,6 +24,7 @@ public class AppUser : BaseEntity
     public string? GoogleRefreshToken { get; set; }
     public DateTime? GoogleTokenExpiresAt { get; set; }
     public DateTime? GoogleConnectedAt { get; set; }
+    public bool HasCompletedOnboarding { get; set; } = false;
 
     public ICollection<BriefingEntry> BriefingEntries { get; set; }
         = new List<BriefingEntry>();

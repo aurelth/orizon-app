@@ -76,7 +76,7 @@ export class RegisterComponent implements OnInit {
     this.authService.register({ displayName, email, password }).subscribe({
       next: () => {
         this.authStore.setLoading(false);
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/onboarding']);
       },
       error: (err) => {
         this.authStore.setError(

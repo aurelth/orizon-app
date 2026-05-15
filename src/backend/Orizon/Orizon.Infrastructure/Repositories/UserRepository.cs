@@ -63,6 +63,7 @@ public class UserRepository : IUserRepository
         identityUser.GoogleRefreshToken = user.GoogleRefreshToken;
         identityUser.GoogleTokenExpiresAt = user.GoogleTokenExpiresAt;
         identityUser.GoogleConnectedAt = user.GoogleConnectedAt;
+        identityUser.HasCompletedOnboarding = user.HasCompletedOnboarding;
 
         _context.Users.Update(identityUser);
         await _context.SaveChangesAsync(ct);
@@ -92,6 +93,7 @@ public class UserRepository : IUserRepository
             GoogleRefreshToken = identityUser.GoogleRefreshToken,
             GoogleTokenExpiresAt = identityUser.GoogleTokenExpiresAt,
             GoogleConnectedAt = identityUser.GoogleConnectedAt,
+            HasCompletedOnboarding = identityUser.HasCompletedOnboarding,
         };
     }
 }

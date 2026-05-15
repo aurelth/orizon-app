@@ -1,0 +1,225 @@
+<div class="onboarding-layout">
+  <header class="onboarding-header">
+    <div class="header-brand">
+      <span class="brand-name">Orizon</span>
+      <span class="brand-tagline">Your day, before it begins</span>
+    </div>
+    <div class="header-progress">
+      <span class="progress-label">{{ currentStep() }} de {{ totalSteps }}</span>
+    </div>
+  </header>
+
+  <div class="onboarding-progress">
+    <div class="progress-bar">
+      <div class="progress-bar__fill"
+        [style.width.%]="progressPercent()">
+      </div>
+    </div>
+    <div class="progress-steps">
+      @for (step of steps; track step.id) {
+        <button class="progress-step"
+          [class.progress-step--active]="currentStep() === step.id"
+          [class.progress-step--done]="currentStep() > step.id"
+          (click)="goToStep(step.id)">
+          @if (currentStep() > step.id) {
+            <i class="pi pi-check"></i>
+          } @else {
+            {{ step.id }}
+          }
+        </button>
+      }
+    </div>
+  </div>
+
+  <main class="onboarding-main">
+
+    <!-- Step 1: Boas-vindas -->
+    @if (currentStep() === 1) {
+      <div class="onboarding-step">
+        <div class="step-icon">🌅</div>
+        <h1 class="step-title">Bem-vindo ao Orizon!</h1>
+        <p class="step-description">
+          O Orizon é seu assistente de briefing diário personalizado.
+          Ele agrega informações do seu Gmail, Google Calendar, Google Tasks,
+          Trello e clima para gerar um resumo inteligente toda manhã.
+        </p>
+        <div class="step-features">
+          <div class="step-feature">
+            <span class="step-feature__icon">☀️</span>
+            <div>
+              <strong>Clima do dia</strong>
+              <p>Temperatura, previsão de chuva e resumo do tempo</p>
+            </div>
+          </div>
+          <div class="step-feature">
+            <span class="step-feature__icon">✉️</span>
+            <div>
+              <strong>Emails importantes</strong>
+              <p>Resumo dos emails não lidos das últimas 24h</p>
+            </div>
+          </div>
+          <div class="step-feature">
+            <span class="step-feature__icon">📅</span>
+            <div>
+              <strong>Agenda e tarefas</strong>
+              <p>Eventos do dia, aniversários e tarefas pendentes</p>
+            </div>
+          </div>
+          <div class="step-feature">
+            <span class="step-feature__icon">🤖</span>
+            <div>
+              <strong>Resumo com IA</strong>
+              <p>Sugestões personalizadas geradas pelo Claude</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Step 2: Localização -->
+    @if (currentStep() === 2) {
+      <div class="onboarding-step">
+        <div class="step-icon">📍</div>
+        <h1 class="step-title">Configure sua localização</h1>
+        <p class="step-description">
+          A localização é necessária para mostrar o clima do seu dia com precisão.
+          Você pode configurar agora ou fazer isso depois nas Configurações.
+        </p>
+        <div class="step-action">
+          <a routerLink="/settings/location" class="btn btn--primary">
+            <i class="pi pi-map-marker"></i>
+            Configurar localização
+          </a>
+          <p class="step-action__hint">
+            Você poderá alterar isso a qualquer momento em
+            <strong>Configurações → Localização</strong>
+          </p>
+        </div>
+      </div>
+    }
+
+    <!-- Step 3: Google -->
+    @if (currentStep() === 3) {
+      <div class="onboarding-step">
+        <div class="step-icon">🔗</div>
+        <h1 class="step-title">Conecte sua conta Google</h1>
+        <p class="step-description">
+          A integração com o Google permite que o Orizon acesse seu Gmail,
+          Google Calendar e Google Tasks para enriquecer seu briefing diário.
+        </p>
+        <div class="step-benefits">
+          <div class="step-benefit">
+            <i class="pi pi-envelope"></i>
+            <span>Resumo dos emails não lidos</span>
+          </div>
+          <div class="step-benefit">
+            <i class="pi pi-calendar"></i>
+            <span>Eventos e aniversários do dia</span>
+          </div>
+          <div class="step-benefit">
+            <i class="pi pi-check-square"></i>
+            <span>Tarefas pendentes do Google Tasks</span>
+          </div>
+        </div>
+        <div class="step-action">
+          <a routerLink="/settings/integrations" class="btn btn--primary">
+            <i class="pi pi-google"></i>
+            Conectar Google
+          </a>
+          <p class="step-action__hint">
+            Você poderá fazer isso depois em
+            <strong>Configurações → Integrações</strong>
+          </p>
+        </div>
+      </div>
+    }
+
+    <!-- Step 4: Trello -->
+    @if (currentStep() === 4) {
+      <div class="onboarding-step">
+        <div class="step-icon">📋</div>
+        <h1 class="step-title">Conecte seu Trello</h1>
+        <p class="step-description">
+          Com o Trello conectado, o Orizon mostra suas tarefas em progresso
+          e as do dia diretamente no briefing. É opcional mas muito útil!
+        </p>
+        <div class="step-benefits">
+          <div class="step-benefit">
+            <i class="pi pi-th-large"></i>
+            <span>Tarefas em progresso</span>
+          </div>
+          <div class="step-benefit">
+            <i class="pi pi-list"></i>
+            <span>Cards do dia nos seus boards</span>
+          </div>
+          <div class="step-benefit">
+            <i class="pi pi-exclamation-triangle"></i>
+            <span>Alerta de tarefas paradas</span>
+          </div>
+        </div>
+        <div class="step-action">
+          <a routerLink="/settings/integrations" class="btn btn--primary">
+            <i class="pi pi-th-large"></i>
+            Conectar Trello
+          </a>
+          <p class="step-action__hint">
+            Você poderá fazer isso depois em
+            <strong>Configurações → Integrações</strong>
+          </p>
+        </div>
+      </div>
+    }
+
+    <!-- Step 5: Conclusão -->
+    @if (currentStep() === 5) {
+      <div class="onboarding-step onboarding-step--final">
+        <div class="step-icon">🎉</div>
+        <h1 class="step-title">Tudo pronto!</h1>
+        <p class="step-description">
+          Seu Orizon está configurado. Clique no botão abaixo para
+          acessar o dashboard e gerar seu primeiro briefing do dia.
+        </p>
+        <div class="step-action">
+          <button class="btn btn--primary btn--lg"
+            (click)="completeOnboarding()"
+            [disabled]="isCompleting()">
+            @if (isCompleting()) {
+              <i class="pi pi-spinner pi-spin"></i>
+              <span>Acessando...</span>
+            } @else {
+              <i class="pi pi-home"></i>
+              <span>Ir para o Dashboard</span>
+            }
+          </button>
+        </div>
+      </div>
+    }
+
+  </main>
+
+  <footer class="onboarding-footer">
+    <div class="footer-actions">
+      @if (!isFirstStep()) {
+        <button class="btn btn--ghost" (click)="back()">
+          <i class="pi pi-arrow-left"></i>
+          Anterior
+        </button>
+      } @else {
+        <div></div>
+      }
+
+      @if (!isLastStep()) {
+        <button class="btn btn--primary" (click)="next()">
+          Próximo
+          <i class="pi pi-arrow-right"></i>
+        </button>
+      }
+    </div>
+
+    @if (!isLastStep()) {
+      <button class="skip-btn" (click)="completeOnboarding()">
+        Pular configuração
+      </button>
+    }
+  </footer>
+</div>

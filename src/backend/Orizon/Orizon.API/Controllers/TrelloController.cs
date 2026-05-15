@@ -120,6 +120,18 @@ public class TrelloController : ControllerBase
 
         return Ok();
     }
+
+    [HttpDelete("disconnect")]
+    public async Task<IActionResult> Disconnect(CancellationToken ct = default)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        await _mediator.Send(new DisconnectTrelloCommand(userId), ct);
+
+        return NoContent();
+    }
 }
 
 public record ConnectTrelloRequest(string ApiKey, string Token);

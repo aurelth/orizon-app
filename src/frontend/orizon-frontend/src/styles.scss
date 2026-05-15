@@ -3,3 +3,30 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import url('https://unpkg.com/primeicons/primeicons.css');
+
+.dashboard-generate-error {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #f87171;
+  margin-top: 0.75rem;
+
+  i {
+    flex-shrink: 0;
+  }
+
+  &__link {
+    margin-left: auto;
+    font-size: 0.8rem;
+    color: #fb923c;
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover { text-decoration: underline; }
+  }
+}

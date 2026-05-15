@@ -34,6 +34,15 @@
         <i class="pi pi-refresh"></i> Gerar agora
         }
       </button>
+      @if (generateError()) {
+      <div class="dashboard-generate-error">
+        <i class="pi pi-exclamation-circle"></i>
+        <span>{{ generateError() }}</span>
+        <a routerLink="/settings/integrations" class="dashboard-generate-error__link">
+          Configurar integrações
+        </a>
+      </div>
+      }
     </div>
     } @else if (briefing()) {
     <div class="dashboard-greeting">
@@ -46,6 +55,15 @@
         <i class="pi pi-refresh"></i> Atualizar briefing
         }
       </button>
+      @if (generateError()) {
+      <div class="dashboard-generate-error">
+        <i class="pi pi-exclamation-circle"></i>&nbsp;
+        <span>{{ generateError() }}</span>
+        <a routerLink="/settings/integrations" class="dashboard-generate-error__link">
+          Configurar integrações
+        </a>
+      </div>
+      }
     </div>
 
     <div class="dashboard-grid">
@@ -53,7 +71,7 @@
       <app-ai-suggestions-card [aiSummary]="aiSummary()!" />
       <app-emails-card [emails]="emails()" />
       <app-calendar-card [events]="calendarEvents()" />
-      @if (googleTasks()?.length) {
+      @if (googleTasks() && googleTasks()!.length > 0) {
       <app-google-tasks-card [tasks]="googleTasks()!" />
       }
       @if (trelloTasks()) {

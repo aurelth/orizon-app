@@ -37,6 +37,7 @@ public class GetUserProfileQueryHandler
             ThemePreference = user.ThemePreference.ToString(),
             GoogleConnected = user.GoogleAccessToken != null,
             TrelloEnabled = user.TrelloEnabled,
+            HasCompletedOnboarding = user.HasCompletedOnboarding
         };
     }
 }
