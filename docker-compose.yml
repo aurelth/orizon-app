@@ -57,6 +57,8 @@ services:
     image: prom/prometheus:latest
     container_name: orizon-prometheus
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
       - "--storage.tsdb.path=/prometheus"

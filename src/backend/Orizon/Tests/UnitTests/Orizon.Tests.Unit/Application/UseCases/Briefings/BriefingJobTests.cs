@@ -30,6 +30,7 @@ public class BriefingJobTests
     private readonly Mock<IGoogleOAuthService> _googleOAuthMock = new();
     private readonly Mock<IConfiguration> _configMock = new();
     private readonly Mock<ILogger<BriefingJob>> _loggerMock = new();
+    private readonly Mock<IOrizonMetrics> _metricsMock = new();
     private readonly BriefingJob _job;
 
     private readonly AppUser _testUser = new()
@@ -79,6 +80,7 @@ public class BriefingJobTests
             _claudeMock.Object,
             _emailMock.Object,
             _googleOAuthMock.Object,
+            _metricsMock.Object,
             _configMock.Object,
             _loggerMock.Object);
     }

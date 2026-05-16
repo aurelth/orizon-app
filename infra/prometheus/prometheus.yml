@@ -11,16 +11,14 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  # A API expõe métricas em /metrics via OpenTelemetry
   - job_name: "orizon-api"
     static_configs:
-      - targets: ["host.docker.internal:5000"]
+      - targets: ["host.docker.internal:5010"]
     metrics_path: "/metrics"
     scrape_interval: 15s
 
-  # O Worker expõe métricas em /metrics via OpenTelemetry
   - job_name: "orizon-worker"
     static_configs:
-      - targets: ["host.docker.internal:5001"]
+      - targets: ["host.docker.internal:5011"]
     metrics_path: "/metrics"
     scrape_interval: 15s

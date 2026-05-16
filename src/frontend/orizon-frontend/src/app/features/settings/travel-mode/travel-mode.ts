@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LocationStore } from '../../../core/location/store/location.store';
 import { LocationService } from '../../../core/location/services/location.service';
+import { ToastService } from '../../../core/toast/toast.service';
 
 interface CityResult {
   city: string;
@@ -21,6 +22,7 @@ export class TravelModeComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(LocationStore);
   private readonly locationService = inject(LocationService);
+  private readonly toast = inject(ToastService);
 
   readonly travelMode = this.store.travelMode;
   readonly travelCity = this.store.travelCity;
@@ -44,6 +46,7 @@ export class TravelModeComponent implements OnInit {
       this.selectedResult.set(null);
       this.searchResults.set([]);
       this.searchForm.reset();
+      this.toast.info('Modo viagem desativado.');
     }
   }
 
@@ -55,8 +58,14 @@ export class TravelModeComponent implements OnInit {
       next: (results) => {
         this.searchResults.set(results);
         this.isSearching.set(false);
+        if (results.length === 0) {
+          this.toast.info('Nenhuma cidade encontrada.');
+        }
       },
-      error: () => this.isSearching.set(false),
+      error: () => {
+        this.isSearching.set(false);
+        this.toast.error('Erro ao buscar cidades.');
+      },
     });
   }
 
@@ -70,5 +79,6 @@ export class TravelModeComponent implements OnInit {
     const result = this.selectedResult();
     if (!result) return;
     this.store.enableTravelMode(result.city, { lat: result.lat, lon: result.lon });
+    this.toast.success(`Modo viagem ativado para ${result.city}.`);
   }
 }

@@ -32,6 +32,7 @@
     <ProjectReference Include="..\..\..\Orizon.Domain\Orizon.Domain.csproj" />
     <ProjectReference Include="..\..\..\Orizon.Application\Orizon.Application.csproj" />
 	<ProjectReference Include="..\..\..\Orizon.Worker\Orizon.Worker.csproj" />
+	<ProjectReference Include="..\..\..\Orizon.API\Orizon.API.csproj" />
   </ItemGroup>
 
 </Project>

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LocationStore } from '../../../core/location/store/location.store';
 import { LocationService } from '../../../core/location/services/location.service';
+import { ToastService } from '../../../core/toast/toast.service';
 
 interface CityResult {
   city: string;
@@ -21,6 +22,7 @@ export class LocationComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly store = inject(LocationStore);
   private readonly locationService = inject(LocationService);
+  private readonly toast = inject(ToastService);
 
   readonly city = this.store.city;
   readonly coordinates = this.store.coordinates;
@@ -41,7 +43,8 @@ export class LocationComponent implements OnInit {
 
   detectLocation(): void {
     this.locationService.detectCurrentLocation().subscribe({
-      error: () => {},
+      next: () => this.toast.success('Localização detectada com sucesso.'),
+      error: () => this.toast.error('Não foi possível detectar a localização.'),
     });
   }
 
@@ -53,8 +56,14 @@ export class LocationComponent implements OnInit {
       next: (results) => {
         this.searchResults.set(results);
         this.isSearching.set(false);
+        if (results.length === 0) {
+          this.toast.info('Nenhuma cidade encontrada.');
+        }
       },
-      error: () => this.isSearching.set(false),
+      error: () => {
+        this.isSearching.set(false);
+        this.toast.error('Erro ao buscar cidades.');
+      },
     });
   }
 
@@ -62,7 +71,10 @@ export class LocationComponent implements OnInit {
     this.store.setLocation(result.city, { lat: result.lat, lon: result.lon });
     this.searchResults.set([]);
     this.searchForm.reset();
-    
-    this.locationService.saveLocation(result.city, result.lat, result.lon).subscribe();
+
+    this.locationService.saveLocation(result.city, result.lat, result.lon).subscribe({
+      next: () => this.toast.success(`Localização definida para ${result.city}.`),
+      error: () => this.toast.error('Erro ao salvar localização.'),
+    });
   }
 }

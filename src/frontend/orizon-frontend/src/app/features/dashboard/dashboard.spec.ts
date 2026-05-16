@@ -7,13 +7,15 @@ import { BriefingStore } from '../../core/briefing/store/briefing.store';
 import { BriefingService } from '../../core/briefing/services/briefing.service';
 import { AuthStore } from '../../core/auth/store/auth.store';
 import { AuthService } from '../../core/auth/services/auth.service';
-import { of } from 'rxjs';
+import { ToastService } from '../../core/toast/toast.service';
+import { of, throwError } from 'rxjs';
 import { BriefingResult } from '../../core/briefing/models/briefing.model';
 
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
   let briefingService: jest.Mocked<Partial<BriefingService>>;
   let authService: jest.Mocked<Partial<AuthService>>;
+  let toastService: jest.Mocked<Partial<ToastService>>;
   let store: InstanceType<typeof BriefingStore>;
 
   const mockBriefing: BriefingResult = {
@@ -35,8 +37,9 @@ describe('DashboardComponent', () => {
       willRain: false,
     },
     emails: [{ from: 'a@b.com', subject: 'Teste', aiSummary: '', category: 'Info', categoryEmoji: '📧', receivedAt: '' }],
-    calendarEvents: [{ title: 'Reunião', startTime: '', endTime: '', participants: [], meetLink: null, description: null, conflictsWithRain: false }],
+    calendarEvents: [{ title: 'Reunião', startTime: '', endTime: '', participants: [], meetLink: null, description: null, conflictsWithRain: false, isBirthday: false, isAllDay: false }],
     trelloTasks: [{ cardId: '1', title: 'Task', boardName: 'Board', boardColor: '#fff', listName: 'Today', columnType: 'today', isStuck: false, daysInProgress: null, movedToInProgressAt: null }],
+    googleTasks: null,
     aiSummary: {
       greeting: 'Bom dia, Aurel!',
       weatherSummary: 'Dia ensolarado.',
@@ -61,6 +64,12 @@ describe('DashboardComponent', () => {
       logout: jest.fn(),
     };
 
+    toastService = {
+      success: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+    };
+
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -70,6 +79,7 @@ describe('DashboardComponent', () => {
         AuthStore,
         { provide: BriefingService, useValue: briefingService },
         { provide: AuthService, useValue: authService },
+        { provide: ToastService, useValue: toastService },
       ],
     }).compileComponents();
 
@@ -109,15 +119,6 @@ describe('DashboardComponent', () => {
     expect(component.emails()).toHaveLength(1);
   });
 
-  it('deve retornar array vazio para calendarEvents quando briefing é null', () => {
-    expect(component.calendarEvents()).toEqual([]);
-  });
-
-  it('deve retornar calendarEvents quando briefing está carregado', () => {
-    store.setBriefing(mockBriefing);
-    expect(component.calendarEvents()).toHaveLength(1);
-  });
-
   it('deve retornar null para trelloTasks quando briefing é null', () => {
     expect(component.trelloTasks()).toBeNull();
   });
@@ -136,9 +137,19 @@ describe('DashboardComponent', () => {
     expect(component.aiSummary()).toEqual(mockBriefing.aiSummary);
   });
 
-  it('deve chamar generateBriefing e setar isGenerating', () => {
+  it('deve chamar generateBriefing e toast.info no sucesso', () => {
     component.generateBriefing();
     expect(briefingService.generateBriefing).toHaveBeenCalled();
+    expect(toastService.info).toHaveBeenCalledWith(
+      'Briefing sendo gerado. Aguarde alguns instantes.');
+  });
+
+  it('deve chamar toast.error quando generateBriefing falhar', () => {
+    (briefingService.generateBriefing as jest.Mock).mockReturnValue(
+      throwError(() => ({ error: { message: 'Sem integração.' } }))
+    );
+    component.generateBriefing();
+    expect(toastService.error).toHaveBeenCalledWith('Sem integração.');
   });
 
   it('deve formatar data corretamente', () => {

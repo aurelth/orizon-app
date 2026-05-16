@@ -9,6 +9,7 @@ import { CalendarCardComponent } from './components/calendar-card/calendar-card'
 import { TrelloCardComponent } from './components/trello-card/trello-card';
 import { AiSuggestionsCardComponent } from './components/ai-suggestions-card/ai-suggestions-card';
 import { GoogleTasksCardComponent } from './components/google-tasks-card/google-tasks-card';
+import { ToastService } from '../../core/toast/toast.service';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -29,6 +30,7 @@ import { environment } from '../../../environments/environment';
 })
 export class DashboardComponent implements OnInit {
   private readonly briefingService = inject(BriefingService);
+  private readonly toast = inject(ToastService);
   readonly store = inject(BriefingStore);
 
   readonly briefing = this.store.briefing;
@@ -56,12 +58,15 @@ export class DashboardComponent implements OnInit {
     this.isGenerating.set(true);
     this.generateError.set(null);
     this.briefingService.generateBriefing().subscribe({
-      next: () => this.isGenerating.set(false),
+      next: () => {
+        this.isGenerating.set(false);
+        this.toast.info('Briefing sendo gerado. Aguarde alguns instantes.');
+      },
       error: (err) => {
         this.isGenerating.set(false);
-        this.generateError.set(
-          err.error?.message ?? 'Erro ao gerar briefing. Tente novamente.'
-        );
+        const message = err.error?.message ?? 'Erro ao gerar briefing. Tente novamente.';
+        this.generateError.set(message);
+        this.toast.error(message);
       },
     });
   }
@@ -71,10 +76,8 @@ export class DashboardComponent implements OnInit {
     const weekday = d.toLocaleDateString('pt-BR', { weekday: 'long' });
     const day = d.getDate();
     const month = d.toLocaleDateString('pt-BR', { month: 'long' });
-
     const weekdayCapitalized = weekday.charAt(0).toUpperCase() + weekday.slice(1);
     const monthCapitalized = month.charAt(0).toUpperCase() + month.slice(1);
-
     return `${weekdayCapitalized}, ${day} de ${monthCapitalized}`;
   }
 }

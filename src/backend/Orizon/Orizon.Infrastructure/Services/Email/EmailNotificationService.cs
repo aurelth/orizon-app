@@ -13,15 +13,18 @@ public class EmailNotificationService : IEmailNotificationService
     private readonly ISendGridClient _sendGridClient;
     private readonly IConfiguration _configuration;
     private readonly ILogger<EmailNotificationService> _logger;
+    private readonly IOrizonMetrics _metrics;
 
     public EmailNotificationService(
         ISendGridClient sendGridClient,
         IConfiguration configuration,
-        ILogger<EmailNotificationService> logger)
+        ILogger<EmailNotificationService> logger,
+        IOrizonMetrics metrics)
     {
         _sendGridClient = sendGridClient;
         _configuration = configuration;
         _logger = logger;
+        _metrics = metrics;
     }
 
     public async Task SendBriefingEmailAsync(
@@ -47,10 +50,16 @@ public class EmailNotificationService : IEmailNotificationService
         var response = await _sendGridClient.SendEmailAsync(msg, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
+        {
+            _metrics.RecordEmailFailed();
             _logger.LogError("Falha ao enviar email para {Email} — Status: {Status}",
                 toEmail, response.StatusCode);
+        }
         else
+        {
+            _metrics.RecordEmailSent();
             _logger.LogInformation("Email enviado com sucesso para {Email}", toEmail);
+        }
     }
 
     public async Task SendPasswordResetEmailAsync(
@@ -81,12 +90,18 @@ public class EmailNotificationService : IEmailNotificationService
         var response = await _sendGridClient.SendEmailAsync(msg, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
+        {
+            _metrics.RecordEmailFailed();
             _logger.LogError(
                 "Falha ao enviar email de redefinição para {Email} — Status: {Status}",
                 toEmail, response.StatusCode);
+        }
         else
+        {
+            _metrics.RecordEmailSent();
             _logger.LogInformation(
                 "Email de redefinição enviado com sucesso para {Email}", toEmail);
+        }
     }
 
     private static string BuildPasswordResetEmailHtml(string userName, string resetLink)

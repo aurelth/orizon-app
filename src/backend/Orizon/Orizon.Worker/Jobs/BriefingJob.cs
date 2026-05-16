@@ -3,6 +3,7 @@ using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
 using Orizon.Domain.Entities;
 using Orizon.Domain.Enums;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace Orizon.Worker.Jobs;
@@ -19,6 +20,7 @@ public class BriefingJob
     private readonly IClaudeService _claudeService;
     private readonly IEmailNotificationService _emailService;
     private readonly IGoogleOAuthService _googleOAuthService;
+    private readonly IOrizonMetrics _metrics;
     private readonly IConfiguration _configuration;
     private readonly ILogger<BriefingJob> _logger;
 
@@ -33,6 +35,7 @@ public class BriefingJob
         IClaudeService claudeService,
         IEmailNotificationService emailService,
         IGoogleOAuthService googleOAuthService,
+        IOrizonMetrics metrics,
         IConfiguration configuration,
         ILogger<BriefingJob> logger)
     {
@@ -46,6 +49,7 @@ public class BriefingJob
         _claudeService = claudeService;
         _emailService = emailService;
         _googleOAuthService = googleOAuthService;
+        _metrics = metrics;
         _configuration = configuration;
         _logger = logger;
     }
@@ -77,6 +81,7 @@ public class BriefingJob
 
     private async Task ProcessUserBriefingAsync(AppUser user, CancellationToken ct)
     {
+        var sw = Stopwatch.StartNew();
         var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone));
         var userId = user.Id.ToString();
@@ -147,14 +152,9 @@ public class BriefingJob
                 ? JsonSerializer.Serialize(trelloTasks) : null;
 
             var aiSummary = await _claudeService.GenerateDailySummaryAsync(
-                emails,
-                events,
-                googleTasks,
+                emails, events, googleTasks,
                 user.TrelloEnabled ? trelloTasks : null,
-                weather,
-                user.DisplayName,
-                today,
-                ct);
+                weather, user.DisplayName, today, ct);
 
             briefing.AISummary = aiSummary.Greeting;
             briefing.AISuggestions = aiSummary.Suggestions;
@@ -163,11 +163,14 @@ public class BriefingJob
 
             await _briefingRepository.UpdateAsync(briefing, ct);
 
+            sw.Stop();
+            _metrics.RecordBriefingGenerated();
+            _metrics.RecordBriefingDuration(sw.Elapsed.TotalSeconds);
+
             await NotifyUserAsync(userId, briefing.Id, ct);
 
             await _emailService.SendBriefingEmailAsync(
-                user.Email,
-                user.DisplayName,
+                user.Email, user.DisplayName,
                 new BriefingResultDto
                 {
                     BriefingId = briefing.Id,
@@ -180,14 +183,17 @@ public class BriefingJob
                     TrelloTasks = user.TrelloEnabled ? trelloTasks : null,
                     AISummary = aiSummary,
                     GeneratedAt = briefing.GeneratedAt.Value,
-                },
-                ct);
+                }, ct);
 
             _logger.LogInformation(
-                "Briefing gerado com sucesso para usuário {UserId}", userId);
+                "Briefing gerado com sucesso para usuário {UserId} em {Duration}s",
+                userId, sw.Elapsed.TotalSeconds);
         }
         catch (Exception ex)
         {
+            sw.Stop();
+            _metrics.RecordBriefingFailed();
+
             _logger.LogError(ex,
                 "Falha ao gerar briefing para usuário {UserId}", userId);
 
@@ -235,7 +241,6 @@ public class BriefingJob
         try
         {
             var apiUrl = _configuration["ApiUrl"] ?? "http://localhost:5010";
-
             var payload = new { UserId = userId, BriefingId = briefingId };
             var json = System.Text.Json.JsonSerializer.Serialize(payload);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");

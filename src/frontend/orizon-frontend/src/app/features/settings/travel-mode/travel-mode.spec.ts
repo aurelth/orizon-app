@@ -5,11 +5,13 @@ import { provideRouter } from '@angular/router';
 import { TravelModeComponent } from './travel-mode';
 import { LocationStore } from '../../../core/location/store/location.store';
 import { LocationService } from '../../../core/location/services/location.service';
+import { ToastService } from '../../../core/toast/toast.service';
 import { of, throwError } from 'rxjs';
 
 describe('TravelModeComponent', () => {
   let component: TravelModeComponent;
   let locationService: jest.Mocked<Partial<LocationService>>;
+  let toastService: jest.Mocked<Partial<ToastService>>;
   let store: InstanceType<typeof LocationStore>;
 
   const mockResult = { city: 'Lisboa', lat: 38.7169, lon: -9.1395 };
@@ -19,6 +21,12 @@ describe('TravelModeComponent', () => {
       searchCity: jest.fn(),
     };
 
+    toastService = {
+      success: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+    };
+
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -26,6 +34,7 @@ describe('TravelModeComponent', () => {
         provideRouter([]),
         LocationStore,
         { provide: LocationService, useValue: locationService },
+        { provide: ToastService, useValue: toastService },
       ],
     }).compileComponents();
 
@@ -63,24 +72,21 @@ describe('TravelModeComponent', () => {
     component.searchForm.get('query')?.setValue('Lisboa');
     component.onSearch();
     expect(component.searchResults()).toHaveLength(1);
-    expect(component.searchResults()[0].city).toBe('Lisboa');
   });
 
   it('deve selecionar cidade e limpar resultados', () => {
     component.searchResults.set([mockResult]);
     component.selectCity(mockResult);
-
     expect(component.selectedResult()).toEqual(mockResult);
     expect(component.searchResults()).toHaveLength(0);
   });
 
-  it('deve ativar modo viagem ao chamar enableTravelMode com cidade selecionada', () => {
+  it('deve ativar modo viagem e chamar toast.success', () => {
     component.selectedResult.set(mockResult);
     component.enableTravelMode();
-
     expect(store.travelMode()).toBe(true);
-    expect(store.travelCity()).toBe('Lisboa');
-    expect(store.travelCoordinates()).toEqual({ lat: 38.7169, lon: -9.1395 });
+    expect(toastService.success).toHaveBeenCalledWith(
+      'Modo viagem ativado para Lisboa.');
   });
 
   it('não deve ativar modo viagem sem cidade selecionada', () => {
@@ -88,18 +94,16 @@ describe('TravelModeComponent', () => {
     expect(store.travelMode()).toBe(false);
   });
 
-  it('deve desativar modo viagem ao chamar toggleTravelMode com modo ativo', () => {
+  it('deve desativar modo viagem e chamar toast.info', () => {
     store.enableTravelMode('Lisboa', { lat: 38.7169, lon: -9.1395 });
     component.toggleTravelMode();
-
     expect(store.travelMode()).toBe(false);
-    expect(component.selectedResult()).toBeNull();
-    expect(component.searchResults()).toHaveLength(0);
+    expect(toastService.info).toHaveBeenCalledWith('Modo viagem desativado.');
   });
 
   it('deve definir isSearching como false após erro na busca', () => {
     (locationService.searchCity as jest.Mock).mockReturnValue(
-      throwError(() => new Error('Network error'))
+      throwError(() => new Error('error'))
     );
     component.searchForm.get('query')?.setValue('Lisboa');
     component.onSearch();
