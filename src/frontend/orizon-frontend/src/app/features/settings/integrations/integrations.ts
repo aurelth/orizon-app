@@ -6,6 +6,7 @@ import { IntegrationsStore } from '../../../core/integrations/store/integrations
 import { GoogleIntegrationService } from '../../../core/integrations/services/google-integration.service';
 import { TrelloIntegrationService, TrelloBoard, TrelloList } from '../../../core/integrations/services/trello-integration.service';
 import { BriefingService } from '../../../core/briefing/services/briefing.service';
+import { ToastService } from '../../../core/toast/toast.service';
 
 @Component({
   selector: 'app-integrations',
@@ -21,6 +22,7 @@ export class IntegrationsComponent implements OnInit {
   private readonly trelloService = inject(TrelloIntegrationService);
   private readonly briefingService = inject(BriefingService);
   private readonly route = inject(ActivatedRoute);
+  private readonly toast = inject(ToastService);
 
   readonly googleConnected = this.store.googleConnected;
   readonly trelloConnected = this.store.trelloConnected;
@@ -108,7 +110,9 @@ export class IntegrationsComponent implements OnInit {
         this.showTrelloForm = false;
         this.showBoardSelector = true;
         this.trelloService.getBoards(apiKey, token).subscribe();
+        this.toast.success('Trello conectado com sucesso.');
       },
+      error: () => this.toast.error('Credenciais Trello inválidas.'),
     });
   }
 
@@ -150,9 +154,13 @@ export class IntegrationsComponent implements OnInit {
         this.expandedBoard = null;
         this.selectedTodayList = null;
         this.selectedInProgressList = null;
+        this.toast.success('Board adicionado ao briefing.');
         this.regenerateBriefing();
       },
-      error: () => this.isSavingBoard.set(false),
+      error: () => {
+        this.isSavingBoard.set(false);
+        this.toast.error('Erro ao salvar configuração do board.');
+      },
     });
   }
 
@@ -178,9 +186,13 @@ export class IntegrationsComponent implements OnInit {
           this.selectedTodayList = null;
           this.selectedInProgressList = null;
         }
+        this.toast.success('Board removido do briefing.');
         this.regenerateBriefing();
       },
-      error: () => this.isRemovingBoard.set(false),
+      error: () => {
+        this.isRemovingBoard.set(false);
+        this.toast.error('Erro ao remover board.');
+      },
     });
   }
 
@@ -205,8 +217,12 @@ export class IntegrationsComponent implements OnInit {
         this.selectedInProgressList = null;
         this.confirmRemoveBoardId = null;
         this.trelloForm.reset();
+        this.toast.info('Trello desconectado.');
       },
-      error: () => this.isDisconnectingTrello.set(false),
+      error: () => {
+        this.isDisconnectingTrello.set(false);
+        this.toast.error('Erro ao desconectar Trello.');
+      },
     });
   }
 

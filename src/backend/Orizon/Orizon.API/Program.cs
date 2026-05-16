@@ -6,7 +6,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using Orizon.API.Hubs;
+using Orizon.API.Metrics;
 using Orizon.Application.Common.Behaviors;
 using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
@@ -111,7 +114,6 @@ try
 
     builder.Services.AddSignalR();
 
-    // HANGFIRE DASHBOARD
     builder.Services.AddHangfire(config =>
         config
             .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
@@ -147,7 +149,7 @@ try
     builder.Services.AddScoped<IJwtService, JwtService>();
     builder.Services.AddScoped<IIdentityService, IdentityService>();
 
-    // EXTERNAL SERVICES — HttpClient com Polly retry
+    // EXTERNAL SERVICES
     builder.Services.AddHttpClient<IWeatherService, WeatherService>()
         .AddStandardResilienceHandler();
 
@@ -189,6 +191,28 @@ try
         typeof(IPipelineBehavior<,>),
         typeof(ValidationBehavior<,>));
 
+    // OPENTELEMETRY + PROMETHEUS
+    builder.Services.AddOpenTelemetry()
+        .WithMetrics(metrics =>
+        {
+            metrics
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddMeter("Orizon.API")
+                .AddPrometheusExporter();
+        })
+        .WithTracing(tracing =>
+        {
+            tracing
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddEntityFrameworkCoreInstrumentation();
+        });
+
+    // MÉTRICAS CUSTOMIZADAS
+    builder.Services.AddSingleton<IOrizonMetrics, OrizonMetrics>();
+
     // HEALTH CHECKS
     var pgConnection = builder.Configuration.GetConnectionString("PostgreSQL");
     var redisConnection = builder.Configuration.GetConnectionString("Redis");
@@ -202,6 +226,15 @@ try
     if (!string.IsNullOrEmpty(redisConnection))
         healthChecks.AddRedis(redisConnection, name: "redis",
             tags: new[] { "cache", "ready" });
+
+    // Hangfire health check apenas fora do ambiente de testes, pois não há servidor Hangfire rodando nos testes de integração    
+    if (!builder.Environment.IsEnvironment("Testing"))
+    {
+        healthChecks.AddHangfire(options =>
+        {
+            options.MinimumAvailableServers = 1;
+        }, name: "hangfire", tags: new[] { "jobs", "ready" });
+    }
 
     var app = builder.Build();
 
@@ -220,8 +253,8 @@ try
     app.MapHub<BriefingHub>("/hubs/briefing");
     app.MapHealthChecks("/health/ready");
     app.MapHealthChecks("/health/live");
+    app.MapPrometheusScrapingEndpoint("/metrics");
 
-    // HANGFIRE DASHBOARD — apenas em desenvolvimento
     if (app.Environment.IsDevelopment())
     {
         app.UseHangfireDashboard("/hangfire", new DashboardOptions

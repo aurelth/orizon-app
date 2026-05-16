@@ -7,13 +7,15 @@ import { IntegrationsStore } from '../../../core/integrations/store/integrations
 import { GoogleIntegrationService } from '../../../core/integrations/services/google-integration.service';
 import { TrelloIntegrationService } from '../../../core/integrations/services/trello-integration.service';
 import { BriefingService } from '../../../core/briefing/services/briefing.service';
+import { ToastService } from '../../../core/toast/toast.service';
 import { of, throwError } from 'rxjs';
 
 describe('IntegrationsComponent', () => {
   let component: IntegrationsComponent;
   let googleService: jest.Mocked<Partial<GoogleIntegrationService>>;
   let trelloService: jest.Mocked<Partial<TrelloIntegrationService>>;
-  let briefingService: jest.Mocked<Partial<BriefingService>>;
+  let briefingService: jest.Mocked<Partial<BriefingService>>;  
+  let toastService: jest.Mocked<Partial<ToastService>>;
   let store: InstanceType<typeof IntegrationsStore>;
 
   const mockBoard = {
@@ -29,7 +31,7 @@ describe('IntegrationsComponent', () => {
   beforeEach(async () => {
     googleService = {
       redirectToGoogle: jest.fn(),
-      getStatus: jest.fn().mockReturnValue(of({ connected: false })),
+      getStatus: jest.fn().mockReturnValue(of({ connected: false })),      
     };
 
     trelloService = {
@@ -38,12 +40,19 @@ describe('IntegrationsComponent', () => {
       saveBoardConfig: jest.fn(),
       getStatus: jest.fn().mockReturnValue(of({ connected: false })),
       getConfig: jest.fn().mockReturnValue(of([])),
-      removeBoardConfig: jest.fn(),
+      removeBoardConfig: jest.fn(),      
       disconnect: jest.fn().mockReturnValue(of(void 0)),
     };
 
     briefingService = {
       generateBriefing: jest.fn().mockReturnValue(of({ jobId: '1', message: 'ok' })),
+    };
+    
+    toastService = {
+      success: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      warning: jest.fn(),
     };
 
     await TestBed.configureTestingModule({
@@ -54,7 +63,8 @@ describe('IntegrationsComponent', () => {
         IntegrationsStore,
         { provide: GoogleIntegrationService, useValue: googleService },
         { provide: TrelloIntegrationService, useValue: trelloService },
-        { provide: BriefingService, useValue: briefingService },
+        { provide: BriefingService, useValue: briefingService },        
+        { provide: ToastService, useValue: toastService },
       ],
     }).compileComponents();
 
@@ -125,6 +135,29 @@ describe('IntegrationsComponent', () => {
     expect(trelloService.getBoards).toHaveBeenCalled();
   });
 
+  it('deve chamar toast.success ao conectar Trello com sucesso', () => {
+    (trelloService.connect as jest.Mock).mockReturnValue(of(void 0));
+    (trelloService.getBoards as jest.Mock).mockReturnValue(of([]));
+
+    component.trelloForm.get('apiKey')?.setValue('a'.repeat(32));
+    component.trelloForm.get('token')?.setValue('b'.repeat(64));
+    component.onTrelloSubmit();
+
+    expect(toastService.success).toHaveBeenCalledWith('Trello conectado com sucesso.');
+  });
+  
+  it('deve chamar toast.error quando connect Trello falhar', () => {
+    (trelloService.connect as jest.Mock).mockReturnValue(
+      throwError(() => new Error('error'))
+    );
+
+    component.trelloForm.get('apiKey')?.setValue('a'.repeat(32));
+    component.trelloForm.get('token')?.setValue('b'.repeat(64));
+    component.onTrelloSubmit();
+
+    expect(toastService.error).toHaveBeenCalledWith('Credenciais Trello inválidas.');
+  });
+
   it('deve retornar true em isBoardActive quando board está nos activeBoardIds', () => {
     store.setActiveBoardIds(['board-1', 'board-2']);
     expect(component.isBoardActive('board-1')).toBe(true);
@@ -173,6 +206,14 @@ describe('IntegrationsComponent', () => {
     expect(trelloService.removeBoardConfig).toHaveBeenCalledWith('board-1');
     expect(briefingService.generateBriefing).toHaveBeenCalled();
   });
+  
+  it('deve chamar toast.success ao remover board com sucesso', () => {
+    (trelloService.removeBoardConfig as jest.Mock).mockReturnValue(of(void 0));
+    component.confirmRemoveBoardId = 'board-1';
+    component.onConfirmRemove();
+
+    expect(toastService.success).toHaveBeenCalledWith('Board removido do briefing.');
+  });
 
   it('deve limpar confirmRemoveBoardId após confirmar remoção', () => {
     (trelloService.removeBoardConfig as jest.Mock).mockReturnValue(of(void 0));
@@ -199,6 +240,16 @@ describe('IntegrationsComponent', () => {
       inProgressListName: 'In Progress',
     });
     expect(briefingService.generateBriefing).toHaveBeenCalled();
+  });
+  
+  it('deve chamar toast.success ao adicionar board com sucesso', () => {
+    (trelloService.saveBoardConfig as jest.Mock).mockReturnValue(of(void 0));
+    component.expandedBoard = mockBoard;
+    component.selectedTodayList = mockBoard.lists[0];
+    component.selectedInProgressList = mockBoard.lists[1];
+    component.onConfirmAdd();
+
+    expect(toastService.success).toHaveBeenCalledWith('Board adicionado ao briefing.');
   });
 
   it('não deve chamar saveBoardConfig quando expandedBoard é null', () => {
@@ -232,6 +283,13 @@ describe('IntegrationsComponent', () => {
     expect(component.confirmDisconnectTrello).toBe(false);
     expect(component.showTrelloForm).toBe(false);
     expect(component.showBoardSelector).toBe(false);
+  });
+  
+  it('deve chamar toast.info ao desconectar Trello com sucesso', () => {
+    (trelloService.disconnect as jest.Mock).mockReturnValue(of(void 0));
+    component.onConfirmDisconnectTrello();
+
+    expect(toastService.info).toHaveBeenCalledWith('Trello desconectado.');
   });
 
   it('deve setar isDisconnectingTrello false quando desconexão falhar', () => {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { UserService } from '../../../core/user/services/user.service';
 import { UserStore } from '../../../core/user/store/user.store';
+import { ToastService } from '../../../core/toast/toast.service';
 
 @Component({
   selector: 'app-profile',
@@ -15,6 +16,7 @@ export class ProfileComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly userService = inject(UserService);
   private readonly store = inject(UserStore);
+  private readonly toast = inject(ToastService);
 
   readonly profile = this.store.profile;
   readonly isLoading = this.store.isLoading;
@@ -38,7 +40,6 @@ export class ProfileComponent implements OnInit {
           themePreference: profile.themePreference,
         });
 
-        // detecta mudanças após carregar valores iniciais
         this.profileForm.valueChanges.subscribe(() => {
           this.hasChanges.set(this.profileForm.dirty);
         });
@@ -73,9 +74,13 @@ export class ProfileComponent implements OnInit {
         this.isSaved.set(true);
         this.hasChanges.set(false);
         this.profileForm.markAsPristine();
+        this.toast.success('Perfil atualizado com sucesso.');
         setTimeout(() => this.isSaved.set(false), 3000);
       },
-      error: () => this.isSaving.set(false),
+      error: () => {
+        this.isSaving.set(false);
+        this.toast.error('Erro ao atualizar perfil.');
+      },
     });
   }
 }

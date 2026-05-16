@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Orizon.Application.Interfaces.Repositories;
+using Orizon.Application.Interfaces.Services;
 using Orizon.Application.UseCases.Integrations.Trello.Command;
 using Orizon.Application.UseCases.Integrations.Trello.Query;
 using System.Security.Claims;
@@ -16,15 +17,18 @@ public class TrelloController : ControllerBase
     private readonly IMediator _mediator;
     private readonly IUserRepository _userRepository;
     private readonly ITrelloBoardConfigRepository _boardConfigRepository;
+    private readonly IOrizonMetrics _metrics;
 
     public TrelloController(
         IMediator mediator,
         IUserRepository userRepository,
-        ITrelloBoardConfigRepository boardConfigRepository)
+        ITrelloBoardConfigRepository boardConfigRepository,
+        IOrizonMetrics metrics)
     {
         _mediator = mediator;
         _userRepository = userRepository;
         _boardConfigRepository = boardConfigRepository;
+        _metrics = metrics;
     }
 
     [HttpGet("status")]
@@ -68,6 +72,8 @@ public class TrelloController : ControllerBase
 
         await _mediator.Send(
             new ConnectTrelloCommand(userId, request.ApiKey, request.Token), ct);
+
+        _metrics.RecordTrelloConnected();
 
         return Ok();
     }

@@ -8,7 +8,7 @@ const config: Config = {
     '^.+\\.(ts|js|mjs|cjs)$': 'babel-jest',
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(@angular|rxjs|tslib|@ngrx)/)',
+    'node_modules/(?!(@angular|rxjs|tslib|@ngrx|ngx-toastr)/)',
   ],
   moduleNameMapper: {
     '^@app/(.*)$': '<rootDir>/src/app/$1',

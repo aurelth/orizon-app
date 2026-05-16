@@ -30,3 +30,109 @@
     &:hover { text-decoration: underline; }
   }
 }
+
+// Toast customizado
+.toast-container {
+  .ngx-toastr {
+    background-color: var(--color-bg-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    padding: 0.875rem 1rem 0.875rem 3rem;
+
+    &:hover {
+      box-shadow: var(--shadow-lg);
+    }
+
+    .toast-title {
+      font-weight: 600;
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .toast-message {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+    }
+
+    .toast-progress {
+      height: 2px;
+      opacity: 0.6;
+    }
+  }
+
+  .toast-success {
+    border-left: 3px solid var(--color-success);
+    background-image: none;
+
+    &::before {
+      content: '✓';
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-success);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .toast-progress { background: var(--color-success); }
+  }
+
+  .toast-error {
+    border-left: 3px solid var(--color-error);
+    background-image: none;
+
+    &::before {
+      content: '✕';
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-error);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .toast-progress { background: var(--color-error); }
+  }
+
+  .toast-info {
+    border-left: 3px solid var(--color-primary);
+    background-image: none;
+
+    &::before {
+      content: 'ℹ';
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-primary);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .toast-progress { background: var(--color-primary); }
+  }
+
+  .toast-warning {
+    border-left: 3px solid var(--color-warning);
+    background-image: none;
+
+    &::before {
+      content: '⚠';
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--color-warning);
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    .toast-progress { background: var(--color-warning); }
+  }
+}

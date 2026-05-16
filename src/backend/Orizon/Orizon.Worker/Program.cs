@@ -3,8 +3,11 @@ using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using Orizon.Application.Interfaces.Repositories;
 using Orizon.Application.Interfaces.Services;
+using Orizon.Application.Services;
 using Orizon.Infrastructure.Data;
 using Orizon.Infrastructure.Identity;
 using Orizon.Infrastructure.Repositories;
@@ -72,7 +75,7 @@ try
         .AddStandardResilienceHandler();
 
     builder.Services.AddHttpClient<TrelloService>()
-    .AddStandardResilienceHandler();
+        .AddStandardResilienceHandler();
 
     builder.Services.AddScoped<ITrelloService, TrelloService>();
 
@@ -80,6 +83,8 @@ try
     builder.Services.AddScoped<ICalendarService, CalendarIntegrationService>();
     builder.Services.AddScoped<IGoogleTasksService, GoogleTasksIntegrationService>();
     builder.Services.AddScoped<IClaudeService, ClaudeService>();
+
+    builder.Services.AddSingleton<IOrizonMetrics, NullOrizonMetrics>();
 
     // EMAIL
     var sendGridApiKey = builder.Configuration["Email:SendGridApiKey"];
@@ -97,13 +102,32 @@ try
     // JOBS
     builder.Services.AddScoped<BriefingJob>();
 
+    // OPENTELEMETRY + PROMETHEUS
+    builder.Services.AddOpenTelemetry()
+        .WithMetrics(metrics =>
+        {
+            metrics
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddPrometheusExporter();
+        })
+        .WithTracing(tracing =>
+        {
+            tracing
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation();
+        });
+
     var app = builder.Build();
 
-    // ENDPOINT INTERNO — acionado pela API para gerar briefing manualmente
+    app.MapPrometheusScrapingEndpoint("/metrics");
+
     app.MapPost("/internal/briefing/trigger", () =>
     {
         RecurringJob.TriggerJob("morning-briefing");
-        return Results.Accepted("/internal/briefing/trigger", new { message = "Job acionado com sucesso." });
+        return Results.Accepted("/internal/briefing/trigger",
+            new { message = "Job acionado com sucesso." });
     });
 
     using (var scope = app.Services.CreateScope())

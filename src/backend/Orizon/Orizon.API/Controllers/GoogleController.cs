@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Orizon.Application.Interfaces.Repositories;
+using Orizon.Application.Interfaces.Services;
 using Orizon.Application.UseCases.Integrations.Google.Command;
 using Orizon.Application.UseCases.Integrations.Google.Query;
-using Orizon.Infrastructure.Repositories;
 using System.Security.Claims;
 using System.Text;
 
@@ -17,17 +17,22 @@ public class GoogleController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly IUserRepository _userRepository;
+    private readonly IOrizonMetrics _metrics;
 
-    public GoogleController(IMediator mediator, IUserRepository userRepository)
+    public GoogleController(
+        IMediator mediator,
+        IUserRepository userRepository,
+        IOrizonMetrics metrics)
     {
         _mediator = mediator;
         _userRepository = userRepository;
+        _metrics = metrics;
     }
 
     [HttpGet("auth-url")]
     public async Task<IActionResult> GetAuthUrl(CancellationToken ct = default)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";        
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
         var state = Convert.ToBase64String(Encoding.UTF8.GetBytes(userId));
 
         var url = await _mediator.Send(
@@ -42,7 +47,7 @@ public class GoogleController : ControllerBase
         [FromQuery] string code,
         [FromQuery] string state,
         CancellationToken ct = default)
-    {        
+    {
         var userId = string.Empty;
         try
         {
@@ -54,6 +59,7 @@ public class GoogleController : ControllerBase
         }
 
         await _mediator.Send(new ExchangeGoogleCodeCommand(userId, code), ct);
+        _metrics.RecordGoogleConnected();
 
         return Redirect("http://localhost:4200/settings/integrations?google=success");
     }
