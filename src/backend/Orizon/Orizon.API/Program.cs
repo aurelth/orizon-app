@@ -227,15 +227,6 @@ try
         healthChecks.AddRedis(redisConnection, name: "redis",
             tags: new[] { "cache", "ready" });
 
-    // Hangfire health check apenas fora do ambiente de testes, pois não há servidor Hangfire rodando nos testes de integração    
-    if (!builder.Environment.IsEnvironment("Testing"))
-    {
-        healthChecks.AddHangfire(options =>
-        {
-            options.MinimumAvailableServers = 1;
-        }, name: "hangfire", tags: new[] { "jobs", "ready" });
-    }
-
     var app = builder.Build();
 
     if (app.Environment.IsDevelopment())
