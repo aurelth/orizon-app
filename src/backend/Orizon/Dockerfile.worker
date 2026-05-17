@@ -1,0 +1,25 @@
+# Etapa 1 — Build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+COPY ["Orizon.Worker/Orizon.Worker.csproj", "Orizon.Worker/"]
+COPY ["Orizon.Application/Orizon.Application.csproj", "Orizon.Application/"]
+COPY ["Orizon.Domain/Orizon.Domain.csproj", "Orizon.Domain/"]
+COPY ["Orizon.Infrastructure/Orizon.Infrastructure.csproj", "Orizon.Infrastructure/"]
+
+RUN dotnet restore "Orizon.Worker/Orizon.Worker.csproj"
+
+COPY . .
+
+WORKDIR "/src/Orizon.Worker"
+RUN dotnet publish "Orizon.Worker.csproj" -c Release -o /app/publish
+
+# Etapa 2 — Runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+EXPOSE 5011
+
+ENTRYPOINT ["dotnet", "Orizon.Worker.dll"]
