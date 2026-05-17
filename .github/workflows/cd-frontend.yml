@@ -1,0 +1,53 @@
+name: CD — Frontend
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "src/frontend/**"
+      - ".github/workflows/cd-frontend.yml"
+
+jobs:
+  build-and-deploy:
+    name: Build e Deploy Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: src/frontend/orizon-frontend/package-lock.json
+
+      - name: Instalar dependências
+        working-directory: src/frontend/orizon-frontend
+        run: npm ci
+
+      - name: Build Angular produção
+        working-directory: src/frontend/orizon-frontend
+        run: npm run build:prod
+
+      - name: Deploy no VPS via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          source: "src/frontend/orizon-frontend/dist/orizon-frontend/browser/*"
+          target: "/var/www/orizonapp/frontend"
+          strip_components: 6
+
+      - name: Recarrega Nginx
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: sudo nginx -t && sudo systemctl reload nginx

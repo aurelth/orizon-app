@@ -1,0 +1,69 @@
+name: CD — Backend
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "src/backend/**"
+      - ".github/workflows/cd-backend.yml"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/orizon-app
+
+jobs:
+  build-and-deploy:
+    name: Build e Deploy Backend
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configura Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build e Push imagem da API
+        uses: docker/build-push-action@v5
+        with:
+          context: src/backend/Orizon
+          file: src/backend/Orizon/Dockerfile.api
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/orizon-api:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build e Push imagem do Worker
+        uses: docker/build-push-action@v5
+        with:
+          context: src/backend/Orizon
+          file: src/backend/Orizon/Dockerfile.worker
+          push: true
+          tags: ${{ env.IMAGE_PREFIX }}/orizon-worker:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy no VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd /home/deploy/orizonapp
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker compose pull api worker
+            docker compose up -d api worker
+            docker image prune -f

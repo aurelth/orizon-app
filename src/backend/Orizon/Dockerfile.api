@@ -1,0 +1,35 @@
+# Etapa 1 — Build
+# Usa a imagem SDK completa do .NET 9 para compilar o código
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Copia os arquivos de projeto primeiro (otimiza cache do Docker)
+# Se o código mudou mas os .csproj não, Docker reutiliza esta camada
+COPY ["Orizon.API/Orizon.API.csproj", "Orizon.API/"]
+COPY ["Orizon.Application/Orizon.Application.csproj", "Orizon.Application/"]
+COPY ["Orizon.Domain/Orizon.Domain.csproj", "Orizon.Domain/"]
+COPY ["Orizon.Infrastructure/Orizon.Infrastructure.csproj", "Orizon.Infrastructure/"]
+
+# Restaura os pacotes NuGet
+RUN dotnet restore "Orizon.API/Orizon.API.csproj"
+
+# Copia o resto do código fonte
+COPY . .
+
+# Compila e publica em modo Release
+WORKDIR "/src/Orizon.API"
+RUN dotnet publish "Orizon.API.csproj" -c Release -o /app/publish
+
+# Etapa 2 — Runtime
+# Usa apenas o runtime (muito menor que o SDK — ~200MB vs ~800MB)
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
+WORKDIR /app
+
+# Copia apenas o resultado do build, não o código fonte
+COPY --from=build /app/publish .
+
+# Porta que a API vai escutar
+EXPOSE 5010
+
+# Comando para iniciar a aplicação
+ENTRYPOINT ["dotnet", "Orizon.API.dll"]
