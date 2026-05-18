@@ -18,6 +18,4 @@ public class BriefingEntry : BaseEntity
     public DateTime? GeneratedAt { get; set; }
     public DateTime? EmailSentAt { get; set; }
     public string? ErrorMessage { get; set; }
-
-    public AppUser User { get; set; } = null!;
 }

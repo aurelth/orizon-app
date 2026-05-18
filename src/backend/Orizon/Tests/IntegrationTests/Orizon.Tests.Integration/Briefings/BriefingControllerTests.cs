@@ -124,18 +124,19 @@ public class BriefingControllerTests : IAsyncLifetime
             .PostAsJsonAsync("/auth/register", registerCommand);
         var auth = await registerResponse.Content
             .ReadFromJsonAsync<AuthResponseDto>();
+
         return auth!.AccessToken;
     }
 
     private async Task<(Guid UserId, string Token)> RegisterAndGetUserIdAsync(
-    string email = "briefing@orizonapp.io")
+        string email = "briefing@orizonapp.io")
     {
         var token = await RegisterAndLoginAsync(email);
 
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider
             .GetRequiredService<OrizonDbContext>();
-        
+
         var identityUser = await context.Users
             .FirstAsync(u => u.Email == email);
 
@@ -143,29 +144,15 @@ public class BriefingControllerTests : IAsyncLifetime
     }
 
     private async Task SeedBriefingAsync(
-    Guid userId,
-    DateOnly date,
-    BriefingStatus status = BriefingStatus.Generated)
+        Guid userId,
+        DateOnly date,
+        BriefingStatus status = BriefingStatus.Generated)
     {
+        // Não precisa criar AppUser — o registro via /auth/register já criou o
+        // AppIdentityUser na tabela 'users' que é a FK real do briefing_entries
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider
             .GetRequiredService<OrizonDbContext>();
-        
-        var appUserExists = await context.Set<Orizon.Domain.Entities.AppUser>()
-            .AnyAsync(u => u.Id == userId);
-
-        if (!appUserExists)
-        {
-            context.Set<Orizon.Domain.Entities.AppUser>().Add(new Orizon.Domain.Entities.AppUser
-            {
-                Id = userId,
-                Email = "seed@orizonapp.io",
-                DisplayName = "Seed User",
-                LocationName = "Blumenau",
-                Timezone = "America/Sao_Paulo",
-            });
-            await context.SaveChangesAsync();
-        }
 
         var briefing = new BriefingEntry
         {
@@ -188,33 +175,27 @@ public class BriefingControllerTests : IAsyncLifetime
     [Fact]
     public async Task GetToday_WhenNotAuthenticated_ShouldReturn401()
     {
-        // Act
         var response = await _client.GetAsync("/briefings/today");
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
     public async Task GetToday_WhenBriefingExists_ShouldReturn200()
     {
-        // Arrange
         var (userId, token) = await RegisterAndGetUserIdAsync(
             "today@orizonapp.io");
 
         var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
         var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone));
+
         await SeedBriefingAsync(userId, today);
 
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
 
-        // Act
         var response = await _client.GetAsync("/briefings/today");
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-
         var result = await response.Content
             .ReadFromJsonAsync<BriefingResultDto>();
         result.Should().NotBeNull();
@@ -224,23 +205,19 @@ public class BriefingControllerTests : IAsyncLifetime
     [Fact]
     public async Task GetToday_WhenBriefingNotFound_ShouldReturn404()
     {
-        // Arrange
         var token = await RegisterAndLoginAsync("notfound@orizonapp.io");
 
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
 
-        // Act
         var response = await _client.GetAsync("/briefings/today");
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]
     public async Task GetByDate_WhenValidDate_ShouldReturn200()
     {
-        // Arrange
         var (userId, token) = await RegisterAndGetUserIdAsync(
             "bydate@orizonapp.io");
 
@@ -250,13 +227,10 @@ public class BriefingControllerTests : IAsyncLifetime
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
 
-        // Act
         var response = await _client
             .GetAsync($"/briefings/{date:yyyy-MM-dd}");
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-
         var result = await response.Content
             .ReadFromJsonAsync<BriefingResultDto>();
         result.Should().NotBeNull();
@@ -266,23 +240,19 @@ public class BriefingControllerTests : IAsyncLifetime
     [Fact]
     public async Task GetByDate_WhenInvalidDateFormat_ShouldReturn400()
     {
-        // Arrange
         var token = await RegisterAndLoginAsync("invaliddate@orizonapp.io");
 
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
 
-        // Act
         var response = await _client.GetAsync("/briefings/data-invalida");
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task GetHistory_WhenAuthenticated_ShouldReturn200()
     {
-        // Arrange
         var (userId, token) = await RegisterAndGetUserIdAsync(
             "history@orizonapp.io");
 
@@ -293,12 +263,9 @@ public class BriefingControllerTests : IAsyncLifetime
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
 
-        // Act
         var response = await _client.GetAsync("/briefings/history");
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-
         var result = await response.Content
             .ReadFromJsonAsync<GetBriefingHistoryResult>();
         result.Should().NotBeNull();
@@ -308,17 +275,13 @@ public class BriefingControllerTests : IAsyncLifetime
     [Fact]
     public async Task GetHistory_WhenNotAuthenticated_ShouldReturn401()
     {
-        // Act
         var response = await _client.GetAsync("/briefings/history");
-
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
     public async Task GetHistory_WithPagination_ShouldReturnCorrectPage()
     {
-        // Arrange
         var (userId, token) = await RegisterAndGetUserIdAsync(
             "pagination@orizonapp.io");
 
@@ -329,13 +292,10 @@ public class BriefingControllerTests : IAsyncLifetime
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
 
-        // Act
         var response = await _client
             .GetAsync("/briefings/history?page=1&pageSize=2");
 
-        // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-
         var result = await response.Content
             .ReadFromJsonAsync<GetBriefingHistoryResult>();
         result.Should().NotBeNull();

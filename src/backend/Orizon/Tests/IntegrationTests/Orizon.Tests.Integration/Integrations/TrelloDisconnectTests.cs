@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Orizon.Application.DTOs.Auth;
 using Orizon.Application.UseCases.Auth.Commands.RegisterUser;
-using Orizon.Domain.Entities;
 using Orizon.Infrastructure.Data;
 using System.Net;
 using System.Net.Http.Headers;
@@ -118,34 +117,21 @@ public class TrelloDisconnectTests : IAsyncLifetime
 
     private async Task SeedTrelloConnectionAsync(Guid userId)
     {
+        // Atualiza credenciais Trello diretamente no AppIdentityUser (tabela 'users')
+        // que é onde realmente são persistidas em produção
         using var scope = _factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<OrizonDbContext>();
 
-        var appUser = await context.Set<AppUser>()
-            .FirstOrDefaultAsync(u => u.Id == userId);
+        var identityUser = await context.Users
+            .FirstOrDefaultAsync(u => u.Id == userId.ToString());
 
-        if (appUser is null)
+        if (identityUser is not null)
         {
-            context.Set<AppUser>().Add(new AppUser
-            {
-                Id = userId,
-                Email = "trello@orizonapp.io",
-                DisplayName = "Aurel",
-                LocationName = "Blumenau",
-                Timezone = "America/Sao_Paulo",
-                TrelloApiKey = "api-key-123",
-                TrelloToken = "token-123",
-                TrelloEnabled = true,
-            });
+            identityUser.TrelloApiKey = "api-key-123";
+            identityUser.TrelloToken = "token-123";
+            identityUser.TrelloEnabled = true;
+            await context.SaveChangesAsync();
         }
-        else
-        {
-            appUser.TrelloApiKey = "api-key-123";
-            appUser.TrelloToken = "token-123";
-            appUser.TrelloEnabled = true;
-        }
-
-        await context.SaveChangesAsync();
     }
 
     [Fact]

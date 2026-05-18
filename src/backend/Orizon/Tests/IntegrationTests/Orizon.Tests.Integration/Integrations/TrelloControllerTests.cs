@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Orizon.Application.DTOs.Auth;
 using Orizon.Application.UseCases.Auth.Commands.RegisterUser;
-using Orizon.Domain.Entities;
 using Orizon.Infrastructure.Data;
 using System.Net;
 using System.Net.Http.Headers;
@@ -116,18 +115,8 @@ public class TrelloControllerTests : IAsyncLifetime
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", _accessToken);
 
-        using var scope2 = _factory.Services.CreateScope();
-        var context2 = scope2.ServiceProvider
-            .GetRequiredService<OrizonDbContext>();
-        context2.Set<AppUser>().Add(new AppUser
-        {
-            Id = _userId,
-            Email = "trello@orizonapp.io",
-            DisplayName = "Aurel",
-            LocationName = "",
-            Timezone = "America/Sao_Paulo",
-        });
-        await context2.SaveChangesAsync();
+        // Não precisamos mais criar AppUser manualmente — o registro já criou o
+        // AppIdentityUser na tabela 'users' que é a FK real do trello_board_configs
     }
 
     public async Task DisposeAsync()
@@ -137,7 +126,6 @@ public class TrelloControllerTests : IAsyncLifetime
     }
 
     // --- Connect ---
-
     [Fact]
     public async Task Connect_WhenValidCredentials_ShouldReturn200()
     {
@@ -157,7 +145,6 @@ public class TrelloControllerTests : IAsyncLifetime
     public async Task Connect_WhenNotAuthenticated_ShouldReturn401()
     {
         var unauthClient = _factory.CreateClient();
-
         var response = await unauthClient.PostAsJsonAsync("/trello/connect", new
         {
             apiKey = "key",
@@ -168,7 +155,6 @@ public class TrelloControllerTests : IAsyncLifetime
     }
 
     // --- GetBoards ---
-
     [Fact]
     public async Task GetBoards_WhenValidCredentials_ShouldReturn200WithBoards()
     {
@@ -185,7 +171,6 @@ public class TrelloControllerTests : IAsyncLifetime
     public async Task GetBoards_WhenMissingParams_ShouldReturn200WithEmptyList()
     {
         var response = await _client.GetAsync("/trello/boards");
-
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
@@ -193,7 +178,6 @@ public class TrelloControllerTests : IAsyncLifetime
     public async Task GetBoards_WhenNotAuthenticated_ShouldReturn401()
     {
         var unauthClient = _factory.CreateClient();
-
         var response = await unauthClient.GetAsync(
             "/trello/boards?apiKey=key&token=token");
 
@@ -201,7 +185,6 @@ public class TrelloControllerTests : IAsyncLifetime
     }
 
     // --- GetStatus ---
-
     [Fact]
     public async Task GetStatus_WhenNotConnected_ShouldReturnConnectedFalse()
     {
@@ -216,14 +199,12 @@ public class TrelloControllerTests : IAsyncLifetime
     public async Task GetStatus_WhenNotAuthenticated_ShouldReturn401()
     {
         var unauthClient = _factory.CreateClient();
-
         var response = await unauthClient.GetAsync("/trello/status");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     // --- GetConfig ---
-
     [Fact]
     public async Task GetConfig_WhenNoBoardConfigured_ShouldReturnEmptyList()
     {
@@ -249,8 +230,8 @@ public class TrelloControllerTests : IAsyncLifetime
         });
 
         var response = await _client.GetAsync("/trello/config");
-
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
         var body = await response.Content
             .ReadFromJsonAsync<List<BoardConfigResponse>>();
         body.Should().HaveCount(1);
@@ -261,14 +242,12 @@ public class TrelloControllerTests : IAsyncLifetime
     public async Task GetConfig_WhenNotAuthenticated_ShouldReturn401()
     {
         var unauthClient = _factory.CreateClient();
-
         var response = await unauthClient.GetAsync("/trello/config");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     // --- SaveBoardConfig ---
-
     [Fact]
     public async Task SaveBoardConfig_WhenValidData_ShouldReturn200()
     {
@@ -322,7 +301,6 @@ public class TrelloControllerTests : IAsyncLifetime
     public async Task SaveBoardConfig_WhenNotAuthenticated_ShouldReturn401()
     {
         var unauthClient = _factory.CreateClient();
-
         var response = await unauthClient.PostAsJsonAsync("/trello/boards/config", new
         {
             boardId = "board123",
@@ -333,7 +311,6 @@ public class TrelloControllerTests : IAsyncLifetime
     }
 
     // --- RemoveBoardConfig ---
-
     [Fact]
     public async Task RemoveBoardConfig_WhenValidBoard_ShouldReturn200()
     {
@@ -379,7 +356,6 @@ public class TrelloControllerTests : IAsyncLifetime
     public async Task RemoveBoardConfig_WhenNotAuthenticated_ShouldReturn401()
     {
         var unauthClient = _factory.CreateClient();
-
         var response = await unauthClient
             .DeleteAsync("/trello/boards/config/board123");
 
@@ -396,6 +372,7 @@ public class TrelloControllerTests : IAsyncLifetime
     }
 
     private record StatusResponse(bool Connected);
+
     private record BoardConfigResponse(
         string BoardId,
         string BoardName,

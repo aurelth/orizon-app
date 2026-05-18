@@ -12,6 +12,5 @@ public class TrelloBoardConfig : BaseEntity
     public string? TodayListId { get; set; }
     public string? InProgressListId { get; set; }    
     public string? TodayListName { get; set; }
-    public string? InProgressListName { get; set; }    
-    public AppUser User { get; set; } = null!;
+    public string? InProgressListName { get; set; } 
 }

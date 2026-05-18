@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Orizon.Application.DTOs.Auth;
 using Orizon.Application.DTOs.User;
 using Orizon.Application.UseCases.Auth.Commands.RegisterUser;
-using Orizon.Domain.Entities;
 using Orizon.Domain.Enums;
 using Orizon.Infrastructure.Data;
 using System.Net;
@@ -109,19 +108,17 @@ public class UserControllerTests : IAsyncLifetime
         _client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", auth.AccessToken);
 
-        // insere AppUser para satisfazer FK
+        // Configura tema padrão e timezone diretamente no AppIdentityUser (tabela 'users')
+        // que é onde realmente são persistidos em produção
         using var scope2 = _factory.Services.CreateScope();
         var context2 = scope2.ServiceProvider
             .GetRequiredService<OrizonDbContext>();
-        context2.Set<AppUser>().Add(new AppUser
-        {
-            Id = _userId,
-            Email = "user@orizonapp.io",
-            DisplayName = "Aurel",
-            LocationName = "Blumenau",
-            Timezone = "America/Sao_Paulo",
-            ThemePreference = ThemePreference.Dark,
-        });
+
+        var identityUser = await context2.Users
+            .FirstAsync(u => u.Id == _userId.ToString());
+        identityUser.LocationName = "Blumenau";
+        identityUser.Timezone = "America/Sao_Paulo";
+        identityUser.ThemePreference = ThemePreference.Dark;
         await context2.SaveChangesAsync();
     }
 
