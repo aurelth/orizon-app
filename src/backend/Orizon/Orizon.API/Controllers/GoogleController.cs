@@ -18,15 +18,18 @@ public class GoogleController : ControllerBase
     private readonly IMediator _mediator;
     private readonly IUserRepository _userRepository;
     private readonly IOrizonMetrics _metrics;
+    private readonly IConfiguration _configuration;
 
     public GoogleController(
         IMediator mediator,
         IUserRepository userRepository,
-        IOrizonMetrics metrics)
+        IOrizonMetrics metrics,
+        IConfiguration configuration)
     {
         _mediator = mediator;
         _userRepository = userRepository;
         _metrics = metrics;
+        _configuration = configuration;
     }
 
     [HttpGet("auth-url")]
@@ -48,6 +51,9 @@ public class GoogleController : ControllerBase
         [FromQuery] string state,
         CancellationToken ct = default)
     {
+        var frontendUrl = _configuration["App:FrontendUrl"]
+            ?? "http://localhost:4200";
+
         var userId = string.Empty;
         try
         {
@@ -55,13 +61,13 @@ public class GoogleController : ControllerBase
         }
         catch
         {
-            return Redirect("http://localhost:4200/settings/integrations?google=error");
+            return Redirect($"{frontendUrl}/settings/integrations?google=error");
         }
 
         await _mediator.Send(new ExchangeGoogleCodeCommand(userId, code), ct);
         _metrics.RecordGoogleConnected();
 
-        return Redirect("http://localhost:4200/settings/integrations?google=success");
+        return Redirect($"{frontendUrl}/settings/integrations?google=success");
     }
 
     [HttpGet("status")]
