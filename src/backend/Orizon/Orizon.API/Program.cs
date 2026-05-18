@@ -256,6 +256,15 @@ try
 
     Log.Information("Orizon API iniciada com sucesso");
 
+    // Aplica migrations automaticamente em produção
+    if (app.Environment.IsProduction())
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<OrizonDbContext>();
+        await db.Database.MigrateAsync();
+        Log.Information("Migrations aplicadas com sucesso");
+    }
+
     app.Run();
 }
 catch (Exception ex) when (ex is not HostAbortedException)
