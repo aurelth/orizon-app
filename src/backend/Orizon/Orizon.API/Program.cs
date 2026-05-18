@@ -256,13 +256,12 @@ try
 
     Log.Information("Orizon API iniciada com sucesso");
 
-    // Cria o banco de dados em produção a partir dos modelos
     if (app.Environment.IsProduction())
     {
         using var scope = app.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<OrizonDbContext>();
-        await db.Database.EnsureCreatedAsync();
-        Log.Information("Banco de dados verificado com sucesso");
+        await db.Database.MigrateAsync();
+        Log.Information("Migrations aplicadas com sucesso");
     }
 
     app.Run();

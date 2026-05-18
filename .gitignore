@@ -56,11 +56,6 @@ project.lock.json
 project.fragment.lock.json
 artifacts/
  
-# Entity Framework Core — migrations geradas localmente
-# ATENÇÃO: As migrations SÃO commitadas — apenas os snapshots temporários não
-src/backend/**/Migrations/*.Designer.cs
- 
- 
 # ============================================================
 # VISUAL STUDIO 2022
 # Configurações específicas da máquina e preferências pessoais
