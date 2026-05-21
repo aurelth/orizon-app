@@ -69,7 +69,11 @@ try
 
     // EXTERNAL SERVICES
     builder.Services.AddHttpClient<IWeatherService, WeatherService>()
-        .AddStandardResilienceHandler();
+    .AddStandardResilienceHandler(options =>
+    {
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
+        options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
+    });
 
     builder.Services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>()
         .AddStandardResilienceHandler();
@@ -140,7 +144,7 @@ try
         RecurringJob.AddOrUpdate<BriefingJob>(
             recurringJobId: "morning-briefing",
             methodCall: job => job.ExecuteAsync(CancellationToken.None),
-            cronExpression: "0 */4 * * *",
+            cronExpression: "0 5,14 * * *",
             options: new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.FindSystemTimeZoneById(
