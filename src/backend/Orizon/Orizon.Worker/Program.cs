@@ -73,6 +73,7 @@ try
     {
         options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(30);
         options.TotalRequestTimeout.Timeout = TimeSpan.FromSeconds(60);
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromSeconds(90);
     });
 
     builder.Services.AddHttpClient<IGoogleOAuthService, GoogleOAuthService>()
