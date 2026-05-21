@@ -63,7 +63,7 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             cd /home/deploy/orizonapp
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u aurelth --password-stdin
             docker compose pull api worker
             docker compose up -d api worker
             docker image prune -f
