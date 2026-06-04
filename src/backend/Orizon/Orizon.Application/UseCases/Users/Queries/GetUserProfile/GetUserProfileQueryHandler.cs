@@ -37,7 +37,15 @@ public class GetUserProfileQueryHandler
             ThemePreference = user.ThemePreference.ToString(),
             GoogleConnected = user.GoogleAccessToken != null,
             TrelloEnabled = user.TrelloEnabled,
-            HasCompletedOnboarding = user.HasCompletedOnboarding
+            HasCompletedOnboarding = user.HasCompletedOnboarding,
+
+            // Preferências de briefing
+            BriefingHour = user.BriefingHour,
+            EmailSectionEnabled = user.EmailSectionEnabled,
+            CalendarSectionEnabled = user.CalendarSectionEnabled,
+            TrelloSectionEnabled = user.TrelloSectionEnabled,
+            TasksSectionEnabled = user.TasksSectionEnabled,
+            WeatherSectionEnabled = user.WeatherSectionEnabled,
         };
     }
 }

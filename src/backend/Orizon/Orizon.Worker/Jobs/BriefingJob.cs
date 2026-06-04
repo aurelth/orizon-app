@@ -56,17 +56,38 @@ public class BriefingJob
 
     public async Task ExecuteAsync(CancellationToken ct = default)
     {
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone);
+        var currentHour = now.Hour;
+
         _logger.LogInformation("BriefingJob iniciado às {Time}", DateTime.UtcNow);
 
         try
         {
-            var users = await _userRepository.GetActiveUsersAsync(ct);
-            var userList = users.ToList();
+            var allUsers = await _userRepository.GetActiveUsersAsync(ct);
+
+            // Filtra usuários que devem receber briefing neste horário:
+            // - Horário matinal configurado pelo usuário (BriefingHour)
+            // - Horários fixos de 12h e 18h (meio-dia e fim de tarde)
+            var users = allUsers
+                .Where(u =>
+                    u.BriefingHour == currentHour ||
+                    currentHour == 12 ||
+                    currentHour == 18)
+                .ToList();
+
+            if (!users.Any())
+            {
+                _logger.LogInformation(
+                    "Nenhum usuário para processar às {Hour}h Brasília", currentHour);
+                return;
+            }
 
             _logger.LogInformation(
-                "Gerando briefing para {Count} usuários", userList.Count);
+                "Gerando briefing para {Count} usuários às {Hour}h Brasília",
+                users.Count, currentHour);
 
-            await Task.WhenAll(userList.Select(user =>
+            await Task.WhenAll(users.Select(user =>
                 ProcessUserBriefingAsync(user, ct)));
 
             _logger.LogInformation(
@@ -90,7 +111,6 @@ public class BriefingJob
 
         var existing = await _briefingRepository.GetByUserAndDateAsync(userId, today, ct);
         var isNew = existing is null;
-
         var briefing = existing ?? new BriefingEntry
         {
             UserId = user.Id,
@@ -98,7 +118,6 @@ public class BriefingJob
         };
 
         briefing.Status = BriefingStatus.Pending;
-
         if (isNew)
             await _briefingRepository.AddAsync(briefing, ct);
         else
@@ -114,24 +133,27 @@ public class BriefingJob
                 ? user.TravelLongitude.Value : user.Longitude;
             var timezone = user.Timezone;
 
-            var emailsTask = !string.IsNullOrEmpty(googleToken)
+            // Respeita os toggles de seções configurados pelo usuário
+            var emailsTask = user.EmailSectionEnabled && !string.IsNullOrEmpty(googleToken)
                 ? _gmailService.GetRecentEmailsWithTokenAsync(googleToken, cancellationToken: ct)
                 : Task.FromResult<IEnumerable<Application.DTOs.Email.EmailSummaryDto>>(
                     Enumerable.Empty<Application.DTOs.Email.EmailSummaryDto>());
 
-            var eventsTask = !string.IsNullOrEmpty(googleToken)
+            var eventsTask = user.CalendarSectionEnabled && !string.IsNullOrEmpty(googleToken)
                 ? _calendarService.GetTodayEventsWithTokenAsync(googleToken, ct)
                 : Task.FromResult<IEnumerable<Application.DTOs.Calendar.CalendarEventDto>>(
                     Enumerable.Empty<Application.DTOs.Calendar.CalendarEventDto>());
 
-            var googleTasksTask = !string.IsNullOrEmpty(googleToken)
+            var googleTasksTask = user.TasksSectionEnabled && !string.IsNullOrEmpty(googleToken)
                 ? _googleTasksService.GetTodayTasksWithTokenAsync(googleToken, ct)
                 : Task.FromResult<IEnumerable<Application.DTOs.Tasks.GoogleTaskDto>>(
                     Enumerable.Empty<Application.DTOs.Tasks.GoogleTaskDto>());
 
-            var weatherTask = _weatherService.GetWeatherAsync(lat, lon, timezone, ct);
+            var weatherTask = user.WeatherSectionEnabled
+                ? _weatherService.GetWeatherAsync(lat, lon, timezone, ct)
+                : Task.FromResult<Application.DTOs.Weather.WeatherDto?>(null);
 
-            var trelloTask = user.TrelloEnabled
+            var trelloTask = user.TrelloSectionEnabled && user.TrelloEnabled
                 ? _trelloService.GetActiveTasksAsync(userId, ct)
                 : Task.FromResult<IEnumerable<Application.DTOs.Trello.TrelloTaskDto>>(
                     Enumerable.Empty<Application.DTOs.Trello.TrelloTaskDto>());
@@ -147,13 +169,14 @@ public class BriefingJob
             briefing.EmailSummaryJson = JsonSerializer.Serialize(emails);
             briefing.CalendarEventsJson = JsonSerializer.Serialize(events);
             briefing.GoogleTasksJson = JsonSerializer.Serialize(googleTasks);
-            briefing.WeatherJson = JsonSerializer.Serialize(weather);
-            briefing.TrelloTasksJson = user.TrelloEnabled
+            briefing.WeatherJson = weather is not null
+                ? JsonSerializer.Serialize(weather) : null;
+            briefing.TrelloTasksJson = user.TrelloSectionEnabled && user.TrelloEnabled
                 ? JsonSerializer.Serialize(trelloTasks) : null;
 
             var aiSummary = await _claudeService.GenerateDailySummaryAsync(
                 emails, events, googleTasks,
-                user.TrelloEnabled ? trelloTasks : null,
+                user.TrelloSectionEnabled && user.TrelloEnabled ? trelloTasks : null,
                 weather, user.DisplayName, today, ct);
 
             briefing.AISummary = aiSummary.Greeting;
@@ -176,11 +199,12 @@ public class BriefingJob
                     BriefingId = briefing.Id,
                     Date = today,
                     UserName = user.DisplayName,
-                    Weather = weather,
+                    Weather = weather!,
                     Emails = emails,
                     CalendarEvents = events,
                     GoogleTasks = googleTasks,
-                    TrelloTasks = user.TrelloEnabled ? trelloTasks : null,
+                    TrelloTasks = user.TrelloSectionEnabled && user.TrelloEnabled
+                        ? trelloTasks : null,
                     AISummary = aiSummary,
                     GeneratedAt = briefing.GeneratedAt.Value,
                 }, ct);
@@ -193,7 +217,6 @@ public class BriefingJob
         {
             sw.Stop();
             _metrics.RecordBriefingFailed();
-
             _logger.LogError(ex,
                 "Falha ao gerar briefing para usuário {UserId}", userId);
 
@@ -226,7 +249,6 @@ public class BriefingJob
 
         user.GoogleAccessToken = tokens.AccessToken;
         user.GoogleTokenExpiresAt = tokens.ExpiresAt;
-
         await _userRepository.UpdateAsync(user, ct);
 
         _logger.LogInformation(
@@ -244,10 +266,8 @@ public class BriefingJob
             var payload = new { UserId = userId, BriefingId = briefingId };
             var json = System.Text.Json.JsonSerializer.Serialize(payload);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-
             using var httpClient = new HttpClient();
             await httpClient.PostAsync($"{apiUrl}/internal/briefing-ready", content, ct);
-
             _logger.LogInformation(
                 "Notificação SignalR enviada para usuário {UserId}", userId);
         }

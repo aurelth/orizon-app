@@ -10,6 +10,15 @@ export interface UpdateProfileRequest {
   themePreference: string | null;
 }
 
+export interface UpdateBriefingPreferencesRequest {
+  briefingHour: number;
+  emailSectionEnabled: boolean;
+  calendarSectionEnabled: boolean;
+  trelloSectionEnabled: boolean;
+  tasksSectionEnabled: boolean;
+  weatherSectionEnabled: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly api = inject(ApiService);
@@ -38,6 +47,14 @@ export class UserService {
           }
         },
         error: () => this.store.setError('Falha ao atualizar perfil.'),
+      })
+    );
+  }
+
+  updateBriefingPreferences(request: UpdateBriefingPreferencesRequest): Observable<void> {
+    return this.api.put<void>('/users/briefing-preferences', request).pipe(
+      tap({
+        error: () => this.store.setError('Falha ao atualizar preferências de briefing.'),
       })
     );
   }

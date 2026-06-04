@@ -10,6 +10,7 @@
 </div>
 }
 
+<!-- Card de perfil -->
 <div class="profile-card">
   @if (isLoading()) {
   <div class="profile-loading">
@@ -83,3 +84,126 @@
   </form>
   }
 </div>
+
+<!-- Card de preferências de briefing -->
+@if (!isLoading()) {
+<div class="profile-card preferences-card">
+  <div class="preferences-header">
+    <h2 class="preferences-title">
+      <i class="pi pi-bell"></i>
+      Preferências de Briefing
+    </h2>
+    <p class="preferences-subtitle">Configure o horário e o conteúdo dos seus briefings</p>
+  </div>
+
+  <form [formGroup]="preferencesForm" (ngSubmit)="onSubmitPreferences()" novalidate
+    class="preferences-form">
+
+    <!-- Seletor de horário matinal -->
+    <div class="field">
+      <label for="briefingHour">Horário do briefing matinal</label>
+      <p class="field-hint">
+        Os briefings de 12h e 18h são fixos. Escolha o horário do seu briefing matinal.
+      </p>
+      <select id="briefingHour" formControlName="briefingHour"
+        (change)="hasPreferencesChanges.set(true); preferencesForm.markAsDirty()">
+        @for (hour of availableHours; track hour.value) {
+        <option [value]="hour.value">{{ hour.label }}</option>
+        }
+      </select>
+    </div>
+
+    <!-- Toggles de seções -->
+    <div class="field">
+      <label>Seções do briefing</label>
+      <p class="field-hint">Escolha quais seções deseja incluir nos seus briefings.</p>
+      <div class="toggles-grid">
+        <label class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">📧</span>
+            <div>
+              <span class="toggle-label">Emails</span>
+              <span class="toggle-description">Resumo dos emails recentes do Gmail</span>
+            </div>
+          </div>
+          <div class="toggle-switch" [class.active]="preferencesForm.get('emailSectionEnabled')?.value"
+            (click)="preferencesForm.get('emailSectionEnabled')?.setValue(!preferencesForm.get('emailSectionEnabled')?.value); preferencesForm.markAsDirty(); hasPreferencesChanges.set(true)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+
+        <label class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">📅</span>
+            <div>
+              <span class="toggle-label">Calendário</span>
+              <span class="toggle-description">Eventos do dia no Google Calendar</span>
+            </div>
+          </div>
+          <div class="toggle-switch" [class.active]="preferencesForm.get('calendarSectionEnabled')?.value"
+            (click)="preferencesForm.get('calendarSectionEnabled')?.setValue(!preferencesForm.get('calendarSectionEnabled')?.value); preferencesForm.markAsDirty(); hasPreferencesChanges.set(true)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+
+        <label class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">✅</span>
+            <div>
+              <span class="toggle-label">Tarefas Google</span>
+              <span class="toggle-description">Tarefas do dia no Google Tasks</span>
+            </div>
+          </div>
+          <div class="toggle-switch" [class.active]="preferencesForm.get('tasksSectionEnabled')?.value"
+            (click)="preferencesForm.get('tasksSectionEnabled')?.setValue(!preferencesForm.get('tasksSectionEnabled')?.value); preferencesForm.markAsDirty(); hasPreferencesChanges.set(true)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+
+        <label class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">📋</span>
+            <div>
+              <span class="toggle-label">Trello</span>
+              <span class="toggle-description">Tarefas ativas nos boards do Trello</span>
+            </div>
+          </div>
+          <div class="toggle-switch" [class.active]="preferencesForm.get('trelloSectionEnabled')?.value"
+            (click)="preferencesForm.get('trelloSectionEnabled')?.setValue(!preferencesForm.get('trelloSectionEnabled')?.value); preferencesForm.markAsDirty(); hasPreferencesChanges.set(true)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+
+        <label class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">🌤️</span>
+            <div>
+              <span class="toggle-label">Clima</span>
+              <span class="toggle-description">Previsão do tempo para o dia</span>
+            </div>
+          </div>
+          <div class="toggle-switch" [class.active]="preferencesForm.get('weatherSectionEnabled')?.value"
+            (click)="preferencesForm.get('weatherSectionEnabled')?.setValue(!preferencesForm.get('weatherSectionEnabled')?.value); preferencesForm.markAsDirty(); hasPreferencesChanges.set(true)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary btn--sm"
+        [disabled]="isSavingPreferences() || !hasPreferencesChanges()">
+        @if (isSavingPreferences()) {
+        <i class="pi pi-spinner pi-spin"></i>
+        <span>Salvando...</span>
+        } @else if (isSavedPreferences()) {
+        <span>Salvo</span>
+        } @else {
+        <i class="pi pi-save"></i>
+        <span>Salvar preferências</span>
+        }
+      </button>
+    </div>
+  </form>
+</div>
+}

@@ -145,7 +145,7 @@ try
         RecurringJob.AddOrUpdate<BriefingJob>(
             recurringJobId: "morning-briefing",
             methodCall: job => job.ExecuteAsync(CancellationToken.None),
-            cronExpression: "0 6,12,18 * * *",
+            cronExpression: "0 * * * *",
             options: new RecurringJobOptions
             {
                 TimeZone = TimeZoneInfo.FindSystemTimeZoneById(

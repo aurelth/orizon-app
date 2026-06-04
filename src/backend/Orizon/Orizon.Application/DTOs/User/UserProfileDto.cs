@@ -16,4 +16,12 @@ public class UserProfileDto
     public bool GoogleConnected { get; set; }
     public bool TrelloEnabled { get; set; }
     public bool HasCompletedOnboarding { get; set; }
+
+    // Preferências de briefing
+    public int BriefingHour { get; set; } = 6;
+    public bool EmailSectionEnabled { get; set; } = true;
+    public bool CalendarSectionEnabled { get; set; } = true;
+    public bool TrelloSectionEnabled { get; set; } = true;
+    public bool TasksSectionEnabled { get; set; } = true;
+    public bool WeatherSectionEnabled { get; set; } = true;
 }

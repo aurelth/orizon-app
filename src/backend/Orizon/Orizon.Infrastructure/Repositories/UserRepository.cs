@@ -65,6 +65,14 @@ public class UserRepository : IUserRepository
         identityUser.GoogleConnectedAt = user.GoogleConnectedAt;
         identityUser.HasCompletedOnboarding = user.HasCompletedOnboarding;
 
+        // Preferências de briefing
+        identityUser.BriefingHour = user.BriefingHour;
+        identityUser.EmailSectionEnabled = user.EmailSectionEnabled;
+        identityUser.CalendarSectionEnabled = user.CalendarSectionEnabled;
+        identityUser.TrelloSectionEnabled = user.TrelloSectionEnabled;
+        identityUser.TasksSectionEnabled = user.TasksSectionEnabled;
+        identityUser.WeatherSectionEnabled = user.WeatherSectionEnabled;
+
         _context.Users.Update(identityUser);
         await _context.SaveChangesAsync(ct);
     }
@@ -94,6 +102,14 @@ public class UserRepository : IUserRepository
             GoogleTokenExpiresAt = identityUser.GoogleTokenExpiresAt,
             GoogleConnectedAt = identityUser.GoogleConnectedAt,
             HasCompletedOnboarding = identityUser.HasCompletedOnboarding,
+
+            // Preferências de briefing
+            BriefingHour = identityUser.BriefingHour,
+            EmailSectionEnabled = identityUser.EmailSectionEnabled,
+            CalendarSectionEnabled = identityUser.CalendarSectionEnabled,
+            TrelloSectionEnabled = identityUser.TrelloSectionEnabled,
+            TasksSectionEnabled = identityUser.TasksSectionEnabled,
+            WeatherSectionEnabled = identityUser.WeatherSectionEnabled,
         };
     }
 }

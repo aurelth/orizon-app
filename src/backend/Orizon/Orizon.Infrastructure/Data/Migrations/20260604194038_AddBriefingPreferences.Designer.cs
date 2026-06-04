@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Orizon.Infrastructure.Data;
@@ -11,9 +12,11 @@ using Orizon.Infrastructure.Data;
 namespace Orizon.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(OrizonDbContext))]
-    partial class OrizonDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260604194038_AddBriefingPreferences")]
+    partial class AddBriefingPreferences
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

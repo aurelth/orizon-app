@@ -23,14 +23,34 @@ export class ProfileComponent implements OnInit {
   readonly error = this.store.error;
 
   profileForm!: FormGroup;
+  preferencesForm!: FormGroup;
+
   isSaving = signal(false);
   isSaved = signal(false);
   hasChanges = signal(false);
+  isSavingPreferences = signal(false);
+  isSavedPreferences = signal(false);
+  hasPreferencesChanges = signal(false);
+
+  // Horas disponíveis para seleção do briefing matinal (0-23)
+  readonly availableHours = Array.from({ length: 24 }, (_, i) => ({
+    value: i,
+    label: `${String(i).padStart(2, '0')}:00`,
+  }));
 
   ngOnInit(): void {
     this.profileForm = this.fb.group({
       displayName: ['', [Validators.required, Validators.minLength(2)]],
       themePreference: ['Dark'],
+    });
+
+    this.preferencesForm = this.fb.group({
+      briefingHour: [6],
+      emailSectionEnabled: [true],
+      calendarSectionEnabled: [true],
+      trelloSectionEnabled: [true],
+      tasksSectionEnabled: [true],
+      weatherSectionEnabled: [true],
     });
 
     this.userService.getProfile().subscribe({
@@ -40,8 +60,21 @@ export class ProfileComponent implements OnInit {
           themePreference: profile.themePreference,
         });
 
+        this.preferencesForm.patchValue({
+          briefingHour: profile.briefingHour,
+          emailSectionEnabled: profile.emailSectionEnabled,
+          calendarSectionEnabled: profile.calendarSectionEnabled,
+          trelloSectionEnabled: profile.trelloSectionEnabled,
+          tasksSectionEnabled: profile.tasksSectionEnabled,
+          weatherSectionEnabled: profile.weatherSectionEnabled,
+        });
+
         this.profileForm.valueChanges.subscribe(() => {
           this.hasChanges.set(this.profileForm.dirty);
+        });
+
+        this.preferencesForm.valueChanges.subscribe(() => {
+          this.hasPreferencesChanges.set(this.preferencesForm.dirty);
         });
       },
     });
@@ -80,6 +113,42 @@ export class ProfileComponent implements OnInit {
       error: () => {
         this.isSaving.set(false);
         this.toast.error('Erro ao atualizar perfil.');
+      },
+    });
+  }
+
+  onSubmitPreferences(): void {
+    if (!this.hasPreferencesChanges()) return;
+
+    this.isSavingPreferences.set(true);
+    const {
+      briefingHour,
+      emailSectionEnabled,
+      calendarSectionEnabled,
+      trelloSectionEnabled,
+      tasksSectionEnabled,
+      weatherSectionEnabled,
+    } = this.preferencesForm.value;
+
+    this.userService.updateBriefingPreferences({
+      briefingHour,
+      emailSectionEnabled,
+      calendarSectionEnabled,
+      trelloSectionEnabled,
+      tasksSectionEnabled,
+      weatherSectionEnabled,
+    }).subscribe({
+      next: () => {
+        this.isSavingPreferences.set(false);
+        this.isSavedPreferences.set(true);
+        this.hasPreferencesChanges.set(false);
+        this.preferencesForm.markAsPristine();
+        this.toast.success('Preferências de briefing atualizadas.');
+        setTimeout(() => this.isSavedPreferences.set(false), 3000);
+      },
+      error: () => {
+        this.isSavingPreferences.set(false);
+        this.toast.error('Erro ao atualizar preferências.');
       },
     });
   }
