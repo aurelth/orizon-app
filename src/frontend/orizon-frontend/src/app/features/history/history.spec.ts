@@ -3,7 +3,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { HistoryComponent } from './history';
-import { BriefingService, BriefingHistoryResult } from '../../core/briefing/services/briefing.service';
+import {
+  BriefingService,
+  BriefingHistoryResult,
+  UserStats,
+} from '../../core/briefing/services/briefing.service';
 import { of, throwError } from 'rxjs';
 
 describe('HistoryComponent', () => {
@@ -18,6 +22,7 @@ describe('HistoryComponent', () => {
         date: '2026-05-10',
         status: 'Generated',
         greeting: 'Bom dia, Aurel!',
+        weatherEmoji: '☀️',
         generatedAt: '2026-05-10T06:00:00Z',
       },
       {
@@ -25,6 +30,7 @@ describe('HistoryComponent', () => {
         date: '2026-05-09',
         status: 'Generated',
         greeting: 'Boa tarde, Aurel!',
+        weatherEmoji: '⛅',
         generatedAt: '2026-05-09T12:00:00Z',
       },
     ],
@@ -34,9 +40,16 @@ describe('HistoryComponent', () => {
     totalPages: 1,
   };
 
+  const mockStats: UserStats = {
+    totalGenerated: 10,
+    currentStreak: 3,
+    maxStreak: 7,
+  };
+
   beforeEach(async () => {
     briefingService = {
       getHistory: jest.fn().mockReturnValue(of(mockHistory)),
+      getStats: jest.fn().mockReturnValue(of(mockStats)),
     };
 
     await TestBed.configureTestingModule({
@@ -59,13 +72,16 @@ describe('HistoryComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('deve chamar getHistory no ngOnInit', () => {
-    expect(briefingService.getHistory).toHaveBeenCalledWith(1, 10);
+  it('deve chamar getHistory e getStats no ngOnInit', () => {
+    expect(briefingService.getHistory).toHaveBeenCalledWith(1, 10, undefined, undefined);
+    expect(briefingService.getStats).toHaveBeenCalled();
   });
 
-  it('deve popular history após carregar', () => {
+  it('deve popular history e stats após carregar', () => {
     expect(component.history()).toEqual(mockHistory);
+    expect(component.stats()).toEqual(mockStats);
     expect(component.isLoading()).toBe(false);
+    expect(component.isLoadingStats()).toBe(false);
   });
 
   it('deve definir erro quando getHistory falhar', () => {
@@ -84,8 +100,37 @@ describe('HistoryComponent', () => {
 
   it('deve carregar página correta ao chamar loadHistory com page', () => {
     component.loadHistory(2);
-    expect(briefingService.getHistory).toHaveBeenCalledWith(2, 10);
+    expect(briefingService.getHistory).toHaveBeenCalledWith(2, 10, undefined, undefined);
     expect(component.currentPage).toBe(2);
+  });
+
+  it('deve aplicar filtro de semana ao chamar setPeriodFilter week', () => {
+    component.setPeriodFilter('week');
+    expect(component.activePeriod).toBe('week');
+    expect(briefingService.getHistory).toHaveBeenCalledWith(
+      1, 10, expect.any(String), undefined
+    );
+  });
+
+  it('deve aplicar filtro de mês ao chamar setPeriodFilter month', () => {
+    component.setPeriodFilter('month');
+    expect(component.activePeriod).toBe('month');
+    expect(briefingService.getHistory).toHaveBeenCalledWith(
+      1, 10, expect.any(String), undefined
+    );
+  });
+
+  it('deve remover filtros ao chamar setPeriodFilter all', () => {
+    component.setPeriodFilter('month');
+    component.setPeriodFilter('all');
+    expect(component.activePeriod).toBe('all');
+    expect(briefingService.getHistory).toHaveBeenLastCalledWith(1, 10, undefined, undefined);
+  });
+
+  it('deve retornar label correto para status', () => {
+    expect(component.getStatusLabel('Generated')).toBe('Gerado');
+    expect(component.getStatusLabel('Failed')).toBe('Falhou');
+    expect(component.getStatusLabel('Pending')).toBe('Pendente');
   });
 
   it('deve formatar data corretamente', () => {

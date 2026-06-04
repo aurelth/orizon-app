@@ -5,6 +5,7 @@ using Orizon.API.Requests.Users;
 using Orizon.Application.UseCases.Users.Commands.CompleteOnboarding;
 using Orizon.Application.UseCases.Users.Commands.UpdateUserProfile;
 using Orizon.Application.UseCases.Users.Queries.GetUserProfile;
+using Orizon.Application.UseCases.Users.Queries.GetUserStats;
 using System.Security.Claims;
 
 namespace Orizon.API.Controllers;
@@ -64,5 +65,17 @@ public class UserController : ControllerBase
         await _mediator.Send(new CompleteOnboardingCommand(userId), ct);
 
         return NoContent();
+    }
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetStats(CancellationToken ct = default)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+        
+        var result = await _mediator.Send(new GetUserStatsQuery(userId.ToString()), ct);
+
+        return Ok(result);
     }
 }

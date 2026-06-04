@@ -9,7 +9,8 @@ export interface BriefingHistoryItem {
   briefingId: string;
   date: string;
   status: string;
-  greeting: string;
+  greeting: string | null;
+  weatherEmoji: string | null;
   generatedAt: string;
 }
 
@@ -19,6 +20,12 @@ export interface BriefingHistoryResult {
   pageSize: number;
   total: number;
   totalPages: number;
+}
+
+export interface UserStats {
+  totalGenerated: number;
+  currentStreak: number;
+  maxStreak: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -47,10 +54,23 @@ export class BriefingService {
     );
   }
 
-  getHistory(page = 1, pageSize = 10): Observable<BriefingHistoryResult> {
-    return this.api.get<BriefingHistoryResult>(
-      `/briefings/history?page=${page}&pageSize=${pageSize}`
-    );
+  getHistory(
+    page = 1,
+    pageSize = 10,
+    dateFrom?: string,
+    dateTo?: string
+  ): Observable<BriefingHistoryResult> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      pageSize: pageSize.toString(),
+    });
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTo) params.set('dateTo', dateTo);
+    return this.api.get<BriefingHistoryResult>(`/briefings/history?${params.toString()}`);
+  }
+
+  getStats(): Observable<UserStats> {
+    return this.api.get<UserStats>('/users/stats');
   }
 
   connectSignalR(hubUrl: string): void {

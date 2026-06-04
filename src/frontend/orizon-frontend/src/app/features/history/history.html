@@ -22,6 +22,55 @@
       <p class="page-subtitle">Seus briefings anteriores</p>
     </div>
 
+    <!-- Seção de estatísticas -->
+    @if (!isLoadingStats() && stats()) {
+    <div class="stats-section">
+      <div class="stat-card">
+        <span class="stat-icon">📋</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats()!.totalGenerated }}</span>
+          <span class="stat-label">Briefings gerados</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">🔥</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats()!.currentStreak }}</span>
+          <span class="stat-label">Streak atual</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <span class="stat-icon">⭐</span>
+        <div class="stat-info">
+          <span class="stat-value">{{ stats()!.maxStreak }}</span>
+          <span class="stat-label">Streak máximo</span>
+        </div>
+      </div>
+    </div>
+    }
+
+    <!-- Filtros de período -->
+    <div class="period-filters">
+      <button
+        class="filter-btn"
+        [class.active]="activePeriod === 'all'"
+        (click)="setPeriodFilter('all')">
+        Todos
+      </button>
+      <button
+        class="filter-btn"
+        [class.active]="activePeriod === 'week'"
+        (click)="setPeriodFilter('week')">
+        Última semana
+      </button>
+      <button
+        class="filter-btn"
+        [class.active]="activePeriod === 'month'"
+        (click)="setPeriodFilter('month')">
+        Último mês
+      </button>
+    </div>
+
     @if (isLoading()) {
     <div class="history-loading">
       <i class="pi pi-spinner pi-spin"></i>
@@ -43,13 +92,21 @@
     <div class="history-list">
       @for (item of history()!.items; track item.briefingId) {
       <button class="history-item" (click)="openBriefing(item.date)">
-        <div class="history-item__date">
-          <i class="pi pi-calendar"></i>
-          <span>{{ formatDate(item.date) }}</span>
+        <div class="history-item__weather">
+          {{ item.weatherEmoji || '🌤️' }}
         </div>
-        <div class="history-item__greeting">
-          {{ item.greeting }}
+        <div class="history-item__content">
+          <span class="history-item__date">
+            <i class="pi pi-calendar"></i>
+            {{ formatDate(item.date) }}
+          </span>
+          @if (item.greeting) {
+          <span class="history-item__greeting">{{ item.greeting }}</span>
+          }
         </div>
+        <span class="history-item__status" [class]="'status--' + item.status.toLowerCase()">
+          {{ getStatusLabel(item.status) }}
+        </span>
         <i class="pi pi-chevron-right history-item__arrow"></i>
       </button>
       }
@@ -57,7 +114,8 @@
 
     @if (history()!.totalPages > 1) {
     <div class="history-pagination">
-      <button class="btn btn--ghost btn--sm"
+      <button
+        class="btn btn--ghost btn--sm"
         [disabled]="currentPage === 1"
         (click)="loadHistory(currentPage - 1)">
         <i class="pi pi-chevron-left"></i>
@@ -66,7 +124,8 @@
       <span class="pagination-info">
         {{ currentPage }} / {{ history()!.totalPages }}
       </span>
-      <button class="btn btn--ghost btn--sm"
+      <button
+        class="btn btn--ghost btn--sm"
         [disabled]="currentPage === history()!.totalPages"
         (click)="loadHistory(currentPage + 1)">
         Próximo
