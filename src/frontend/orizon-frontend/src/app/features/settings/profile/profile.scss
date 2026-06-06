@@ -96,6 +96,69 @@
       color: var(--color-text-dim);
     }
   }
+
+  position: relative;
+  cursor: pointer;
+  transition: opacity var(--transition);
+
+  &:hover:not(.profile-avatar--uploading) {
+    opacity: 0.85;
+
+    .profile-avatar__edit {
+      opacity: 1;
+    }
+  }
+
+  &--uploading {
+    cursor: not-allowed;
+  }
+
+  &__overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+
+    i {
+      color: white;
+      font-size: 1rem;
+    }
+  }
+
+  &__edit {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: var(--color-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--transition);
+    z-index: 2;
+
+    i {
+      font-size: 0.625rem;
+      color: white;
+    }
+  }
+
+  &__input {
+    display: none;
+  }
+}
+
+.profile-photo-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
 }
 
 .profile-meta {

@@ -35,5 +35,11 @@ export const UserStore = signalStore(
         profile: { ...store.profile()!, themePreference: theme }
       });
     },
+    updateProfilePicture(url: string): void {
+      if (!store.profile()) return;
+      patchState(store, {
+        profile: { ...store.profile()!, profilePictureUrl: url }
+      });
+    },
   }))
 );

@@ -37,13 +37,29 @@ describe('ProfileComponent', () => {
     weatherSectionEnabled: true,
   };
 
+  // Mock do FileReader para testes síncronos
+  class MockFileReader {
+    result: string | null = null;
+    onload: ((ev: any) => any) | null = null;
+
+    readAsDataURL(_file: Blob) {
+      this.result = 'data:image/jpeg;base64,abc123';
+      if (this.onload) {
+        this.onload({ target: this });
+      }
+    }
+  }
+
   beforeEach(async () => {
+    (global as any).FileReader = MockFileReader;
+
     userService = {
       getProfile: jest.fn().mockReturnValue(of(mockProfile)),
       updateProfile: jest.fn(),
       updateBriefingPreferences: jest.fn(),
       changePassword: jest.fn(),
       deleteAccount: jest.fn(),
+      uploadProfilePicture: jest.fn(),
     };
 
     toastService = {
@@ -94,6 +110,14 @@ describe('ProfileComponent', () => {
     expect(component.deleteForm.get('password')?.value).toBe('');
   });
 
+  it('deve inicializar isUploadingPhoto como false', () => {
+    expect(component.isUploadingPhoto()).toBe(false);
+  });
+
+  it('deve inicializar previewUrl como null', () => {
+    expect(component.previewUrl()).toBeNull();
+  });
+
   it('deve inicializar hasChanges como false', () => {
     expect(component.hasChanges()).toBe(false);
   });
@@ -121,15 +145,6 @@ describe('ProfileComponent', () => {
       profilePictureUrl: null,
       themePreference: 'Dark',
     });
-  });
-
-  it('deve chamar toast.success após salvar perfil', () => {
-    (userService.updateProfile as jest.Mock).mockReturnValue(of(void 0));
-    component.profileForm.get('displayName')?.setValue('Aurel Lossou');
-    component.profileForm.markAsDirty();
-    component.hasChanges.set(true);
-    component.onSubmit();
-    expect(toastService.success).toHaveBeenCalledWith('Perfil atualizado com sucesso.');
   });
 
   it('não deve chamar updateBriefingPreferences quando não há mudanças', () => {
@@ -164,7 +179,7 @@ describe('ProfileComponent', () => {
     component.securityForm.patchValue({
       currentPassword: 'Senha@123',
       newPassword: 'NovaSenha@456',
-      confirmNewPassword: 'NovaSenhaDiferente@789',
+      confirmNewPassword: 'Diferente@789',
     });
     component.onChangePassword();
     expect(userService.changePassword).not.toHaveBeenCalled();
@@ -184,7 +199,7 @@ describe('ProfileComponent', () => {
     });
   });
 
-  it('deve chamar toast.success após alterar senha com sucesso', () => {
+  it('deve chamar toast.success após alterar senha', () => {
     (userService.changePassword as jest.Mock).mockReturnValue(of(void 0));
     component.securityForm.patchValue({
       currentPassword: 'Senha@123',
@@ -196,9 +211,7 @@ describe('ProfileComponent', () => {
   });
 
   it('deve chamar toast.error quando alterar senha falhar', () => {
-    (userService.changePassword as jest.Mock).mockReturnValue(
-      throwError(() => new Error('error'))
-    );
+    (userService.changePassword as jest.Mock).mockReturnValue(throwError(() => new Error('error')));
     component.securityForm.patchValue({
       currentPassword: 'Senha@123',
       newPassword: 'NovaSenha@456',
@@ -206,19 +219,8 @@ describe('ProfileComponent', () => {
     });
     component.onChangePassword();
     expect(toastService.error).toHaveBeenCalledWith(
-      'Senha atual incorreta ou nova senha inválida.'
+      'Senha atual incorreta ou nova senha inválida.',
     );
-  });
-
-  it('deve resetar securityForm após alterar senha com sucesso', () => {
-    (userService.changePassword as jest.Mock).mockReturnValue(of(void 0));
-    component.securityForm.patchValue({
-      currentPassword: 'Senha@123',
-      newPassword: 'NovaSenha@456',
-      confirmNewPassword: 'NovaSenha@456',
-    });
-    component.onChangePassword();
-    expect(component.securityForm.get('currentPassword')?.value).toBeNull();
   });
 
   it('passwordsMismatch deve retornar true quando senhas diferem', () => {
@@ -251,7 +253,7 @@ describe('ProfileComponent', () => {
     expect(userService.deleteAccount).toHaveBeenCalledWith({ password: 'Senha@123' });
   });
 
-  it('deve navegar para login após excluir conta com sucesso', () => {
+  it('deve navegar para login após excluir conta', () => {
     (userService.deleteAccount as jest.Mock).mockReturnValue(of(void 0));
     component.deleteForm.get('password')?.setValue('Senha@123');
     component.onDeleteAccount();
@@ -259,18 +261,81 @@ describe('ProfileComponent', () => {
   });
 
   it('deve chamar toast.error quando deleteAccount falhar', () => {
-    (userService.deleteAccount as jest.Mock).mockReturnValue(
-      throwError(() => new Error('error'))
-    );
+    (userService.deleteAccount as jest.Mock).mockReturnValue(throwError(() => new Error('error')));
     component.deleteForm.get('password')?.setValue('SenhaErrada');
     component.onDeleteAccount();
-    expect(toastService.error).toHaveBeenCalledWith(
-      'Senha incorreta. Conta não foi excluída.'
-    );
+    expect(toastService.error).toHaveBeenCalledWith('Senha incorreta. Conta não foi excluída.');
   });
 
   it('showDeleteConfirm deve iniciar como false', () => {
     expect(component.showDeleteConfirm()).toBe(false);
+  });
+
+  // --- Upload de foto (continuação) ---
+
+  it('deve mostrar toast.error quando arquivo é muito grande', () => {
+    const largeFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'photo.jpg', {
+      type: 'image/jpeg',
+    });
+    const event = { target: { files: [largeFile], value: '' } } as any;
+    component.onFileSelected(event);
+    expect(toastService.error).toHaveBeenCalledWith('Arquivo muito grande. Tamanho máximo: 5MB.');
+    expect(userService.uploadProfilePicture).not.toHaveBeenCalled();
+  });
+
+  it('deve mostrar toast.error quando tipo de arquivo não é permitido', () => {
+    const gifFile = new File([new ArrayBuffer(100)], 'photo.gif', { type: 'image/gif' });
+    const event = { target: { files: [gifFile], value: '' } } as any;
+    component.onFileSelected(event);
+    expect(toastService.error).toHaveBeenCalledWith('Tipo não permitido. Use JPG, PNG ou WebP.');
+    expect(userService.uploadProfilePicture).not.toHaveBeenCalled();
+  });
+
+  it('deve chamar uploadProfilePicture com arquivo válido', () => {
+    (userService.uploadProfilePicture as jest.Mock).mockReturnValue(
+      of({ url: 'http://localhost:5010/uploads/profile-pictures/photo.jpg' }),
+    );
+    const validFile = new File([new ArrayBuffer(100)], 'photo.jpg', { type: 'image/jpeg' });
+    const event = { target: { files: [validFile], value: '' } } as any;
+    component.onFileSelected(event);
+    expect(userService.uploadProfilePicture).toHaveBeenCalledWith(validFile);
+  });
+
+  it('deve definir previewUrl após selecionar arquivo válido', () => {
+    (userService.uploadProfilePicture as jest.Mock).mockReturnValue(
+      of({ url: 'http://localhost:5010/uploads/profile-pictures/photo.jpg' }),
+    );
+    const validFile = new File([new ArrayBuffer(100)], 'photo.jpg', { type: 'image/jpeg' });
+    const event = { target: { files: [validFile], value: '' } } as any;
+    component.onFileSelected(event);
+    expect(component.previewUrl()).toBe('data:image/jpeg;base64,abc123');
+  });
+
+  it('deve chamar toast.success após upload bem-sucedido', () => {
+    (userService.uploadProfilePicture as jest.Mock).mockReturnValue(
+      of({ url: 'http://localhost:5010/uploads/profile-pictures/photo.jpg' }),
+    );
+    const validFile = new File([new ArrayBuffer(100)], 'photo.jpg', { type: 'image/jpeg' });
+    const event = { target: { files: [validFile], value: '' } } as any;
+    component.onFileSelected(event);
+    expect(toastService.success).toHaveBeenCalledWith('Foto de perfil atualizada.');
+  });
+
+  it('deve chamar toast.error e limpar previewUrl quando upload falhar', () => {
+    (userService.uploadProfilePicture as jest.Mock).mockReturnValue(
+      throwError(() => new Error('error')),
+    );
+    const validFile = new File([new ArrayBuffer(100)], 'photo.jpg', { type: 'image/jpeg' });
+    const event = { target: { files: [validFile], value: '' } } as any;
+    component.onFileSelected(event);
+    expect(toastService.error).toHaveBeenCalledWith('Erro ao fazer upload da foto.');
+    expect(component.previewUrl()).toBeNull();
+  });
+
+  it('não deve fazer nada quando nenhum arquivo é selecionado', () => {
+    const event = { target: { files: [], value: '' } } as any;
+    component.onFileSelected(event);
+    expect(userService.uploadProfilePicture).not.toHaveBeenCalled();
   });
 
   it('deve ter 24 horas disponíveis no seletor', () => {

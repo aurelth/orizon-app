@@ -43,10 +43,16 @@ export class ProfileComponent implements OnInit {
   isDeletingAccount = signal(false);
   showDeleteConfirm = signal(false);
 
+  isUploadingPhoto = signal(false);
+  previewUrl = signal<string | null>(null);
+
   readonly availableHours = Array.from({ length: 24 }, (_, i) => ({
     value: i,
     label: `${String(i).padStart(2, '0')}:00`,
   }));
+
+  private readonly allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+  private readonly maxSizeBytes = 5 * 1024 * 1024; // 5MB
 
   ngOnInit(): void {
     this.profileForm = this.fb.group({
@@ -96,6 +102,48 @@ export class ProfileComponent implements OnInit {
         this.preferencesForm.valueChanges.subscribe(() => {
           this.hasPreferencesChanges.set(this.preferencesForm.dirty);
         });
+      },
+    });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    const file = input.files[0];
+
+    if (file.size > this.maxSizeBytes) {
+      this.toast.error('Arquivo muito grande. Tamanho máximo: 5MB.');
+      input.value = '';
+      return;
+    }
+
+    if (!this.allowedTypes.includes(file.type)) {
+      this.toast.error('Tipo não permitido. Use JPG, PNG ou WebP.');
+      input.value = '';
+      return;
+    }
+
+    // Preview local antes do upload
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.previewUrl.set(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Faz o upload
+    this.isUploadingPhoto.set(true);
+    this.userService.uploadProfilePicture(file).subscribe({
+      next: () => {
+        this.isUploadingPhoto.set(false);
+        this.toast.success('Foto de perfil atualizada.');
+        input.value = '';
+      },
+      error: () => {
+        this.isUploadingPhoto.set(false);
+        this.previewUrl.set(null);
+        this.toast.error('Erro ao fazer upload da foto.');
+        input.value = '';
       },
     });
   }

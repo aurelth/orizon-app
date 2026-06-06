@@ -19,15 +19,38 @@
   </div>
   } @else {
   <div class="profile-info">
-    <div class="profile-avatar">
-      @if (profile()?.profilePictureUrl) {
-      <img [src]="profile()!.profilePictureUrl!" [alt]="profile()!.displayName" />
+
+    <!-- Avatar com upload -->
+    <div class="profile-avatar"
+      [class.profile-avatar--uploading]="isUploadingPhoto()"
+      (click)="!isUploadingPhoto() && fileInput.click()"
+      title="Clique para alterar a foto">
+
+      @if (isUploadingPhoto()) {
+      <div class="profile-avatar__overlay">
+        <i class="pi pi-spinner pi-spin"></i>
+      </div>
+      } @else {
+      <div class="profile-avatar__edit">
+        <i class="pi pi-camera"></i>
+      </div>
+      }
+
+      @if (previewUrl() || profile()?.profilePictureUrl) {
+      <img [src]="previewUrl() || profile()!.profilePictureUrl!"
+        [alt]="profile()?.displayName" />
       } @else {
       <div class="profile-avatar__placeholder">
         <i class="pi pi-user"></i>
       </div>
       }
+
+      <input #fileInput type="file"
+        accept="image/jpeg,image/jpg,image/png,image/webp"
+        class="profile-avatar__input"
+        (change)="onFileSelected($event)" />
     </div>
+
     <div class="profile-meta">
       <p class="profile-email">{{ profile()?.email }}</p>
       @if (profile()?.locationName) {
@@ -36,6 +59,7 @@
         {{ profile()?.locationName }}
       </p>
       }
+      <p class="profile-photo-hint">Clique na foto para alterar • JPG, PNG ou WebP • máx. 5MB</p>
     </div>
   </div>
 
@@ -282,9 +306,7 @@
   </button>
   } @else {
   <form [formGroup]="deleteForm" (ngSubmit)="onDeleteAccount()" novalidate class="delete-form">
-    <p class="delete-confirm-text">
-      Digite sua senha para confirmar a exclusão da conta:
-    </p>
+    <p class="delete-confirm-text">Digite sua senha para confirmar a exclusão da conta:</p>
     <div class="field">
       <input type="password" formControlName="password"
         placeholder="Sua senha atual" autocomplete="current-password" />

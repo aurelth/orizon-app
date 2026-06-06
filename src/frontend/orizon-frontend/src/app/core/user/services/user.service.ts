@@ -28,6 +28,10 @@ export interface DeleteAccountRequest {
   password: string;
 }
 
+export interface UploadProfilePictureResponse {
+  url: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly api = inject(ApiService);
@@ -74,6 +78,17 @@ export class UserService {
 
   deleteAccount(request: DeleteAccountRequest): Observable<void> {
     return this.api.delete<void>('/users/account', request);
+  }
+
+  uploadProfilePicture(file: File): Observable<UploadProfilePictureResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.api.postFile<UploadProfilePictureResponse>('/users/profile-picture', formData).pipe(
+      tap({
+        next: ({ url }) => this.store.updateProfilePicture(url),
+        error: () => this.store.setError('Falha ao fazer upload da foto.'),
+      })
+    );
   }
 
   private applyTheme(theme: string): void {
