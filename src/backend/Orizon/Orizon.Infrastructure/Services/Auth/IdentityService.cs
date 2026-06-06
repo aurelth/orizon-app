@@ -97,28 +97,22 @@ public class IdentityService : IIdentityService
             ?? throw new InvalidOperationException("Usuário não encontrado.");
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(identityUser);
-
-        // encode para URL-safe
         return WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
     }
 
     public async Task<bool> ResetPasswordAsync(
-    string userId,
-    string token,
-    string newPassword,
-    CancellationToken ct = default)
+        string userId,
+        string token,
+        string newPassword,
+        CancellationToken ct = default)
     {
         var identityUser = await _userManager.FindByIdAsync(userId)
             ?? throw new InvalidOperationException("Usuário não encontrado.");
 
         try
         {
-            var decodedToken = Encoding.UTF8.GetString(
-                WebEncoders.Base64UrlDecode(token));
-
-            var result = await _userManager.ResetPasswordAsync(
-                identityUser, decodedToken, newPassword);
-
+            var decodedToken = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(token));
+            var result = await _userManager.ResetPasswordAsync(identityUser, decodedToken, newPassword);
             return result.Succeeded;
         }
         catch (FormatException)
@@ -128,12 +122,30 @@ public class IdentityService : IIdentityService
     }
 
     public async Task<bool> CheckPasswordAsync(
-    string userId,
-    string password,
-    CancellationToken ct = default)
+        string userId,
+        string password,
+        CancellationToken ct = default)
     {
         var identityUser = await _userManager.FindByIdAsync(userId);
         if (identityUser is null) return false;
         return await _userManager.CheckPasswordAsync(identityUser, password);
+    }
+
+    public async Task<(bool Success, string[] Errors)> ChangePasswordAsync(
+        string userId,
+        string currentPassword,
+        string newPassword,
+        CancellationToken ct = default)
+    {
+        var identityUser = await _userManager.FindByIdAsync(userId)
+            ?? throw new InvalidOperationException("Usuário não encontrado.");
+
+        var result = await _userManager.ChangePasswordAsync(
+            identityUser, currentPassword, newPassword);
+
+        if (!result.Succeeded)
+            return (false, result.Errors.Select(e => e.Description).ToArray());
+
+        return (true, Array.Empty<string>());
     }
 }

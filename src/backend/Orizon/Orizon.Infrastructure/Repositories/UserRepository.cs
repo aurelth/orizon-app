@@ -77,6 +77,32 @@ public class UserRepository : IUserRepository
         await _context.SaveChangesAsync(ct);
     }
 
+    public async Task DeleteAsync(Guid userId, CancellationToken ct = default)
+    {
+        var userIdStr = userId.ToString();
+        
+        await _context.Set<BriefingEntry>()
+            .Where(b => b.UserId == userId)
+            .ExecuteDeleteAsync(ct);
+
+        await _context.Set<TrelloBoardConfig>()
+            .Where(t => t.UserId == userId)
+            .ExecuteDeleteAsync(ct);
+
+        await _context.Set<RefreshToken>()
+            .Where(r => r.UserId == userIdStr)
+            .ExecuteDeleteAsync(ct);
+        
+        var identityUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == userIdStr, ct);
+
+        if (identityUser is not null)
+        {
+            _context.Users.Remove(identityUser);
+            await _context.SaveChangesAsync(ct);
+        }
+    }
+
     private static AppUser MapToDomain(Identity.AppIdentityUser identityUser)
     {
         return new AppUser
@@ -102,8 +128,6 @@ public class UserRepository : IUserRepository
             GoogleTokenExpiresAt = identityUser.GoogleTokenExpiresAt,
             GoogleConnectedAt = identityUser.GoogleConnectedAt,
             HasCompletedOnboarding = identityUser.HasCompletedOnboarding,
-
-            // Preferências de briefing
             BriefingHour = identityUser.BriefingHour,
             EmailSectionEnabled = identityUser.EmailSectionEnabled,
             CalendarSectionEnabled = identityUser.CalendarSectionEnabled,

@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { UserService } from '../../../core/user/services/user.service';
 import { UserStore } from '../../../core/user/store/user.store';
 import { ToastService } from '../../../core/toast/toast.service';
@@ -17,6 +18,7 @@ export class ProfileComponent implements OnInit {
   private readonly userService = inject(UserService);
   private readonly store = inject(UserStore);
   private readonly toast = inject(ToastService);
+  private readonly router = inject(Router);
 
   readonly profile = this.store.profile;
   readonly isLoading = this.store.isLoading;
@@ -24,15 +26,23 @@ export class ProfileComponent implements OnInit {
 
   profileForm!: FormGroup;
   preferencesForm!: FormGroup;
+  securityForm!: FormGroup;
+  deleteForm!: FormGroup;
 
   isSaving = signal(false);
   isSaved = signal(false);
   hasChanges = signal(false);
+
   isSavingPreferences = signal(false);
   isSavedPreferences = signal(false);
   hasPreferencesChanges = signal(false);
 
-  // Horas disponíveis para seleção do briefing matinal (0-23)
+  isSavingPassword = signal(false);
+  isSavedPassword = signal(false);
+
+  isDeletingAccount = signal(false);
+  showDeleteConfirm = signal(false);
+
   readonly availableHours = Array.from({ length: 24 }, (_, i) => ({
     value: i,
     label: `${String(i).padStart(2, '0')}:00`,
@@ -51,6 +61,16 @@ export class ProfileComponent implements OnInit {
       trelloSectionEnabled: [true],
       tasksSectionEnabled: [true],
       weatherSectionEnabled: [true],
+    });
+
+    this.securityForm = this.fb.group({
+      currentPassword: ['', [Validators.required]],
+      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      confirmNewPassword: ['', [Validators.required]],
+    });
+
+    this.deleteForm = this.fb.group({
+      password: ['', [Validators.required]],
     });
 
     this.userService.getProfile().subscribe({
@@ -89,6 +109,17 @@ export class ProfileComponent implements OnInit {
   isFieldInvalid(field: string): boolean {
     const control = this.profileForm.get(field);
     return !!(control?.invalid && control?.touched);
+  }
+
+  isSecurityFieldInvalid(field: string): boolean {
+    const control = this.securityForm.get(field);
+    return !!(control?.invalid && control?.touched);
+  }
+
+  passwordsMismatch(): boolean {
+    const newPassword = this.securityForm.get('newPassword')?.value;
+    const confirmNewPassword = this.securityForm.get('confirmNewPassword')?.value;
+    return newPassword !== confirmNewPassword && !!confirmNewPassword;
   }
 
   onSubmit(): void {
@@ -149,6 +180,45 @@ export class ProfileComponent implements OnInit {
       error: () => {
         this.isSavingPreferences.set(false);
         this.toast.error('Erro ao atualizar preferências.');
+      },
+    });
+  }
+
+  onChangePassword(): void {
+    if (this.securityForm.invalid || this.passwordsMismatch()) return;
+
+    const { currentPassword, newPassword } = this.securityForm.value;
+    this.isSavingPassword.set(true);
+
+    this.userService.changePassword({ currentPassword, newPassword }).subscribe({
+      next: () => {
+        this.isSavingPassword.set(false);
+        this.isSavedPassword.set(true);
+        this.securityForm.reset();
+        this.toast.success('Senha alterada com sucesso.');
+        setTimeout(() => this.isSavedPassword.set(false), 3000);
+      },
+      error: () => {
+        this.isSavingPassword.set(false);
+        this.toast.error('Senha atual incorreta ou nova senha inválida.');
+      },
+    });
+  }
+
+  onDeleteAccount(): void {
+    if (this.deleteForm.invalid) return;
+
+    const { password } = this.deleteForm.value;
+    this.isDeletingAccount.set(true);
+
+    this.userService.deleteAccount({ password }).subscribe({
+      next: () => {
+        localStorage.clear();
+        this.router.navigate(['/auth/login']);
+      },
+      error: () => {
+        this.isDeletingAccount.set(false);
+        this.toast.error('Senha incorreta. Conta não foi excluída.');
       },
     });
   }

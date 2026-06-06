@@ -7,4 +7,5 @@ public interface IUserRepository
     Task<IEnumerable<AppUser>> GetActiveUsersAsync(CancellationToken ct = default);
     Task<AppUser?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task UpdateAsync(AppUser user, CancellationToken ct = default);
+    Task DeleteAsync(Guid userId, CancellationToken ct = default);
 }

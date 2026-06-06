@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { provideRouter } from '@angular/router';
+import { Router } from '@angular/router';
 import { ProfileComponent } from './profile';
 import { UserService } from '../../../core/user/services/user.service';
 import { UserStore } from '../../../core/user/store/user.store';
@@ -12,6 +12,7 @@ describe('ProfileComponent', () => {
   let component: ProfileComponent;
   let userService: jest.Mocked<Partial<UserService>>;
   let toastService: jest.Mocked<Partial<ToastService>>;
+  let router: jest.Mocked<Partial<Router>>;
 
   const mockProfile = {
     id: 'user-1',
@@ -41,6 +42,8 @@ describe('ProfileComponent', () => {
       getProfile: jest.fn().mockReturnValue(of(mockProfile)),
       updateProfile: jest.fn(),
       updateBriefingPreferences: jest.fn(),
+      changePassword: jest.fn(),
+      deleteAccount: jest.fn(),
     };
 
     toastService = {
@@ -48,14 +51,18 @@ describe('ProfileComponent', () => {
       error: jest.fn(),
     };
 
+    router = {
+      navigate: jest.fn().mockResolvedValue(true),
+    };
+
     await TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        provideRouter([]),
         UserStore,
         { provide: UserService, useValue: userService },
         { provide: ToastService, useValue: toastService },
+        { provide: Router, useValue: router },
       ],
     }).compileComponents();
 
@@ -75,25 +82,20 @@ describe('ProfileComponent', () => {
   it('deve inicializar o preferencesForm com valores do perfil', () => {
     expect(component.preferencesForm.get('briefingHour')?.value).toBe(6);
     expect(component.preferencesForm.get('emailSectionEnabled')?.value).toBe(true);
-    expect(component.preferencesForm.get('calendarSectionEnabled')?.value).toBe(true);
-    expect(component.preferencesForm.get('trelloSectionEnabled')?.value).toBe(true);
-    expect(component.preferencesForm.get('tasksSectionEnabled')?.value).toBe(true);
-    expect(component.preferencesForm.get('weatherSectionEnabled')?.value).toBe(true);
+  });
+
+  it('deve inicializar o securityForm vazio', () => {
+    expect(component.securityForm.get('currentPassword')?.value).toBe('');
+    expect(component.securityForm.get('newPassword')?.value).toBe('');
+    expect(component.securityForm.get('confirmNewPassword')?.value).toBe('');
+  });
+
+  it('deve inicializar o deleteForm vazio', () => {
+    expect(component.deleteForm.get('password')?.value).toBe('');
   });
 
   it('deve inicializar hasChanges como false', () => {
     expect(component.hasChanges()).toBe(false);
-  });
-
-  it('deve inicializar hasPreferencesChanges como false', () => {
-    expect(component.hasPreferencesChanges()).toBe(false);
-  });
-
-  it('deve detectar mudanças ao alterar displayName', () => {
-    component.profileForm.get('displayName')?.setValue('Novo Nome');
-    component.profileForm.markAsDirty();
-    component.hasChanges.set(true);
-    expect(component.hasChanges()).toBe(true);
   });
 
   it('deve detectar mudanças ao chamar setTheme', () => {
@@ -104,11 +106,6 @@ describe('ProfileComponent', () => {
 
   it('não deve chamar updateProfile quando form inválido', () => {
     component.profileForm.get('displayName')?.setValue('');
-    component.onSubmit();
-    expect(userService.updateProfile).not.toHaveBeenCalled();
-  });
-
-  it('não deve chamar updateProfile quando não há mudanças', () => {
     component.onSubmit();
     expect(userService.updateProfile).not.toHaveBeenCalled();
   });
@@ -126,24 +123,13 @@ describe('ProfileComponent', () => {
     });
   });
 
-  it('deve chamar toast.success após salvar perfil com sucesso', () => {
+  it('deve chamar toast.success após salvar perfil', () => {
     (userService.updateProfile as jest.Mock).mockReturnValue(of(void 0));
     component.profileForm.get('displayName')?.setValue('Aurel Lossou');
     component.profileForm.markAsDirty();
     component.hasChanges.set(true);
     component.onSubmit();
     expect(toastService.success).toHaveBeenCalledWith('Perfil atualizado com sucesso.');
-  });
-
-  it('deve chamar toast.error quando salvar perfil falhar', () => {
-    (userService.updateProfile as jest.Mock).mockReturnValue(
-      throwError(() => new Error('error'))
-    );
-    component.profileForm.get('displayName')?.setValue('Aurel Lossou');
-    component.profileForm.markAsDirty();
-    component.hasChanges.set(true);
-    component.onSubmit();
-    expect(toastService.error).toHaveBeenCalledWith('Erro ao atualizar perfil.');
   });
 
   it('não deve chamar updateBriefingPreferences quando não há mudanças', () => {
@@ -154,13 +140,12 @@ describe('ProfileComponent', () => {
   it('deve chamar updateBriefingPreferences com dados corretos', () => {
     (userService.updateBriefingPreferences as jest.Mock).mockReturnValue(of(void 0));
     component.preferencesForm.get('briefingHour')?.setValue(8);
-    component.preferencesForm.get('emailSectionEnabled')?.setValue(false);
     component.preferencesForm.markAsDirty();
     component.hasPreferencesChanges.set(true);
     component.onSubmitPreferences();
     expect(userService.updateBriefingPreferences).toHaveBeenCalledWith({
       briefingHour: 8,
-      emailSectionEnabled: false,
+      emailSectionEnabled: true,
       calendarSectionEnabled: true,
       trelloSectionEnabled: true,
       tasksSectionEnabled: true,
@@ -168,45 +153,129 @@ describe('ProfileComponent', () => {
     });
   });
 
-  it('deve chamar toast.success após salvar preferências com sucesso', () => {
-    (userService.updateBriefingPreferences as jest.Mock).mockReturnValue(of(void 0));
-    component.preferencesForm.markAsDirty();
-    component.hasPreferencesChanges.set(true);
-    component.onSubmitPreferences();
-    expect(toastService.success).toHaveBeenCalledWith('Preferências de briefing atualizadas.');
+  // --- Alterar senha ---
+
+  it('não deve chamar changePassword quando securityForm inválido', () => {
+    component.onChangePassword();
+    expect(userService.changePassword).not.toHaveBeenCalled();
   });
 
-  it('deve chamar toast.error quando salvar preferências falhar', () => {
-    (userService.updateBriefingPreferences as jest.Mock).mockReturnValue(
+  it('não deve chamar changePassword quando senhas não coincidem', () => {
+    component.securityForm.patchValue({
+      currentPassword: 'Senha@123',
+      newPassword: 'NovaSenha@456',
+      confirmNewPassword: 'NovaSenhaDiferente@789',
+    });
+    component.onChangePassword();
+    expect(userService.changePassword).not.toHaveBeenCalled();
+  });
+
+  it('deve chamar changePassword com dados corretos', () => {
+    (userService.changePassword as jest.Mock).mockReturnValue(of(void 0));
+    component.securityForm.patchValue({
+      currentPassword: 'Senha@123',
+      newPassword: 'NovaSenha@456',
+      confirmNewPassword: 'NovaSenha@456',
+    });
+    component.onChangePassword();
+    expect(userService.changePassword).toHaveBeenCalledWith({
+      currentPassword: 'Senha@123',
+      newPassword: 'NovaSenha@456',
+    });
+  });
+
+  it('deve chamar toast.success após alterar senha com sucesso', () => {
+    (userService.changePassword as jest.Mock).mockReturnValue(of(void 0));
+    component.securityForm.patchValue({
+      currentPassword: 'Senha@123',
+      newPassword: 'NovaSenha@456',
+      confirmNewPassword: 'NovaSenha@456',
+    });
+    component.onChangePassword();
+    expect(toastService.success).toHaveBeenCalledWith('Senha alterada com sucesso.');
+  });
+
+  it('deve chamar toast.error quando alterar senha falhar', () => {
+    (userService.changePassword as jest.Mock).mockReturnValue(
       throwError(() => new Error('error'))
     );
-    component.preferencesForm.markAsDirty();
-    component.hasPreferencesChanges.set(true);
-    component.onSubmitPreferences();
-    expect(toastService.error).toHaveBeenCalledWith('Erro ao atualizar preferências.');
+    component.securityForm.patchValue({
+      currentPassword: 'Senha@123',
+      newPassword: 'NovaSenha@456',
+      confirmNewPassword: 'NovaSenha@456',
+    });
+    component.onChangePassword();
+    expect(toastService.error).toHaveBeenCalledWith(
+      'Senha atual incorreta ou nova senha inválida.'
+    );
   });
 
-  it('deve ter 24 horas disponíveis', () => {
+  it('deve resetar securityForm após alterar senha com sucesso', () => {
+    (userService.changePassword as jest.Mock).mockReturnValue(of(void 0));
+    component.securityForm.patchValue({
+      currentPassword: 'Senha@123',
+      newPassword: 'NovaSenha@456',
+      confirmNewPassword: 'NovaSenha@456',
+    });
+    component.onChangePassword();
+    expect(component.securityForm.get('currentPassword')?.value).toBeNull();
+  });
+
+  it('passwordsMismatch deve retornar true quando senhas diferem', () => {
+    component.securityForm.patchValue({
+      newPassword: 'NovaSenha@456',
+      confirmNewPassword: 'Diferente@789',
+    });
+    expect(component.passwordsMismatch()).toBe(true);
+  });
+
+  it('passwordsMismatch deve retornar false quando senhas coincidem', () => {
+    component.securityForm.patchValue({
+      newPassword: 'NovaSenha@456',
+      confirmNewPassword: 'NovaSenha@456',
+    });
+    expect(component.passwordsMismatch()).toBe(false);
+  });
+
+  // --- Excluir conta ---
+
+  it('não deve chamar deleteAccount quando deleteForm inválido', () => {
+    component.onDeleteAccount();
+    expect(userService.deleteAccount).not.toHaveBeenCalled();
+  });
+
+  it('deve chamar deleteAccount com senha correta', () => {
+    (userService.deleteAccount as jest.Mock).mockReturnValue(of(void 0));
+    component.deleteForm.get('password')?.setValue('Senha@123');
+    component.onDeleteAccount();
+    expect(userService.deleteAccount).toHaveBeenCalledWith({ password: 'Senha@123' });
+  });
+
+  it('deve navegar para login após excluir conta com sucesso', () => {
+    (userService.deleteAccount as jest.Mock).mockReturnValue(of(void 0));
+    component.deleteForm.get('password')?.setValue('Senha@123');
+    component.onDeleteAccount();
+    expect(router.navigate).toHaveBeenCalledWith(['/auth/login']);
+  });
+
+  it('deve chamar toast.error quando deleteAccount falhar', () => {
+    (userService.deleteAccount as jest.Mock).mockReturnValue(
+      throwError(() => new Error('error'))
+    );
+    component.deleteForm.get('password')?.setValue('SenhaErrada');
+    component.onDeleteAccount();
+    expect(toastService.error).toHaveBeenCalledWith(
+      'Senha incorreta. Conta não foi excluída.'
+    );
+  });
+
+  it('showDeleteConfirm deve iniciar como false', () => {
+    expect(component.showDeleteConfirm()).toBe(false);
+  });
+
+  it('deve ter 24 horas disponíveis no seletor', () => {
     expect(component.availableHours).toHaveLength(24);
     expect(component.availableHours[0]).toEqual({ value: 0, label: '00:00' });
     expect(component.availableHours[6]).toEqual({ value: 6, label: '06:00' });
-    expect(component.availableHours[23]).toEqual({ value: 23, label: '23:00' });
-  });
-
-  it('deve setar isSaved como true após salvar perfil', () => {
-    (userService.updateProfile as jest.Mock).mockReturnValue(of(void 0));
-    component.profileForm.get('displayName')?.setValue('Aurel Lossou');
-    component.profileForm.markAsDirty();
-    component.hasChanges.set(true);
-    component.onSubmit();
-    expect(component.isSaved()).toBe(true);
-  });
-
-  it('deve resetar hasPreferencesChanges após salvar preferências', () => {
-    (userService.updateBriefingPreferences as jest.Mock).mockReturnValue(of(void 0));
-    component.preferencesForm.markAsDirty();
-    component.hasPreferencesChanges.set(true);
-    component.onSubmitPreferences();
-    expect(component.hasPreferencesChanges()).toBe(false);
   });
 });

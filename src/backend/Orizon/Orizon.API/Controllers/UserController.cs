@@ -2,7 +2,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Orizon.API.Requests.Users;
+using Orizon.Application.UseCases.Users.Commands.ChangePassword;
 using Orizon.Application.UseCases.Users.Commands.CompleteOnboarding;
+using Orizon.Application.UseCases.Users.Commands.DeleteAccount;
 using Orizon.Application.UseCases.Users.Commands.UpdateBriefingPreferences;
 using Orizon.Application.UseCases.Users.Commands.UpdateUserProfile;
 using Orizon.Application.UseCases.Users.Queries.GetUserProfile;
@@ -99,6 +101,51 @@ public class UserController : ControllerBase
                 request.TrelloSectionEnabled,
                 request.TasksSectionEnabled,
                 request.WeatherSectionEnabled), ct);
+
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("change-password")]
+    public async Task<IActionResult> ChangePassword(
+        [FromBody] ChangePasswordRequest request,
+        CancellationToken ct = default)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        try
+        {
+            await _mediator.Send(new ChangePasswordCommand(
+                userId,
+                request.CurrentPassword,
+                request.NewPassword), ct);
+
+            return NoContent();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpDelete("account")]
+    public async Task<IActionResult> DeleteAccount(
+        [FromBody] DeleteAccountRequest request,
+        CancellationToken ct = default)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+        if (!Guid.TryParse(userIdStr, out var userId))
+            return Unauthorized();
+
+        try
+        {
+            await _mediator.Send(new DeleteAccountCommand(userId, request.Password), ct);
 
             return NoContent();
         }

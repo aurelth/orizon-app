@@ -19,6 +19,15 @@ export interface UpdateBriefingPreferencesRequest {
   weatherSectionEnabled: boolean;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface DeleteAccountRequest {
+  password: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly api = inject(ApiService);
@@ -57,6 +66,14 @@ export class UserService {
         error: () => this.store.setError('Falha ao atualizar preferências de briefing.'),
       })
     );
+  }
+
+  changePassword(request: ChangePasswordRequest): Observable<void> {
+    return this.api.put<void>('/users/change-password', request);
+  }
+
+  deleteAccount(request: DeleteAccountRequest): Observable<void> {
+    return this.api.delete<void>('/users/account', request);
   }
 
   private applyTheme(theme: string): void {
