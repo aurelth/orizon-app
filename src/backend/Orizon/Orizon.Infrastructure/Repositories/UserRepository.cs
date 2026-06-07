@@ -65,8 +65,42 @@ public class UserRepository : IUserRepository
         identityUser.GoogleConnectedAt = user.GoogleConnectedAt;
         identityUser.HasCompletedOnboarding = user.HasCompletedOnboarding;
 
+        // Preferências de briefing
+        identityUser.BriefingHour = user.BriefingHour;
+        identityUser.EmailSectionEnabled = user.EmailSectionEnabled;
+        identityUser.CalendarSectionEnabled = user.CalendarSectionEnabled;
+        identityUser.TrelloSectionEnabled = user.TrelloSectionEnabled;
+        identityUser.TasksSectionEnabled = user.TasksSectionEnabled;
+        identityUser.WeatherSectionEnabled = user.WeatherSectionEnabled;
+
         _context.Users.Update(identityUser);
         await _context.SaveChangesAsync(ct);
+    }
+
+    public async Task DeleteAsync(Guid userId, CancellationToken ct = default)
+    {
+        var userIdStr = userId.ToString();
+        
+        await _context.Set<BriefingEntry>()
+            .Where(b => b.UserId == userId)
+            .ExecuteDeleteAsync(ct);
+
+        await _context.Set<TrelloBoardConfig>()
+            .Where(t => t.UserId == userId)
+            .ExecuteDeleteAsync(ct);
+
+        await _context.Set<RefreshToken>()
+            .Where(r => r.UserId == userIdStr)
+            .ExecuteDeleteAsync(ct);
+        
+        var identityUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id == userIdStr, ct);
+
+        if (identityUser is not null)
+        {
+            _context.Users.Remove(identityUser);
+            await _context.SaveChangesAsync(ct);
+        }
     }
 
     private static AppUser MapToDomain(Identity.AppIdentityUser identityUser)
@@ -94,6 +128,12 @@ public class UserRepository : IUserRepository
             GoogleTokenExpiresAt = identityUser.GoogleTokenExpiresAt,
             GoogleConnectedAt = identityUser.GoogleConnectedAt,
             HasCompletedOnboarding = identityUser.HasCompletedOnboarding,
+            BriefingHour = identityUser.BriefingHour,
+            EmailSectionEnabled = identityUser.EmailSectionEnabled,
+            CalendarSectionEnabled = identityUser.CalendarSectionEnabled,
+            TrelloSectionEnabled = identityUser.TrelloSectionEnabled,
+            TasksSectionEnabled = identityUser.TasksSectionEnabled,
+            WeatherSectionEnabled = identityUser.WeatherSectionEnabled,
         };
     }
 }

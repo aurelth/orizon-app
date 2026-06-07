@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Orizon.Application.Interfaces.Repositories;
 using Orizon.Domain.Entities;
+using Orizon.Domain.Enums;
 using Orizon.Infrastructure.Data;
 
 namespace Orizon.Infrastructure.Repositories;
@@ -26,24 +27,48 @@ public class BriefingRepository : IBriefingRepository
         string userId,
         DateOnly date,
         CancellationToken ct = default)
-    {        
+    {
         return await _context.BriefingEntries
             .FirstOrDefaultAsync(
                 b => b.UserId.ToString() == userId && b.Date == date,
                 ct);
     }
 
-    public async Task<IEnumerable<BriefingEntry>> GetByUserAsync(
+    public async Task<(IEnumerable<BriefingEntry> Items, int Total)> GetByUserAsync(
         string userId,
         int page = 1,
         int pageSize = 10,
+        DateOnly? dateFrom = null,
+        DateOnly? dateTo = null,
         CancellationToken ct = default)
     {
-        return await _context.BriefingEntries
-            .Where(b => b.UserId.ToString() == userId)
+        var query = _context.BriefingEntries
+            .Where(b => b.UserId.ToString() == userId);
+        
+        if (dateFrom.HasValue)
+            query = query.Where(b => b.Date >= dateFrom.Value);
+
+        if (dateTo.HasValue)
+            query = query.Where(b => b.Date <= dateTo.Value);
+
+        var total = await query.CountAsync(ct);
+
+        var items = await query
             .OrderByDescending(b => b.Date)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .ToListAsync(ct);
+
+        return (items, total);
+    }
+
+    public async Task<IEnumerable<DateOnly>> GetGeneratedDatesByUserAsync(
+        string userId,
+        CancellationToken ct = default)
+    {        
+        return await _context.BriefingEntries
+            .Where(b => b.UserId.ToString() == userId && b.Status == BriefingStatus.Generated)
+            .Select(b => b.Date)
             .ToListAsync(ct);
     }
 
@@ -58,7 +83,7 @@ public class BriefingRepository : IBriefingRepository
     public async Task UpdateAsync(
         BriefingEntry briefing,
         CancellationToken ct = default)
-    {        
+    {
         briefing.UpdatedAt = DateTime.UtcNow;
         _context.BriefingEntries.Update(briefing);
         await _context.SaveChangesAsync(ct);

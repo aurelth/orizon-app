@@ -32,20 +32,8 @@ public class BriefingJobTests
     private readonly Mock<ILogger<BriefingJob>> _loggerMock = new();
     private readonly Mock<IOrizonMetrics> _metricsMock = new();
     private readonly BriefingJob _job;
-
-    private readonly AppUser _testUser = new()
-    {
-        Id = Guid.NewGuid(),
-        Email = "aurel@orizonapp.io",
-        DisplayName = "Aurel",
-        Latitude = -26.9194,
-        Longitude = -49.0661,
-        Timezone = "America/Sao_Paulo",
-        TrelloEnabled = false,
-        GoogleAccessToken = "valid-access-token",
-        GoogleRefreshToken = "valid-refresh-token",
-        GoogleTokenExpiresAt = DateTime.UtcNow.AddHours(1),
-    };
+    
+    private readonly AppUser _testUser;
 
     private readonly WeatherDto _weather = new()
     {
@@ -64,7 +52,30 @@ public class BriefingJobTests
     };
 
     public BriefingJobTests()
-    {
+    {        
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        var currentBrasiliaHour = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone).Hour;
+
+        _testUser = new AppUser
+        {
+            Id = Guid.NewGuid(),
+            Email = "aurel@orizonapp.io",
+            DisplayName = "Aurel",
+            Latitude = -26.9194,
+            Longitude = -49.0661,
+            Timezone = "America/Sao_Paulo",
+            TrelloEnabled = false,
+            GoogleAccessToken = "valid-access-token",
+            GoogleRefreshToken = "valid-refresh-token",
+            GoogleTokenExpiresAt = DateTime.UtcNow.AddHours(1),
+            BriefingHour = currentBrasiliaHour,
+            EmailSectionEnabled = true,
+            CalendarSectionEnabled = true,
+            TrelloSectionEnabled = true,
+            TasksSectionEnabled = true,
+            WeatherSectionEnabled = true,
+        };
+
         _configMock
             .Setup(c => c["SignalR:HubUrl"])
             .Returns("http://localhost:5010/hubs/briefing");
@@ -258,7 +269,6 @@ public class BriefingJobTests
         _testUser.IsTraveling = true;
         _testUser.TravelLatitude = 38.7169;
         _testUser.TravelLongitude = -9.1395;
-
         SetupDefaultMocks();
 
         await _job.ExecuteAsync(default);

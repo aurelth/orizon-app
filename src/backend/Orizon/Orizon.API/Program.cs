@@ -21,6 +21,7 @@ using Orizon.Infrastructure.Services;
 using Orizon.Infrastructure.Services.Auth;
 using Orizon.Infrastructure.Services.Email;
 using Orizon.Infrastructure.Services.External;
+using Orizon.Infrastructure.Services.Storage;
 using Scalar.AspNetCore;
 using SendGrid;
 using Serilog;
@@ -166,6 +167,9 @@ try
     builder.Services.AddScoped<IClaudeService, ClaudeService>();
     builder.Services.AddHttpClient<IJobScheduler, HangfireJobScheduler>();
 
+    // STORAGE
+    builder.Services.AddScoped<IFileStorageService, LocalFileStorageService>();
+
     // EMAIL — SendGrid
     var sendGridApiKey = builder.Configuration["Email:SendGridApiKey"];
     if (!string.IsNullOrEmpty(sendGridApiKey))
@@ -236,6 +240,7 @@ try
     }
 
     app.UseSerilogRequestLogging();
+    app.UseStaticFiles();
     app.UseCors("OrizonPolicy");
     app.UseHttpsRedirection();
     app.UseAuthentication();

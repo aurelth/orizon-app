@@ -10,6 +10,28 @@ export interface UpdateProfileRequest {
   themePreference: string | null;
 }
 
+export interface UpdateBriefingPreferencesRequest {
+  briefingHour: number;
+  emailSectionEnabled: boolean;
+  calendarSectionEnabled: boolean;
+  trelloSectionEnabled: boolean;
+  tasksSectionEnabled: boolean;
+  weatherSectionEnabled: boolean;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface DeleteAccountRequest {
+  password: string;
+}
+
+export interface UploadProfilePictureResponse {
+  url: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private readonly api = inject(ApiService);
@@ -38,6 +60,33 @@ export class UserService {
           }
         },
         error: () => this.store.setError('Falha ao atualizar perfil.'),
+      })
+    );
+  }
+
+  updateBriefingPreferences(request: UpdateBriefingPreferencesRequest): Observable<void> {
+    return this.api.put<void>('/users/briefing-preferences', request).pipe(
+      tap({
+        error: () => this.store.setError('Falha ao atualizar preferências de briefing.'),
+      })
+    );
+  }
+
+  changePassword(request: ChangePasswordRequest): Observable<void> {
+    return this.api.put<void>('/users/change-password', request);
+  }
+
+  deleteAccount(request: DeleteAccountRequest): Observable<void> {
+    return this.api.delete<void>('/users/account', request);
+  }
+
+  uploadProfilePicture(file: File): Observable<UploadProfilePictureResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.api.postFile<UploadProfilePictureResponse>('/users/profile-picture', formData).pipe(
+      tap({
+        next: ({ url }) => this.store.updateProfilePicture(url),
+        error: () => this.store.setError('Falha ao fazer upload da foto.'),
       })
     );
   }

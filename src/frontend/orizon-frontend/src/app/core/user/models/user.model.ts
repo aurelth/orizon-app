@@ -13,4 +13,12 @@ export interface UserProfile {
   googleConnected: boolean;
   trelloEnabled: boolean;
   hasCompletedOnboarding: boolean;
+
+  // Preferências de briefing
+  briefingHour: number;
+  emailSectionEnabled: boolean;
+  calendarSectionEnabled: boolean;
+  trelloSectionEnabled: boolean;
+  tasksSectionEnabled: boolean;
+  weatherSectionEnabled: boolean;
 }

@@ -1,7 +1,13 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
-import { BriefingService, BriefingHistoryResult } from '../../core/briefing/services/briefing.service';
+import {
+  BriefingService,
+  BriefingHistoryResult,
+  UserStats,
+} from '../../core/briefing/services/briefing.service';
+
+export type PeriodFilter = 'week' | 'month' | 'all';
 
 @Component({
   selector: 'app-history',
@@ -15,20 +21,38 @@ export class HistoryComponent implements OnInit {
   private readonly router = inject(Router);
 
   readonly isLoading = signal(true);
+  readonly isLoadingStats = signal(true);
   readonly history = signal<BriefingHistoryResult | null>(null);
+  readonly stats = signal<UserStats | null>(null);
   readonly error = signal<string | null>(null);
 
   currentPage = 1;
   readonly pageSize = 10;
+  activePeriod: PeriodFilter = 'all';
 
   ngOnInit(): void {
+    this.loadStats();
     this.loadHistory();
+  }
+
+  loadStats(): void {
+    this.isLoadingStats.set(true);
+    this.briefingService.getStats().subscribe({
+      next: (stats) => {
+        this.stats.set(stats);
+        this.isLoadingStats.set(false);
+      },
+      error: () => this.isLoadingStats.set(false),
+    });
   }
 
   loadHistory(page = 1): void {
     this.isLoading.set(true);
     this.currentPage = page;
-    this.briefingService.getHistory(page, this.pageSize).subscribe({
+
+    const { dateFrom, dateTo } = this.getPeriodDates(this.activePeriod);
+
+    this.briefingService.getHistory(page, this.pageSize, dateFrom, dateTo).subscribe({
       next: (result) => {
         this.history.set(result);
         this.isLoading.set(false);
@@ -38,6 +62,30 @@ export class HistoryComponent implements OnInit {
         this.isLoading.set(false);
       },
     });
+  }
+
+  setPeriodFilter(period: PeriodFilter): void {
+    this.activePeriod = period;
+    this.loadHistory(1);
+  }
+
+  private getPeriodDates(period: PeriodFilter): { dateFrom?: string; dateTo?: string } {
+    const today = new Date();
+    if (period === 'week') {
+      const from = new Date(today);
+      from.setDate(today.getDate() - 7);
+      return { dateFrom: this.toApiDate(from) };
+    }
+    if (period === 'month') {
+      const from = new Date(today);
+      from.setDate(today.getDate() - 30);
+      return { dateFrom: this.toApiDate(from) };
+    }
+    return {};
+  }
+
+  private toApiDate(date: Date): string {
+    return date.toISOString().split('T')[0];
   }
 
   openBriefing(date: string): void {
@@ -52,5 +100,13 @@ export class HistoryComponent implements OnInit {
       month: 'long',
       year: 'numeric',
     });
+  }
+
+  getStatusLabel(status: string): string {
+    switch (status) {
+      case 'Generated': return 'Gerado';
+      case 'Failed': return 'Falhou';
+      default: return 'Pendente';
+    }
   }
 }

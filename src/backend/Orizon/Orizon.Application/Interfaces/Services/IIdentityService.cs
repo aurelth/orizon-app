@@ -38,7 +38,13 @@ public interface IIdentityService
         CancellationToken ct = default);
 
     Task<bool> CheckPasswordAsync(
-    string userId,
-    string password,
-    CancellationToken ct = default);
+        string userId,
+        string password,
+        CancellationToken ct = default);
+
+    Task<(bool Success, string[] Errors)> ChangePasswordAsync(
+        string userId,
+        string currentPassword,
+        string newPassword,
+        CancellationToken ct = default);
 }

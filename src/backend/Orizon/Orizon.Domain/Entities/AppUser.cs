@@ -26,6 +26,14 @@ public class AppUser : BaseEntity
     public DateTime? GoogleConnectedAt { get; set; }
     public bool HasCompletedOnboarding { get; set; } = false;
 
+    // Preferências de briefing
+    public int BriefingHour { get; set; } = 6;
+    public bool EmailSectionEnabled { get; set; } = true;
+    public bool CalendarSectionEnabled { get; set; } = true;
+    public bool TrelloSectionEnabled { get; set; } = true;
+    public bool TasksSectionEnabled { get; set; } = true;
+    public bool WeatherSectionEnabled { get; set; } = true;
+
     public ICollection<BriefingEntry> BriefingEntries { get; set; }
         = new List<BriefingEntry>();
 

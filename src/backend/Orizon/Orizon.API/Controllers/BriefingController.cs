@@ -62,12 +62,14 @@ public class BriefingController : ControllerBase
     public async Task<IActionResult> GetHistory(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10,
+        [FromQuery] DateOnly? dateFrom = null,
+        [FromQuery] DateOnly? dateTo = null,
         CancellationToken ct = default)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
 
         var result = await _mediator.Send(
-            new GetBriefingHistoryQuery(userId, page, pageSize), ct);
+            new GetBriefingHistoryQuery(userId, page, pageSize, dateFrom, dateTo), ct);
 
         return Ok(result);
     }

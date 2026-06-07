@@ -26,7 +26,7 @@
     <div class="dashboard-empty">
       <div class="empty-icon">🌅</div>
       <h2>Briefing não disponível</h2>
-      <p>Seu briefing é atualizado às 0h, 4h, 8h, 12h, 16h e 20h.</p>
+      <p>Seu briefing é gerado automaticamente nos horários configurados.</p>
       <button class="btn btn--primary" (click)="generateBriefing()" [disabled]="isGenerating()">
         @if (isGenerating()) {
         <i class="pi pi-spinner pi-spin"></i> Gerando...
@@ -65,6 +65,39 @@
       </div>
       }
     </div>
+
+    <!-- Barra de estatísticas -->
+    @if (!isLoadingStats() && stats()) {
+    <div class="dashboard-stats">
+      <div class="stat-item">
+        <span class="stat-icon">🔥</span>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats()!.currentStreak }}</span>
+          <span class="stat-label">{{ streakLabel(stats()!.currentStreak) }}</span>
+        </div>
+      </div>
+
+      <div class="stat-divider"></div>
+
+      <div class="stat-item">
+        <span class="stat-icon">🏆</span>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats()!.maxStreak }}</span>
+          <span class="stat-label">Melhor sequência</span>
+        </div>
+      </div>
+
+      <div class="stat-divider"></div>
+
+      <div class="stat-item">
+        <span class="stat-icon">📋</span>
+        <div class="stat-content">
+          <span class="stat-value">{{ stats()!.totalGenerated }}</span>
+          <span class="stat-label">Briefings gerados</span>
+        </div>
+      </div>
+    </div>
+    }
 
     <div class="dashboard-grid">
       <app-weather-card [weather]="weather()!" [weatherSummary]="weatherSummary()" />

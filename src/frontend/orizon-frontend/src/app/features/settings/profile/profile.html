@@ -10,6 +10,7 @@
 </div>
 }
 
+<!-- Card de perfil -->
 <div class="profile-card">
   @if (isLoading()) {
   <div class="profile-loading">
@@ -18,15 +19,38 @@
   </div>
   } @else {
   <div class="profile-info">
-    <div class="profile-avatar">
-      @if (profile()?.profilePictureUrl) {
-      <img [src]="profile()!.profilePictureUrl!" [alt]="profile()!.displayName" />
+
+    <!-- Avatar com upload -->
+    <div class="profile-avatar"
+      [class.profile-avatar--uploading]="isUploadingPhoto()"
+      (click)="!isUploadingPhoto() && fileInput.click()"
+      title="Clique para alterar a foto">
+
+      @if (isUploadingPhoto()) {
+      <div class="profile-avatar__overlay">
+        <i class="pi pi-spinner pi-spin"></i>
+      </div>
+      } @else {
+      <div class="profile-avatar__edit">
+        <i class="pi pi-camera"></i>
+      </div>
+      }
+
+      @if (previewUrl() || profile()?.profilePictureUrl) {
+      <img [src]="previewUrl() || profile()!.profilePictureUrl!"
+        [alt]="profile()?.displayName" />
       } @else {
       <div class="profile-avatar__placeholder">
         <i class="pi pi-user"></i>
       </div>
       }
+
+      <input #fileInput type="file"
+        accept="image/jpeg,image/jpg,image/png,image/webp"
+        class="profile-avatar__input"
+        (change)="onFileSelected($event)" />
     </div>
+
     <div class="profile-meta">
       <p class="profile-email">{{ profile()?.email }}</p>
       @if (profile()?.locationName) {
@@ -35,14 +59,14 @@
         {{ profile()?.locationName }}
       </p>
       }
+      <p class="profile-photo-hint">Clique na foto para alterar • JPG, PNG ou WebP • máx. 5MB</p>
     </div>
   </div>
 
   <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" novalidate class="profile-form">
     <div class="field" [class.field--error]="isFieldInvalid('displayName')">
       <label for="displayName">Nome</label>
-      <input id="displayName" type="text" formControlName="displayName"
-        placeholder="Seu nome" />
+      <input id="displayName" type="text" formControlName="displayName" placeholder="Seu nome" />
       @if (isFieldInvalid('displayName')) {
       <span class="field__error">Nome obrigatório (mínimo 2 caracteres)</span>
       }
@@ -83,3 +107,227 @@
   </form>
   }
 </div>
+
+<!-- Card de preferências de briefing -->
+@if (!isLoading()) {
+<div class="profile-card preferences-card">
+  <div class="preferences-header">
+    <h2 class="preferences-title">
+      <i class="pi pi-bell"></i>
+      Preferências de Briefing
+    </h2>
+    <p class="preferences-subtitle">Configure o horário e o conteúdo dos seus briefings</p>
+  </div>
+
+  <form [formGroup]="preferencesForm" (ngSubmit)="onSubmitPreferences()" novalidate
+    class="preferences-form">
+    <div class="field">
+      <label for="briefingHour">Horário do briefing matinal</label>
+      <p class="field-hint">Os briefings de 12h e 18h são fixos. Escolha o horário do seu briefing matinal.</p>
+      <select id="briefingHour" formControlName="briefingHour"
+        (change)="hasPreferencesChanges.set(true); preferencesForm.markAsDirty()">
+        @for (hour of availableHours; track hour.value) {
+        <option [value]="hour.value">{{ hour.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Seções do briefing</label>
+      <p class="field-hint">Escolha quais seções deseja incluir nos seus briefings.</p>
+      <div class="toggles-grid">
+        <label class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">📧</span>
+            <div>
+              <span class="toggle-label">Emails</span>
+              <span class="toggle-description">Resumo dos emails recentes do Gmail</span>
+            </div>
+          </div>
+          <div class="toggle-switch"
+            [class.active]="preferencesForm.get('emailSectionEnabled')?.value"
+            (click)="preferencesForm.get('emailSectionEnabled')?.setValue(!preferencesForm.get('emailSectionEnabled')?.value); preferencesForm.markAsDirty(); hasPreferencesChanges.set(true)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+
+        <label class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">📅</span>
+            <div>
+              <span class="toggle-label">Calendário</span>
+              <span class="toggle-description">Eventos do dia no Google Calendar</span>
+            </div>
+          </div>
+          <div class="toggle-switch"
+            [class.active]="preferencesForm.get('calendarSectionEnabled')?.value"
+            (click)="preferencesForm.get('calendarSectionEnabled')?.setValue(!preferencesForm.get('calendarSectionEnabled')?.value); preferencesForm.markAsDirty(); hasPreferencesChanges.set(true)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+
+        <label class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">✅</span>
+            <div>
+              <span class="toggle-label">Tarefas Google</span>
+              <span class="toggle-description">Tarefas do dia no Google Tasks</span>
+            </div>
+          </div>
+          <div class="toggle-switch"
+            [class.active]="preferencesForm.get('tasksSectionEnabled')?.value"
+            (click)="preferencesForm.get('tasksSectionEnabled')?.setValue(!preferencesForm.get('tasksSectionEnabled')?.value); preferencesForm.markAsDirty(); hasPreferencesChanges.set(true)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+
+        <label class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">📋</span>
+            <div>
+              <span class="toggle-label">Trello</span>
+              <span class="toggle-description">Tarefas ativas nos boards do Trello</span>
+            </div>
+          </div>
+          <div class="toggle-switch"
+            [class.active]="preferencesForm.get('trelloSectionEnabled')?.value"
+            (click)="preferencesForm.get('trelloSectionEnabled')?.setValue(!preferencesForm.get('trelloSectionEnabled')?.value); preferencesForm.markAsDirty(); hasPreferencesChanges.set(true)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+
+        <label class="toggle-item">
+          <div class="toggle-info">
+            <span class="toggle-icon">🌤️</span>
+            <div>
+              <span class="toggle-label">Clima</span>
+              <span class="toggle-description">Previsão do tempo para o dia</span>
+            </div>
+          </div>
+          <div class="toggle-switch"
+            [class.active]="preferencesForm.get('weatherSectionEnabled')?.value"
+            (click)="preferencesForm.get('weatherSectionEnabled')?.setValue(!preferencesForm.get('weatherSectionEnabled')?.value); preferencesForm.markAsDirty(); hasPreferencesChanges.set(true)">
+            <span class="toggle-knob"></span>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary btn--sm"
+        [disabled]="isSavingPreferences() || !hasPreferencesChanges()">
+        @if (isSavingPreferences()) {
+        <i class="pi pi-spinner pi-spin"></i>
+        <span>Salvando...</span>
+        } @else if (isSavedPreferences()) {
+        <span>Salvo</span>
+        } @else {
+        <i class="pi pi-save"></i>
+        <span>Salvar preferências</span>
+        }
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Card de segurança -->
+<div class="profile-card preferences-card">
+  <div class="preferences-header">
+    <h2 class="preferences-title">
+      <i class="pi pi-lock"></i>
+      Segurança
+    </h2>
+    <p class="preferences-subtitle">Altere a sua senha de acesso</p>
+  </div>
+
+  <form [formGroup]="securityForm" (ngSubmit)="onChangePassword()" novalidate
+    class="preferences-form">
+    <div class="field" [class.field--error]="isSecurityFieldInvalid('currentPassword')">
+      <label for="currentPassword">Senha atual</label>
+      <input id="currentPassword" type="password" formControlName="currentPassword"
+        placeholder="Sua senha atual" autocomplete="current-password" />
+      @if (isSecurityFieldInvalid('currentPassword')) {
+      <span class="field__error">Senha atual obrigatória</span>
+      }
+    </div>
+
+    <div class="field" [class.field--error]="isSecurityFieldInvalid('newPassword')">
+      <label for="newPassword">Nova senha</label>
+      <input id="newPassword" type="password" formControlName="newPassword"
+        placeholder="Mínimo 8 caracteres" autocomplete="new-password" />
+      @if (isSecurityFieldInvalid('newPassword')) {
+      <span class="field__error">Nova senha obrigatória (mínimo 8 caracteres)</span>
+      }
+    </div>
+
+    <div class="field" [class.field--error]="passwordsMismatch()">
+      <label for="confirmNewPassword">Confirmar nova senha</label>
+      <input id="confirmNewPassword" type="password" formControlName="confirmNewPassword"
+        placeholder="Repita a nova senha" autocomplete="new-password" />
+      @if (passwordsMismatch()) {
+      <span class="field__error">As senhas não coincidem</span>
+      }
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary btn--sm"
+        [disabled]="isSavingPassword() || securityForm.invalid || passwordsMismatch()">
+        @if (isSavingPassword()) {
+        <i class="pi pi-spinner pi-spin"></i>
+        <span>Alterando...</span>
+        } @else if (isSavedPassword()) {
+        <span>Senha alterada</span>
+        } @else {
+        <i class="pi pi-lock"></i>
+        <span>Alterar senha</span>
+        }
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Zona de perigo -->
+<div class="profile-card danger-card">
+  <div class="danger-header">
+    <h2 class="danger-title">
+      <i class="pi pi-exclamation-triangle"></i>
+      Zona de Perigo
+    </h2>
+    <p class="danger-subtitle">
+      A exclusão da conta é permanente e não pode ser desfeita. Todos os seus briefings,
+      configurações e dados serão removidos.
+    </p>
+  </div>
+
+  @if (!showDeleteConfirm()) {
+  <button type="button" class="btn btn--danger btn--sm" (click)="showDeleteConfirm.set(true)">
+    <i class="pi pi-trash"></i>
+    <span>Excluir minha conta</span>
+  </button>
+  } @else {
+  <form [formGroup]="deleteForm" (ngSubmit)="onDeleteAccount()" novalidate class="delete-form">
+    <p class="delete-confirm-text">Digite sua senha para confirmar a exclusão da conta:</p>
+    <div class="field">
+      <input type="password" formControlName="password"
+        placeholder="Sua senha atual" autocomplete="current-password" />
+    </div>
+    <div class="delete-actions">
+      <button type="button" class="btn btn--ghost btn--sm"
+        (click)="showDeleteConfirm.set(false); deleteForm.reset()">
+        Cancelar
+      </button>
+      <button type="submit" class="btn btn--danger btn--sm"
+        [disabled]="isDeletingAccount() || deleteForm.invalid">
+        @if (isDeletingAccount()) {
+        <i class="pi pi-spinner pi-spin"></i>
+        <span>Excluindo...</span>
+        } @else {
+        <i class="pi pi-trash"></i>
+        <span>Confirmar exclusão</span>
+        }
+      </button>
+    </div>
+  </form>
+  }
+</div>
+}

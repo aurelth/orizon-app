@@ -323,6 +323,12 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
+                    b.Property<int>("BriefingHour")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("CalendarSectionEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("text");
@@ -336,6 +342,9 @@ namespace Orizon.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(256)");
 
                     b.Property<bool>("EmailConfirmed")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("EmailSectionEnabled")
                         .HasColumnType("boolean");
 
                     b.Property<string>("GoogleAccessToken")
@@ -395,6 +404,9 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
+                    b.Property<bool>("TasksSectionEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("ThemePreference")
                         .HasColumnType("integer");
 
@@ -417,6 +429,9 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Property<bool>("TrelloEnabled")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("TrelloSectionEnabled")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("TrelloToken")
                         .HasColumnType("text");
 
@@ -426,6 +441,9 @@ namespace Orizon.Infrastructure.Data.Migrations
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("WeatherSectionEnabled")
+                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 
