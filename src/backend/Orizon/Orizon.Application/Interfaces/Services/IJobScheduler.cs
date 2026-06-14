@@ -2,5 +2,7 @@
 
 public interface IJobScheduler
 {
-    Task<string> EnqueueBriefingGenerationAsync(CancellationToken ct = default);
+    Task<string> EnqueueBriefingGenerationAsync(
+        string userId,
+        CancellationToken ct = default);
 }

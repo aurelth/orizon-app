@@ -128,6 +128,15 @@ try
 
     app.MapPrometheusScrapingEndpoint("/metrics");
 
+    app.MapPost("/internal/briefing/trigger/{userId}", (string userId) =>
+    {
+        BackgroundJob.Enqueue<BriefingJob>(
+            job => job.ExecuteForUserAsync(userId, CancellationToken.None));
+
+        return Results.Accepted($"/internal/briefing/trigger/{userId}",
+            new { message = "Briefing sendo gerado para o usuário." });
+    });
+
     app.MapPost("/internal/briefing/trigger", () =>
     {
         RecurringJob.TriggerJob("morning-briefing");

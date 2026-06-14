@@ -36,7 +36,8 @@ public class GenerateBriefingCommandHandlerTests
             .ReturnsAsync(user);
 
         _jobSchedulerMock
-            .Setup(s => s.EnqueueBriefingGenerationAsync(default))
+            .Setup(s => s.EnqueueBriefingGenerationAsync(
+                userId.ToString(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("job-123");
 
         var result = await _handler.Handle(
@@ -44,7 +45,9 @@ public class GenerateBriefingCommandHandlerTests
 
         result.JobId.Should().Be("job-123");
         _jobSchedulerMock.Verify(
-            s => s.EnqueueBriefingGenerationAsync(default), Times.Once);
+            s => s.EnqueueBriefingGenerationAsync(
+                userId.ToString(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -63,7 +66,8 @@ public class GenerateBriefingCommandHandlerTests
             .ReturnsAsync(user);
 
         _jobSchedulerMock
-            .Setup(s => s.EnqueueBriefingGenerationAsync(default))
+            .Setup(s => s.EnqueueBriefingGenerationAsync(
+                userId.ToString(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("job-456");
 
         var result = await _handler.Handle(
@@ -118,5 +122,34 @@ public class GenerateBriefingCommandHandlerTests
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("Usuário inválido.");
+    }
+
+    [Fact]
+    public async Task Handle_WhenGoogleConnected_ShouldPassUserIdToScheduler()
+    {
+        var userId = Guid.NewGuid();
+        var user = new AppUser
+        {
+            Id = userId,
+            GoogleAccessToken = "valid-token",
+            TrelloEnabled = false,
+        };
+
+        _userRepoMock
+            .Setup(r => r.GetByIdAsync(userId, default))
+            .ReturnsAsync(user);
+
+        _jobSchedulerMock
+            .Setup(s => s.EnqueueBriefingGenerationAsync(
+                userId.ToString(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("job-123");
+
+        await _handler.Handle(
+            new GenerateBriefingCommand(userId.ToString()), default);
+
+        _jobSchedulerMock.Verify(
+            s => s.EnqueueBriefingGenerationAsync(
+                userId.ToString(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 }
