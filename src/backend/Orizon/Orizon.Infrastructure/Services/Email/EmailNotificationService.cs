@@ -44,7 +44,6 @@ public class EmailNotificationService : IEmailNotificationService
             Subject = $"☀️ Seu briefing de {briefing.Date:dd/MM} está pronto, {userName}!",
             HtmlContent = BuildEmailHtml(briefing),
         };
-
         msg.AddTo(new EmailAddress(toEmail, userName));
 
         var response = await _sendGridClient.SendEmailAsync(msg, cancellationToken);
@@ -54,12 +53,13 @@ public class EmailNotificationService : IEmailNotificationService
             _metrics.RecordEmailFailed();
             _logger.LogError("Falha ao enviar email para {Email} — Status: {Status}",
                 toEmail, response.StatusCode);
+            
+            throw new InvalidOperationException(
+                $"Falha ao enviar email para {toEmail} — Status: {response.StatusCode}");
         }
-        else
-        {
-            _metrics.RecordEmailSent();
-            _logger.LogInformation("Email enviado com sucesso para {Email}", toEmail);
-        }
+
+        _metrics.RecordEmailSent();
+        _logger.LogInformation("Email enviado com sucesso para {Email}", toEmail);
     }
 
     public async Task SendPasswordResetEmailAsync(
@@ -74,7 +74,6 @@ public class EmailNotificationService : IEmailNotificationService
         var fromEmail = _configuration["Email:FromEmail"] ?? "noreply@orizonapp.io";
         var fromName = _configuration["Email:FromName"] ?? "Orizon";
         var frontendUrl = _configuration["App:FrontendUrl"] ?? "http://localhost:4200";
-
         var resetLink =
             $"{frontendUrl}/auth/reset-password?email={Uri.EscapeDataString(toEmail)}&token={resetToken}";
 
@@ -84,7 +83,6 @@ public class EmailNotificationService : IEmailNotificationService
             Subject = "🔐 Redefinição de senha — Orizon",
             HtmlContent = BuildPasswordResetEmailHtml(userName, resetLink),
         };
-
         msg.AddTo(new EmailAddress(toEmail, userName));
 
         var response = await _sendGridClient.SendEmailAsync(msg, cancellationToken);
@@ -95,13 +93,14 @@ public class EmailNotificationService : IEmailNotificationService
             _logger.LogError(
                 "Falha ao enviar email de redefinição para {Email} — Status: {Status}",
                 toEmail, response.StatusCode);
+
+            throw new InvalidOperationException(
+                $"Falha ao enviar email de redefinição para {toEmail} — Status: {response.StatusCode}");
         }
-        else
-        {
-            _metrics.RecordEmailSent();
-            _logger.LogInformation(
-                "Email de redefinição enviado com sucesso para {Email}", toEmail);
-        }
+
+        _metrics.RecordEmailSent();
+        _logger.LogInformation(
+            "Email de redefinição enviado com sucesso para {Email}", toEmail);
     }
 
     private static string BuildPasswordResetEmailHtml(string userName, string resetLink)
@@ -119,16 +118,12 @@ public class EmailNotificationService : IEmailNotificationService
                 <tr>
                   <td align="center">
                     <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;">
-
-                      <!-- Header -->
                       <tr>
                         <td align="center" style="padding-bottom:28px;">
                           <div style="font-size:28px;font-weight:800;color:#ea580c;letter-spacing:-1px;">🌅 Orizon</div>
                           <div style="font-size:12px;color:#9ca3af;margin-top:4px;letter-spacing:0.5px;">Your day, before it begins</div>
                         </td>
                       </tr>
-
-                      <!-- Card -->
                       <tr>
                         <td style="padding-bottom:12px;">
                           <div style="background:#ffffff;border-radius:12px;padding:32px 28px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
@@ -149,14 +144,11 @@ public class EmailNotificationService : IEmailNotificationService
                           </div>
                         </td>
                       </tr>
-
-                      <!-- Footer -->
                       <tr>
                         <td align="center" style="padding-top:16px;">
                           <div style="font-size:11px;color:#9ca3af;">Orizon — seu briefing diário personalizado</div>
                         </td>
                       </tr>
-
                     </table>
                   </td>
                 </tr>
@@ -196,10 +188,7 @@ public class EmailNotificationService : IEmailNotificationService
 
         var chips = string.Join("", briefing.AISummary.ActionChips.Select(c =>
             $"""<span style="display:inline-block;background:#fff7ed;color:#ea580c;border:1px solid #fed7aa;border-radius:999px;padding:4px 12px;font-size:12px;margin:3px 3px 3px 0;">{c}</span>"""));
-
-        var chipsSection = chips.Length > 0
-            ? $"<div style='margin-top:14px;'>{chips}</div>"
-            : "";
+        var chipsSection = chips.Length > 0 ? $"<div style='margin-top:14px;'>{chips}</div>" : "";
 
         var priorityHtml = briefing.AISummary.PriorityTask != null
             ? $"""
@@ -227,24 +216,18 @@ public class EmailNotificationService : IEmailNotificationService
                 <tr>
                   <td align="center">
                     <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;">
-
-                      <!-- Header -->
                       <tr>
                         <td align="center" style="padding-bottom:28px;">
                           <div style="font-size:28px;font-weight:800;color:#ea580c;letter-spacing:-1px;">🌅 Orizon</div>
                           <div style="font-size:12px;color:#9ca3af;margin-top:4px;letter-spacing:0.5px;">Your day, before it begins</div>
                         </td>
                       </tr>
-
-                      <!-- Greeting -->
                       <tr>
                         <td style="padding-bottom:20px;">
                           <div style="font-size:22px;font-weight:700;color:#111827;line-height:1.4;">{briefing.AISummary.Greeting}</div>
                           <div style="font-size:14px;color:#6b7280;margin-top:6px;">{dateCapitalized}</div>
                         </td>
                       </tr>
-
-                      <!-- Clima -->
                       <tr>
                         <td style="padding-bottom:12px;">
                           <div style="background:#ffffff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
@@ -255,8 +238,6 @@ public class EmailNotificationService : IEmailNotificationService
                           </div>
                         </td>
                       </tr>
-
-                      <!-- Sugestões -->
                       <tr>
                         <td style="padding-bottom:12px;">
                           <div style="background:#ffffff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
@@ -266,11 +247,7 @@ public class EmailNotificationService : IEmailNotificationService
                           </div>
                         </td>
                       </tr>
-
-                      <!-- Tarefa prioritária -->
                       {priorityHtml}
-
-                      <!-- Agenda -->
                       <tr>
                         <td style="padding-bottom:12px;">
                           <div style="background:#ffffff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
@@ -281,8 +258,6 @@ public class EmailNotificationService : IEmailNotificationService
                           </div>
                         </td>
                       </tr>
-
-                      <!-- Emails -->
                       <tr>
                         <td style="padding-bottom:12px;">
                           <div style="background:#ffffff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
@@ -291,14 +266,11 @@ public class EmailNotificationService : IEmailNotificationService
                           </div>
                         </td>
                       </tr>
-
-                      <!-- Footer -->
                       <tr>
                         <td align="center" style="padding-top:16px;padding-bottom:8px;">
                           <div style="font-size:11px;color:#9ca3af;">Gerado por Orizon em {briefing.GeneratedAt:dd/MM/yyyy HH:mm}</div>
                         </td>
                       </tr>
-
                     </table>
                   </td>
                 </tr>

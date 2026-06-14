@@ -66,39 +66,6 @@
       }
     </div>
 
-    <!-- Barra de estatísticas -->
-    @if (!isLoadingStats() && stats()) {
-    <div class="dashboard-stats">
-      <div class="stat-item">
-        <span class="stat-icon">🔥</span>
-        <div class="stat-content">
-          <span class="stat-value">{{ stats()!.currentStreak }}</span>
-          <span class="stat-label">{{ streakLabel(stats()!.currentStreak) }}</span>
-        </div>
-      </div>
-
-      <div class="stat-divider"></div>
-
-      <div class="stat-item">
-        <span class="stat-icon">🏆</span>
-        <div class="stat-content">
-          <span class="stat-value">{{ stats()!.maxStreak }}</span>
-          <span class="stat-label">Melhor sequência</span>
-        </div>
-      </div>
-
-      <div class="stat-divider"></div>
-
-      <div class="stat-item">
-        <span class="stat-icon">📋</span>
-        <div class="stat-content">
-          <span class="stat-value">{{ stats()!.totalGenerated }}</span>
-          <span class="stat-label">Briefings gerados</span>
-        </div>
-      </div>
-    </div>
-    }
-
     <div class="dashboard-grid">
       <app-weather-card [weather]="weather()!" [weatherSummary]="weatherSummary()" />
       <app-ai-suggestions-card [aiSummary]="aiSummary()!" />

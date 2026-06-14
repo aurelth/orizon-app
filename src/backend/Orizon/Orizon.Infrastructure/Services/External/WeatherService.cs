@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Globalization;
+using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Orizon.Application.DTOs.Weather;
@@ -30,8 +31,8 @@ public class WeatherService : IWeatherService
         CancellationToken cancellationToken = default)
     {
         var url = $"{_baseUrl}/forecast" +
-            $"?latitude={latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}" +
-            $"&longitude={longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)}" +
+            $"?latitude={latitude.ToString(CultureInfo.InvariantCulture)}" +
+            $"&longitude={longitude.ToString(CultureInfo.InvariantCulture)}" +
             $"&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,relative_humidity_2m" +
             $"&daily=temperature_2m_max,temperature_2m_min,weather_code" +
             $"&hourly=precipitation,precipitation_probability" +
@@ -51,16 +52,13 @@ public class WeatherService : IWeatherService
         var hourly = data.GetProperty("hourly");
 
         var currentTemp = current.GetProperty("temperature_2m").GetDouble();
-        var feelsLike = current.GetProperty("apparent_temperature").GetDouble();
         var weatherCode = current.GetProperty("weather_code").GetInt32();
         var windSpeed = current.GetProperty("wind_speed_10m").GetDouble();
-
         var maxTemp = daily.GetProperty("temperature_2m_max")[0].GetDouble();
         var minTemp = daily.GetProperty("temperature_2m_min")[0].GetDouble();
 
         var hourlyTimes = hourly.GetProperty("time").EnumerateArray().ToList();
         var hourlyPrecip = hourly.GetProperty("precipitation").EnumerateArray().ToList();
-        var hourlyPrecipProb = hourly.GetProperty("precipitation_probability").EnumerateArray().ToList();
 
         var precipitationByHour = new Dictionary<int, double>();
         int? rainStartHour = null;
@@ -71,13 +69,14 @@ public class WeatherService : IWeatherService
             var hour = DateTime.Parse(hourlyTimes[i].GetString()!).Hour;
             var precip = hourlyPrecip[i].GetDouble();
             precipitationByHour[hour] = precip;
-
             if (precip > 0.1)
             {
                 rainStartHour ??= hour;
                 rainEndHour = hour;
             }
         }
+        
+        var locationName = await GetLocationNameAsync(latitude, longitude, cancellationToken);
 
         return new WeatherDto
         {
@@ -91,8 +90,87 @@ public class WeatherService : IWeatherService
             HourlyPrecipitation = precipitationByHour,
             RainStartHour = rainStartHour,
             RainEndHour = rainEndHour,
+            LocationName = locationName,
         };
     }
+
+    private async Task<string> GetLocationNameAsync(
+        double latitude, double longitude, CancellationToken ct)
+    {
+        try
+        {
+            var url = "https://nominatim.openstreetmap.org/reverse" +
+                      $"?lat={latitude.ToString(CultureInfo.InvariantCulture)}" +
+                      $"&lon={longitude.ToString(CultureInfo.InvariantCulture)}" +
+                      $"&format=json&accept-language=pt-BR";
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.TryAddWithoutValidation("User-Agent", "Orizon/1.0 (orizonapp.io)");
+
+            var response = await _httpClient.SendAsync(request, ct);
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync(ct);
+            var data = JsonSerializer.Deserialize<JsonElement>(json);
+
+            if (!data.TryGetProperty("address", out var address))
+                return string.Empty;
+
+            var city = TryGetString(address, "city")
+                    ?? TryGetString(address, "town")
+                    ?? TryGetString(address, "village")
+                    ?? TryGetString(address, "municipality");
+
+            var state = TryGetString(address, "state");
+            var stateAbbrev = GetBrazilianStateAbbreviation(state);
+
+            if (city is null) return string.Empty;
+
+            return stateAbbrev is not null ? $"{city}, {stateAbbrev}" : city;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "Falha ao obter nome da localização via geocoding " +
+                "para lat={Lat}, lon={Lon}", latitude, longitude);
+            return string.Empty;
+        }
+    }
+
+    private static string? TryGetString(JsonElement element, string propertyName)
+        => element.TryGetProperty(propertyName, out var prop) ? prop.GetString() : null;
+
+    public static string? GetBrazilianStateAbbreviation(string? stateName) => stateName switch
+    {
+        "Acre" => "AC",
+        "Alagoas" => "AL",
+        "Amapá" => "AP",
+        "Amazonas" => "AM",
+        "Bahia" => "BA",
+        "Ceará" => "CE",
+        "Distrito Federal" => "DF",
+        "Espírito Santo" => "ES",
+        "Goiás" => "GO",
+        "Maranhão" => "MA",
+        "Mato Grosso" => "MT",
+        "Mato Grosso do Sul" => "MS",
+        "Minas Gerais" => "MG",
+        "Pará" => "PA",
+        "Paraíba" => "PB",
+        "Paraná" => "PR",
+        "Pernambuco" => "PE",
+        "Piauí" => "PI",
+        "Rio de Janeiro" => "RJ",
+        "Rio Grande do Norte" => "RN",
+        "Rio Grande do Sul" => "RS",
+        "Rondônia" => "RO",
+        "Roraima" => "RR",
+        "Santa Catarina" => "SC",
+        "São Paulo" => "SP",
+        "Sergipe" => "SE",
+        "Tocantins" => "TO",
+        _ => null
+    };
 
     private static string GetWeatherDescription(int code) => code switch
     {

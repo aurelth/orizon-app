@@ -4,11 +4,9 @@
       <i class="pi pi-sun"></i>
     </div>
     <div>
-      <h3 class="card__title">Clima</h3>
-      <p class="card__subtitle">{{ weather().locationName }}</p>
+      <h3 class="card__title">{{ locationLabel() }}</h3>
     </div>
   </div>
-
   <div class="card__body">
     <div class="weather-main">
       <span class="weather-emoji">{{ weather().weatherEmoji }}</span>
@@ -17,9 +15,7 @@
         <span class="temp-range">{{ weather().minTemperature | number:'1.0-0' }}° / {{ weather().maxTemperature | number:'1.0-0' }}°</span>
       </div>
     </div>
-
     <p class="weather-description">{{ weather().description }}</p>
-
     <div class="weather-stats">
       <div class="stat">
         <i class="pi pi-droplet"></i>
@@ -30,14 +26,12 @@
         <span>{{ weather().windSpeed | number:'1.0-0' }} km/h</span>
       </div>
     </div>
-
     @if (weather().willRain) {
       <div class="rain-alert">
         <i class="pi pi-cloud"></i>
         <span>Chuva prevista das {{ weather().rainStartHour }}h às {{ weather().rainEndHour }}h</span>
       </div>
     }
-
     @if (precipitationHours().length > 0) {
       <div class="precipitation-chart">
         <p class="chart-label">Precipitação</p>
@@ -57,7 +51,6 @@
         </div>
       </div>
     }
-
     <p class="weather-summary">{{ weatherSummary() }}</p>
   </div>
 </div>
