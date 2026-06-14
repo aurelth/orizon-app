@@ -54,9 +54,14 @@ public class BriefingJob
         _logger = logger;
     }
 
+    /// <summary>
+    /// Executa o job para todos os usuários cujo BriefingHour bate com a hora atual
+    /// ou nos horários fixos de 12h e 18h. Usado pelo cron.
+    /// </summary>
     public async Task ExecuteAsync(CancellationToken ct = default)
     {
-        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById(
+            "E. South America Standard Time");
         var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone);
         var currentHour = now.Hour;
 
@@ -66,9 +71,6 @@ public class BriefingJob
         {
             var allUsers = await _userRepository.GetActiveUsersAsync(ct);
 
-            // Filtra usuários que devem receber briefing neste horário:
-            // - Horário matinal configurado pelo usuário (BriefingHour)
-            // - Horários fixos de 12h e 18h (meio-dia e fim de tarde)
             var users = allUsers
                 .Where(u =>
                     u.BriefingHour == currentHour ||
@@ -100,16 +102,50 @@ public class BriefingJob
         }
     }
 
+    /// <summary>
+    /// Executa o job para um usuário específico, ignorando o filtro de hora.
+    /// Usado pelo botão "Atualizar" do dashboard.
+    /// </summary>
+    public async Task ExecuteForUserAsync(
+        string userId,
+        CancellationToken ct = default)
+    {
+        _logger.LogInformation(
+            "BriefingJob acionado manualmente para usuário {UserId}", userId);
+
+        if (!Guid.TryParse(userId, out var userGuid))
+        {
+            _logger.LogWarning("UserId inválido recebido: {UserId}", userId);
+            return;
+        }
+
+        var user = await _userRepository.GetByIdAsync(userGuid, ct);
+        if (user is null)
+        {
+            _logger.LogWarning(
+                "Usuário {UserId} não encontrado para geração manual", userId);
+            return;
+        }
+
+        await ProcessUserBriefingAsync(user, ct);
+
+        _logger.LogInformation(
+            "BriefingJob manual concluído para usuário {UserId}", userId);
+    }
+
     private async Task ProcessUserBriefingAsync(AppUser user, CancellationToken ct)
     {
         var sw = Stopwatch.StartNew();
-        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
-        var today = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone));
+        var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById(
+            "E. South America Standard Time");
+        var today = DateOnly.FromDateTime(
+            TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone));
         var userId = user.Id.ToString();
 
         _logger.LogInformation("Processando briefing para usuário {UserId}", userId);
 
-        var existing = await _briefingRepository.GetByUserAndDateAsync(userId, today, ct);
+        var existing = await _briefingRepository
+            .GetByUserAndDateAsync(userId, today, ct);
         var isNew = existing is null;
         var briefing = existing ?? new BriefingEntry
         {
@@ -123,6 +159,9 @@ public class BriefingJob
         else
             await _briefingRepository.UpdateAsync(briefing, ct);
 
+        // Armazena o DTO para envio de email — separado do try de geração
+        BriefingResultDto? briefingResult = null;
+
         try
         {
             var googleToken = await EnsureValidGoogleTokenAsync(user, ct);
@@ -133,7 +172,6 @@ public class BriefingJob
                 ? user.TravelLongitude.Value : user.Longitude;
             var timezone = user.Timezone;
 
-            // Respeita os toggles de seções configurados pelo usuário
             var emailsTask = user.EmailSectionEnabled && !string.IsNullOrEmpty(googleToken)
                 ? _gmailService.GetRecentEmailsWithTokenAsync(googleToken, cancellationToken: ct)
                 : Task.FromResult<IEnumerable<Application.DTOs.Email.EmailSummaryDto>>(
@@ -183,7 +221,6 @@ public class BriefingJob
             briefing.AISuggestions = aiSummary.Suggestions;
             briefing.Status = BriefingStatus.Generated;
             briefing.GeneratedAt = DateTime.UtcNow;
-
             await _briefingRepository.UpdateAsync(briefing, ct);
 
             sw.Stop();
@@ -192,22 +229,21 @@ public class BriefingJob
 
             await NotifyUserAsync(userId, briefing.Id, ct);
 
-            await _emailService.SendBriefingEmailAsync(
-                user.Email, user.DisplayName,
-                new BriefingResultDto
-                {
-                    BriefingId = briefing.Id,
-                    Date = today,
-                    UserName = user.DisplayName,
-                    Weather = weather!,
-                    Emails = emails,
-                    CalendarEvents = events,
-                    GoogleTasks = googleTasks,
-                    TrelloTasks = user.TrelloSectionEnabled && user.TrelloEnabled
-                        ? trelloTasks : null,
-                    AISummary = aiSummary,
-                    GeneratedAt = briefing.GeneratedAt.Value,
-                }, ct);
+            // DTO pronto para o email — construído após salvar como Generated
+            briefingResult = new BriefingResultDto
+            {
+                BriefingId = briefing.Id,
+                Date = today,
+                UserName = user.DisplayName,
+                Weather = weather!,
+                Emails = emails,
+                CalendarEvents = events,
+                GoogleTasks = googleTasks,
+                TrelloTasks = user.TrelloSectionEnabled && user.TrelloEnabled
+                    ? trelloTasks : null,
+                AISummary = aiSummary,
+                GeneratedAt = briefing.GeneratedAt.Value,
+            };
 
             _logger.LogInformation(
                 "Briefing gerado com sucesso para usuário {UserId} em {Duration}s",
@@ -219,10 +255,31 @@ public class BriefingJob
             _metrics.RecordBriefingFailed();
             _logger.LogError(ex,
                 "Falha ao gerar briefing para usuário {UserId}", userId);
-
             briefing.Status = BriefingStatus.Failed;
             briefing.ErrorMessage = ex.Message;
             await _briefingRepository.UpdateAsync(briefing, ct);
+        }
+
+        // Email isolado: falha não altera o status do briefing de Generated para Failed
+        if (briefingResult is not null)
+        {
+            try
+            {
+                await _emailService.SendBriefingEmailAsync(
+                    user.Email, user.DisplayName, briefingResult, ct);
+
+                briefing.EmailSentAt = DateTime.UtcNow;
+                await _briefingRepository.UpdateAsync(briefing, ct);
+
+                _logger.LogInformation(
+                    "Email de briefing enviado com sucesso para usuário {UserId}", userId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Falha ao enviar email para usuário {UserId} — briefing permanece como Generated",
+                    userId);
+            }
         }
     }
 
@@ -242,7 +299,8 @@ public class BriefingJob
             return string.Empty;
         }
 
-        _logger.LogInformation("Renovando Google Access Token para usuário {UserId}", user.Id);
+        _logger.LogInformation(
+            "Renovando Google Access Token para usuário {UserId}", user.Id);
 
         var tokens = await _googleOAuthService.RefreshAccessTokenAsync(
             user.GoogleRefreshToken, ct);
@@ -264,10 +322,12 @@ public class BriefingJob
         {
             var apiUrl = _configuration["ApiUrl"] ?? "http://localhost:5010";
             var payload = new { UserId = userId, BriefingId = briefingId };
-            var json = System.Text.Json.JsonSerializer.Serialize(payload);
+            var json = JsonSerializer.Serialize(payload);
             var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
             using var httpClient = new HttpClient();
             await httpClient.PostAsync($"{apiUrl}/internal/briefing-ready", content, ct);
+
             _logger.LogInformation(
                 "Notificação SignalR enviada para usuário {UserId}", userId);
         }

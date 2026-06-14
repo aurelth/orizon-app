@@ -35,7 +35,8 @@ public class GenerateBriefingCommandHandler
             throw new InvalidOperationException(
                 "É necessário conectar ao menos uma integração (Google ou Trello) antes de gerar o briefing.");
 
-        var jobId = await _jobScheduler.EnqueueBriefingGenerationAsync(cancellationToken);
+        var jobId = await _jobScheduler.EnqueueBriefingGenerationAsync(
+            request.UserId, cancellationToken);
 
         return new GenerateBriefingResult(
             jobId,

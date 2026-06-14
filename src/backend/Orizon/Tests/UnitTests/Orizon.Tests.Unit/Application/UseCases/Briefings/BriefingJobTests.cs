@@ -32,9 +32,8 @@ public class BriefingJobTests
     private readonly Mock<ILogger<BriefingJob>> _loggerMock = new();
     private readonly Mock<IOrizonMetrics> _metricsMock = new();
     private readonly BriefingJob _job;
-    
-    private readonly AppUser _testUser;
 
+    private readonly AppUser _testUser;
     private readonly WeatherDto _weather = new()
     {
         CurrentTemperature = 22,
@@ -42,7 +41,6 @@ public class BriefingJobTests
         WeatherEmoji = "☀️",
         LocationName = "Blumenau"
     };
-
     private readonly BriefingAISummaryDto _aiSummary = new()
     {
         Greeting = "Bom dia, Aurel!",
@@ -52,7 +50,7 @@ public class BriefingJobTests
     };
 
     public BriefingJobTests()
-    {        
+    {
         var brasiliaZone = TimeZoneInfo.FindSystemTimeZoneById("E. South America Standard Time");
         var currentBrasiliaHour = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, brasiliaZone).Hour;
 
@@ -80,6 +78,10 @@ public class BriefingJobTests
             .Setup(c => c["SignalR:HubUrl"])
             .Returns("http://localhost:5010/hubs/briefing");
 
+        _configMock
+            .Setup(c => c["ApiUrl"])
+            .Returns("http://api:5010");
+
         _job = new BriefingJob(
             _userRepoMock.Object,
             _briefingRepoMock.Object,
@@ -95,6 +97,8 @@ public class BriefingJobTests
             _configMock.Object,
             _loggerMock.Object);
     }
+
+    // --- ExecuteAsync (cron) ---
 
     [Fact]
     public async Task ExecuteAsync_WhenNoUsers_ShouldNotProcessAnyBriefing()
@@ -118,8 +122,7 @@ public class BriefingJobTests
         BriefingEntry? capturedBriefing = null;
         _briefingRepoMock
             .Setup(r => r.AddAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
-            .Callback<BriefingEntry, CancellationToken>(
-                (b, _) => capturedBriefing = b)
+            .Callback<BriefingEntry, CancellationToken>((b, _) => capturedBriefing = b)
             .Returns(Task.CompletedTask);
 
         await _job.ExecuteAsync(default);
@@ -141,8 +144,7 @@ public class BriefingJobTests
         BriefingEntry? updatedBriefing = null;
         _briefingRepoMock
             .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
-            .Callback<BriefingEntry, CancellationToken>(
-                (b, _) => updatedBriefing = b)
+            .Callback<BriefingEntry, CancellationToken>((b, _) => updatedBriefing = b)
             .Returns(Task.CompletedTask);
 
         await _job.ExecuteAsync(default);
@@ -193,8 +195,7 @@ public class BriefingJobTests
         BriefingEntry? updatedBriefing = null;
         _briefingRepoMock
             .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
-            .Callback<BriefingEntry, CancellationToken>(
-                (b, _) => updatedBriefing = b)
+            .Callback<BriefingEntry, CancellationToken>((b, _) => updatedBriefing = b)
             .Returns(Task.CompletedTask);
 
         await _job.ExecuteAsync(default);
@@ -222,7 +223,6 @@ public class BriefingJobTests
     {
         _testUser.TrelloEnabled = true;
         SetupDefaultMocks();
-
         _trelloMock
             .Setup(s => s.GetActiveTasksAsync(
                 _testUser.Id.ToString(), It.IsAny<CancellationToken>()))
@@ -380,6 +380,152 @@ public class BriefingJobTests
             Times.Never);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WhenEmailFails_ShouldNotChangeStatusToFailed()
+    {
+        SetupDefaultMocks();
+
+        // Email falha
+        _emailMock
+            .Setup(s => s.SendBriefingEmailAsync(
+                It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<BriefingResultDto>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("SendGrid indisponível"));
+
+        var updateCalls = new List<BriefingStatus>();
+        _briefingRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
+            .Callback<BriefingEntry, CancellationToken>(
+                (b, _) => updateCalls.Add(b.Status))
+            .Returns(Task.CompletedTask);
+
+        await _job.ExecuteAsync(default);
+
+        updateCalls.Should().NotContain(BriefingStatus.Failed,
+            "falha no email não deve alterar o status do briefing para Failed");
+        updateCalls.Should().Contain(BriefingStatus.Generated,
+            "o briefing deve ser salvo como Generated independente do email");
+    }
+
+    // --- ExecuteForUserAsync (acionamento manual) ---
+
+    [Fact]
+    public async Task ExecuteForUserAsync_WhenUserIdIsInvalidGuid_ShouldNotCallUserRepository()
+    {
+        await _job.ExecuteForUserAsync("not-a-guid");
+
+        _userRepoMock.Verify(
+            r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteForUserAsync_WhenUserIdIsInvalidGuid_ShouldNotCallBriefingRepository()
+    {
+        await _job.ExecuteForUserAsync("invalid");
+
+        _briefingRepoMock.Verify(
+            r => r.AddAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteForUserAsync_WhenUserNotFound_ShouldCompleteWithoutThrowing()
+    {
+        _userRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppUser?)null);
+
+        var act = async () => await _job.ExecuteForUserAsync(Guid.NewGuid().ToString());
+
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task ExecuteForUserAsync_WhenUserNotFound_ShouldNotCallBriefingRepository()
+    {
+        _userRepoMock
+            .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((AppUser?)null);
+
+        await _job.ExecuteForUserAsync(Guid.NewGuid().ToString());
+
+        _briefingRepoMock.Verify(
+            r => r.AddAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _briefingRepoMock.Verify(
+            r => r.UpdateAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteForUserAsync_WhenUserExists_ShouldCallGetByIdAsync()
+    {
+        SetupDefaultMocksForUser();
+
+        await _job.ExecuteForUserAsync(_testUser.Id.ToString());
+
+        _userRepoMock.Verify(
+            r => r.GetByIdAsync(_testUser.Id, It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecuteForUserAsync_WhenUserExists_ShouldGenerateBriefing()
+    {
+        SetupDefaultMocksForUser();
+
+        BriefingEntry? updatedBriefing = null;
+        _briefingRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
+            .Callback<BriefingEntry, CancellationToken>((b, _) => updatedBriefing = b)
+            .Returns(Task.CompletedTask);
+
+        await _job.ExecuteForUserAsync(_testUser.Id.ToString());
+
+        updatedBriefing.Should().NotBeNull();
+        updatedBriefing!.Status.Should().Be(BriefingStatus.Generated);
+    }
+
+    [Fact]
+    public async Task ExecuteForUserAsync_ShouldNotCallGetActiveUsersAsync()
+    {
+        SetupDefaultMocksForUser();
+
+        await _job.ExecuteForUserAsync(_testUser.Id.ToString());
+
+        _userRepoMock.Verify(
+            r => r.GetActiveUsersAsync(It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task ExecuteForUserAsync_WhenEmailFails_ShouldNotChangeStatusToFailed()
+    {
+        SetupDefaultMocksForUser();
+
+        _emailMock
+            .Setup(s => s.SendBriefingEmailAsync(
+                It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<BriefingResultDto>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new Exception("SendGrid indisponível"));
+
+        var updateCalls = new List<BriefingStatus>();
+        _briefingRepoMock
+            .Setup(r => r.UpdateAsync(It.IsAny<BriefingEntry>(), It.IsAny<CancellationToken>()))
+            .Callback<BriefingEntry, CancellationToken>(
+                (b, _) => updateCalls.Add(b.Status))
+            .Returns(Task.CompletedTask);
+
+        await _job.ExecuteForUserAsync(_testUser.Id.ToString());
+
+        updateCalls.Should().NotContain(BriefingStatus.Failed,
+            "falha no email não deve alterar o status do briefing para Failed");
+        updateCalls.Should().Contain(BriefingStatus.Generated);
+    }
+
+    // --- Helpers ---
+
     private void SetupDefaultMocks(string? accessToken = null)
     {
         var token = accessToken ?? _testUser.GoogleAccessToken!;
@@ -388,6 +534,22 @@ public class BriefingJobTests
             .Setup(r => r.GetActiveUsersAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<AppUser> { _testUser });
 
+        SetupServiceMocks(token);
+    }
+
+    private void SetupDefaultMocksForUser(string? accessToken = null)
+    {
+        var token = accessToken ?? _testUser.GoogleAccessToken!;
+
+        _userRepoMock
+            .Setup(r => r.GetByIdAsync(_testUser.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_testUser);
+
+        SetupServiceMocks(token);
+    }
+
+    private void SetupServiceMocks(string token)
+    {
         _briefingRepoMock
             .Setup(r => r.GetByUserAndDateAsync(
                 _testUser.Id.ToString(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
@@ -407,13 +569,11 @@ public class BriefingJobTests
             .ReturnsAsync(new List<EmailSummaryDto>());
 
         _calendarMock
-            .Setup(s => s.GetTodayEventsWithTokenAsync(
-                token, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetTodayEventsWithTokenAsync(token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<CalendarEventDto>());
 
         _googleTasksMock
-            .Setup(s => s.GetTodayTasksWithTokenAsync(
-                token, It.IsAny<CancellationToken>()))
+            .Setup(s => s.GetTodayTasksWithTokenAsync(token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<GoogleTaskDto>());
 
         _weatherMock
@@ -436,10 +596,8 @@ public class BriefingJobTests
 
         _emailMock
             .Setup(s => s.SendBriefingEmailAsync(
-                It.IsAny<string>(),
-                It.IsAny<string>(),
-                It.IsAny<BriefingResultDto>(),
-                It.IsAny<CancellationToken>()))
+                It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<BriefingResultDto>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
     }
 }
