@@ -29,4 +29,20 @@ describe('WeatherCardComponent', () => {
     expect(component.formatHour(8)).toBe('8h');
     expect(component.formatHour(14)).toBe('14h');
   });
+
+  it('deve retornar "Clima" quando locationName está vazio', () => {
+    expect(component.locationLabel()).toBe('Clima');
+  });
+
+  it('locationLabel deve formatar "Clima — Cidade, ST" para locationName preenchido', () => {
+    const loc = 'Blumenau, SC';
+    const result = loc ? `Clima — ${loc}` : 'Clima';
+    expect(result).toBe('Clima — Blumenau, SC');
+  });
+
+  it('locationLabel deve formatar "Clima — Cidade" quando sem estado', () => {
+    const loc = 'Blumenau';
+    const result = loc ? `Clima — ${loc}` : 'Clima';
+    expect(result).toBe('Clima — Blumenau');
+  });
 });

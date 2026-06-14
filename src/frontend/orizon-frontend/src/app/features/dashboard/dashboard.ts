@@ -2,7 +2,7 @@ import { Component, inject, OnInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BriefingStore } from '../../core/briefing/store/briefing.store';
-import { BriefingService, UserStats } from '../../core/briefing/services/briefing.service';
+import { BriefingService } from '../../core/briefing/services/briefing.service';
 import { WeatherCardComponent } from './components/weather-card/weather-card';
 import { EmailsCardComponent } from './components/emails-card/emails-card';
 import { CalendarCardComponent } from './components/calendar-card/calendar-card';
@@ -48,24 +48,9 @@ export class DashboardComponent implements OnInit {
   readonly isGenerating = signal(false);
   readonly generateError = signal<string | null>(null);
 
-  readonly stats = signal<UserStats | null>(null);
-  readonly isLoadingStats = signal(false);
-
   ngOnInit(): void {
     this.briefingService.getTodayBriefing().subscribe();
     this.briefingService.connectSignalR(`${environment.apiUrl}/hubs/briefing`);
-    this.loadStats();
-  }
-
-  loadStats(): void {
-    this.isLoadingStats.set(true);
-    this.briefingService.getStats().subscribe({
-      next: (data) => {
-        this.stats.set(data);
-        this.isLoadingStats.set(false);
-      },
-      error: () => this.isLoadingStats.set(false),
-    });
   }
 
   generateBriefing(): void {
@@ -93,11 +78,5 @@ export class DashboardComponent implements OnInit {
     const weekdayCapitalized = weekday.charAt(0).toUpperCase() + weekday.slice(1);
     const monthCapitalized = month.charAt(0).toUpperCase() + month.slice(1);
     return `${weekdayCapitalized}, ${day} de ${monthCapitalized}`;
-  }
-
-  streakLabel(streak: number): string {
-    if (streak === 0) return 'Nenhum dia consecutivo';
-    if (streak === 1) return '1 dia consecutivo';
-    return `${streak} dias consecutivos`;
   }
 }

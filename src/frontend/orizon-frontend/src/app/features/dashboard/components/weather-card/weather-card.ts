@@ -13,6 +13,11 @@ export class WeatherCardComponent {
   readonly weather = input<WeatherData>({} as WeatherData);
   readonly weatherSummary = input<string>('');
 
+  readonly locationLabel = computed(() => {
+    const loc = this.weather().locationName;
+    return loc ? `Clima — ${loc}` : 'Clima';
+  });
+
   readonly precipitationHours = computed(() =>
     Object.entries(this.weather().hourlyPrecipitation ?? {})
       .map(([hour, value]) => ({ hour: Number(hour), value }))
